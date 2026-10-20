@@ -1,4 +1,4 @@
-var SIMSRC="data/sim.js?v=1792464534";
+var SIMSRC="data/sim.js?v=1792466109";
 const P=ALL[SLUG];
 document.getElementById('app').innerHTML=P.body;
 document.title=P.cls+' · AION 2 Field Manual';
