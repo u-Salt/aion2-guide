@@ -1,8 +1,5 @@
 <!doctype html>
 <html lang="en"><head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>AION 2 Field Manual</title>
 <meta name="description" content="Free all-class guide for AION 2 Global: skill builds and macros tested in a DPS simulator, Daevanion routes, gear and Soul Binding targets, dungeon and boss guides with videos, an upgrade cost planner and optimizer.">
 <meta name="theme-color" content="#e3b862">
 <meta property="og:type" content="website">
@@ -18,6 +15,9 @@
 <meta name="twitter:title" content="AION 2 Field Manual: all 9 classes">
 <meta name="twitter:description" content="Free all-class guide for AION 2 Global: skill builds and macros tested in a DPS simulator, Daevanion routes, gear and Soul Binding targets, dungeon and boss guides with videos, an upgrade cost planner and optimizer.">
 <meta name="twitter:image" content="https://u-salt.github.io/aion2-guide/og-banner.png">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AION 2 Global Class Guides · Field Manual (Unofficial Fan Guide)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -63,7 +63,7 @@ section.tab{padding-top:28px;display:grid;gap:22px}
 .callout b{color:var(--fg)}
 ol.steps,ul.plain{margin:0;padding-left:22px;display:grid;gap:6px}
 .kbd{font-family:var(--f-mono);font-size:13px;background:var(--panel2);border:1px solid var(--line);border-bottom-width:2px;padding:1px 6px;border-radius:5px;white-space:nowrap}
-.tag{display:inline-block;font:600 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.tag{display:inline-block;font:600 12px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
 .tag.gold{color:var(--gold);border-color:color-mix(in srgb,var(--gold) 50%,transparent)}
 .tag.wind{color:var(--wind);border-color:color-mix(in srgb,var(--wind) 50%,transparent)}
 .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
@@ -78,12 +78,12 @@ td.num,th.num{text-align:center;font-family:var(--f-mono);font-variant-numeric:t
 .bracket{display:grid;grid-template-columns:110px 1fr;gap:18px;padding-block:18px;border-top:1px solid var(--line)}
 .bracket:first-of-type{border-top:0}
 .bracket .lv{font-family:var(--f-display);font-size:30px;color:var(--gold);line-height:1}
-.bracket .lv small{display:block;font:600 11px var(--f-mono);letter-spacing:.1em;color:var(--muted);margin-top:6px;text-transform:uppercase}
+.bracket .lv small{display:block;font:600 12px var(--f-mono);letter-spacing:.1em;color:var(--muted);margin-top:6px;text-transform:uppercase}
 .checks{display:grid;gap:8px;min-width:0}
 .check{display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:start;padding:9px 12px;background:var(--panel);border:1px solid var(--line);border-radius:9px;cursor:pointer}
 .check input{width:18px;height:18px;margin:2px 0 0;accent-color:var(--wind)}
 .check .what{min-width:0}
-.check .sys{font:600 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
+.check .sys{font:600 12px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;margin-right:6px}
 .sys.skill{color:var(--n-legend)} .sys.spec{color:var(--wind)} .sys.stig{color:var(--gold)} .sys.dae{color:var(--n-unique)} .sys.gear{color:var(--n-rare)} .sys.tip{color:var(--muted)}
 .check:has(input:checked){opacity:.55}
 .check:has(input:checked) .what{text-decoration:line-through;text-decoration-color:var(--muted)}
@@ -128,7 +128,7 @@ td.num,th.num{text-align:center;font-family:var(--f-mono);font-variant-numeric:t
 .flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .tile{display:inline-grid;place-items:center;min-width:92px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);text-align:center;line-height:1.2}
 .tile b{font-size:14px;font-weight:600}
-.tile small{display:block;font:600 10.5px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+.tile small{display:block;font:600 12px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:3px}
 .tile.buff{border-color:color-mix(in srgb,var(--gold) 60%,transparent)} .tile.buff b{color:var(--gold)}
 .tile.debuff{border-color:color-mix(in srgb,var(--wind) 60%,transparent)} .tile.debuff b{color:var(--wind)}
 .tile.nuke{border-color:color-mix(in srgb,var(--n-legend) 70%,transparent)} .tile.nuke b{color:#9cc4ff}
@@ -151,7 +151,7 @@ td.num,th.num{text-align:center;font-family:var(--f-mono);font-variant-numeric:t
 .rankgrid td.rk.up{color:var(--fg);background:color-mix(in srgb,var(--wind) 14%,transparent)}
 .rankgrid td.rk.spec{color:var(--gold)}
 .rankgrid td.rk.max{color:var(--gold);background:color-mix(in srgb,var(--gold) 16%,transparent)}
-.rankgrid tr.grp td{background:var(--panel2);font:600 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.rankgrid tr.grp td{background:var(--panel2);font:600 12px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .rankgrid th.pts{color:var(--wind)}
 /* phase guide */
 .phasepick{display:flex;flex-wrap:wrap;gap:6px}
@@ -161,27 +161,27 @@ td.num,th.num{text-align:center;font-family:var(--f-mono);font-variant-numeric:t
 .phase li{display:grid;grid-template-columns:24px 92px 32px 1fr auto;gap:10px;align-items:center;padding:8px 10px;border-radius:9px;background:var(--panel);border:1px solid var(--line)}
 .phase li input{width:18px;height:18px;accent-color:var(--wind);margin:0}
 .phase li:has(input:checked){opacity:.5}
-.chip{font:600 11.5px var(--f-mono);letter-spacing:.04em;padding:3px 8px;border-radius:6px;text-align:center;color:#0d1018}
+.chip{font:600 12px var(--f-mono);letter-spacing:.04em;padding:3px 8px;border-radius:6px;text-align:center;color:#0d1018}
 .chip.Nezekan{background:#b9c4e6}.chip.Zikel{background:#9fd7c8}.chip.Vaizel{background:#e3b862}.chip.Triniel{background:#e79aa6}.chip.Azphel{background:#c7a6ef}
 .phase .go{font:600 12.5px var(--f-mono);color:var(--gold);background:none;border:1px solid var(--line);border-radius:7px;padding:4px 8px;cursor:pointer;white-space:nowrap}
-.pctico{width:32px;height:32px;border-radius:6px;background:var(--n-unique);display:grid;place-items:center;color:#0d1018;font:700 11px var(--f-mono)}
+.pctico{width:32px;height:32px;border-radius:6px;background:var(--n-unique);display:grid;place-items:center;color:#0d1018;font:700 12px var(--f-mono)}
 /* game-like macro window */
 .mwin{background:linear-gradient(#1a1f2e,#141824);border:1px solid #39415a;border-radius:12px;overflow:hidden;min-width:0}
 .mwin .mhead{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;background:#202639;border-bottom:1px solid #39415a;flex-wrap:wrap}
 .mwin .mhead b{font-family:var(--f-display);font-size:18px;font-weight:400;color:var(--gold)}
 .mwin .mbody{padding:12px;display:grid;gap:8px}
 .mstep{display:grid;grid-template-columns:56px 1fr 120px;gap:12px;align-items:center;padding:10px;border:1px solid #333b52;border-radius:9px;background:#11141d}
-.mstep .no{font:600 11px var(--f-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.mstep .no{font:600 12px var(--f-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 .stack{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.stack .sl{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;color:var(--muted);width:76px;text-align:center;line-height:1.2}
+.stack .sl{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;color:var(--muted);width:76px;text-align:center;line-height:1.2}
 .stack .sl .ico{width:44px;height:44px}
-.stack .ord{font:700 10px var(--f-mono);color:var(--wind)}
+.stack .ord{font:700 12px var(--f-mono);color:var(--wind)}
 .delay{display:flex;align-items:center;gap:6px;font-family:var(--f-mono);font-size:13px;color:var(--muted)}
 .delay span.v{background:#0a0c12;border:1px solid #39415a;border-radius:6px;padding:5px 10px;color:var(--fg);min-width:52px;text-align:right}
 .addrow{border:1px dashed #39415a;border-radius:9px;padding:10px;text-align:center;color:var(--muted);font-size:13.5px}
 .keychip{font:600 12px var(--f-mono);border:1px solid var(--gold);color:var(--gold);border-radius:6px;padding:3px 8px}
 @media (max-width:620px){.mstep{grid-template-columns:1fr}.phase li{grid-template-columns:24px 80px 32px 1fr;}.phase li .go{grid-column:2/-1;justify-self:start}}
-.wingtable tr.wgrp td{background:var(--panel2);font:600 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.wingtable tr.wgrp td{background:var(--panel2);font:600 12px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .wingtable tr.best-pve td{background:color-mix(in srgb,var(--gold) 10%,transparent)}
 .wingtable tr.best-pvp td{background:color-mix(in srgb,var(--wind) 10%,transparent)}
 .wingtable td.num{white-space:nowrap;color:var(--gold)}
@@ -190,11 +190,11 @@ td.num,th.num{text-align:center;font-family:var(--f-mono);font-variant-numeric:t
 .qcol.man{border-color:color-mix(in srgb,var(--gold) 55%,transparent)}
 .qk{font:700 12px var(--f-mono);color:var(--gold);text-align:center}
 .qrow{display:grid;grid-template-columns:10px 1fr;gap:3px;align-items:center}
-.qrow i{font:600 9px var(--f-mono);color:var(--muted);font-style:normal}
-.qc{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;line-height:1.15;text-align:center;color:var(--fg);min-height:64px}
+.qrow i{font:600 12px var(--f-mono);color:var(--muted);font-style:normal}
+.qc{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;line-height:1.15;text-align:center;color:var(--fg);min-height:64px}
 .qc .ico{width:40px;height:40px}
 .qc.empty{border:1px dashed var(--line);border-radius:6px;min-height:46px}
-.qnote{font:600 9.5px var(--f-mono);color:var(--muted);text-align:center;text-transform:uppercase;letter-spacing:.04em}
+.qnote{font:600 12px var(--f-mono);color:var(--muted);text-align:center;text-transform:uppercase;letter-spacing:.04em}
 .geartable td{vertical-align:middle}
 .gstones{display:flex;flex-wrap:wrap;gap:6px}
 .gchk{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border:1px solid var(--line);border-radius:7px;background:var(--panel2);font-size:13px;cursor:pointer;white-space:nowrap}
@@ -218,9 +218,9 @@ td.num,th.num{text-align:center;font-family:var(--f-mono);font-variant-numeric:t
 .dwtab td.num,.dwtab th.num{min-width:92px}
 .dwtab .dwbox{width:20px;height:20px;accent-color:var(--wind)}
 .dwtab tr:has(.dwbox:checked) td:first-child,.dwtab tr:has([data-dwc^="srv|"]:checked) td:first-child{opacity:.6}
-.dwdel{background:none;border:1px solid var(--line);color:var(--muted);border-radius:6px;cursor:pointer;font-size:11px;padding:1px 6px;margin-top:4px}
+.dwdel{background:none;border:1px solid var(--line);color:var(--muted);border-radius:6px;cursor:pointer;font-size:12px;padding:1px 6px;margin-top:4px}
 .dwdel:hover{color:var(--warn);border-color:var(--warn)}
-.xchk{display:inline-flex;align-items:center;gap:5px;margin-right:8px;padding:2px 7px;border:1px solid var(--line);border-radius:999px;font:600 11px var(--f-mono);letter-spacing:.03em;color:var(--muted);background:var(--panel2);cursor:pointer;vertical-align:middle;white-space:nowrap}
+.xchk{display:inline-flex;align-items:center;gap:5px;margin-right:8px;padding:2px 7px;border:1px solid var(--line);border-radius:999px;font:600 12px var(--f-mono);letter-spacing:.03em;color:var(--muted);background:var(--panel2);cursor:pointer;vertical-align:middle;white-space:nowrap}
 .xchk input{width:15px;height:15px;margin:0;accent-color:var(--wind)}
 .xchk:has(input:checked){color:var(--wind);border-color:color-mix(in srgb,var(--wind) 60%,transparent)}
 tr.xrow:has(.xchk input:checked) td,li.xrow:has(.xchk input:checked){opacity:.62}
@@ -260,13 +260,13 @@ tr.fcurrow td:first-child input{outline:3px solid var(--wind);outline-offset:3px
 .girow.done .gilock{opacity:1;filter:drop-shadow(0 0 4px var(--wind))}
 .gilock:has(input:focus-visible){outline:2px solid var(--wind);border-radius:6px}
 .gimain{display:flex;justify-content:space-between;gap:10px;font-weight:700;font-size:15px;flex-wrap:wrap}
-.gislot{font:600 11px var(--f-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.gislot{font:600 12px var(--f-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
 @media (max-width:760px){.gigrid{grid-template-columns:1fr}.giboards{flex-direction:row;overflow-x:auto}.gib{min-width:120px}}
 @media (max-width:760px){.guidebox{position:static}}
 /* my character */
 .chgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr));gap:10px}
 .chstat{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
-.chstat .k{font:600 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.chstat .k{font:600 12px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .chstat .v{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .chrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .chpaste{display:block;width:100%;min-height:110px;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:13px/1.4 var(--f-mono);resize:vertical}
@@ -331,9 +331,9 @@ ol.chtodo input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--wind)}
 .msrow strong{color:var(--fg)}
 .msperks{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px}
 .msperk{display:inline-flex;align-items:baseline;gap:6px;font-size:13.5px;line-height:1.35;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px 8px}
-.msperk i{font:600 11px var(--f-mono);font-style:normal;color:var(--muted)}
+.msperk i{font:600 12px var(--f-mono);font-style:normal;color:var(--muted)}
 .msperk.new{border-color:color-mix(in srgb,var(--gold) 60%,transparent);background:color-mix(in srgb,var(--gold) 10%,var(--panel))}
-.msperk em,.mschip em{font:600 10px var(--f-mono);font-style:normal;letter-spacing:.06em;text-transform:uppercase;color:var(--gold)}
+.msperk em,.mschip em{font:600 12px var(--f-mono);font-style:normal;letter-spacing:.06em;text-transform:uppercase;color:var(--gold)}
 .mschips{display:flex;flex-wrap:wrap;gap:6px}
 .mschip{display:inline-flex;align-items:center;gap:6px;font-size:14px;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:4px 10px 4px 5px}
 .mschip.new{border-color:color-mix(in srgb,var(--gold) 60%,transparent)}
@@ -361,7 +361,7 @@ ol.chtodo input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--wind)}
 .mssrc[open] summary{margin-bottom:8px}
 .mssrc ul{display:grid;gap:6px;margin:8px 0 0}
 .mssrc li{overflow-wrap:anywhere}
-.mssrc .tag{font-size:10.5px;padding:1px 6px;margin-right:2px}
+.mssrc .tag{font-size:12px;padding:1px 6px;margin-right:2px}
 @media (max-width:420px){.msflow .tile{min-width:72px;padding:6px 8px}}
 /* Pantheon tab (pantheon_fn.js) */
 .pantop{display:grid;gap:10px}
@@ -426,18 +426,69 @@ tr.panrowown td{background:color-mix(in srgb,var(--wind) 6%,transparent)}
 #syncstate[data-ok="1"]{color:var(--wind)}
 .tabbar{position:sticky;top:calc(env(safe-area-inset-top,0px) + 52px);z-index:5;background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);margin-inline:-16px;padding:8px 16px 0}
 .tabbar nav.tabs{position:static;margin:0;padding:6px 0 8px;border:0;background:none;backdrop-filter:none}
-.tgroups{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.tgroups{display:flex;flex-wrap:wrap;gap:6px;padding-bottom:2px}
 .tgroups button{flex:0 0 auto;background:var(--panel2);border:1px solid var(--line);color:var(--fg);font:700 13px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;padding:7px 14px;border-radius:999px;cursor:pointer}
 .tgroups button[aria-pressed="true"]{background:var(--wind);color:var(--bg);border-color:var(--wind)}
 nav.tabs button.gh{display:none}
+.topbar a.donate{display:inline-flex;align-items:center;gap:5px;font:600 12px var(--f-body);color:var(--gold);text-decoration:none;border:1px solid color-mix(in srgb,var(--gold) 45%,transparent);border-radius:999px;padding:4px 10px;white-space:nowrap}
+.topbar a.donate:hover{background:color-mix(in srgb,var(--gold) 12%,transparent)}
+.topbar a.donate[hidden],.sitefoot [hidden]{display:none}
+.sitefoot{border-top:1px solid var(--line);background:var(--panel);margin-top:8px}
+.sitefoot .in{max-width:1080px;margin:0 auto;padding:18px 16px calc(22px + env(safe-area-inset-bottom,0px));display:grid;gap:6px;font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.sitefoot p{margin:0}.sitefoot b{color:var(--fg)}
+.sitefoot .fl a{display:inline-flex;align-items:center;gap:4px}
+.sitefoot .fl a svg{vertical-align:-2px}
+@media (max-width:520px){.topbar a.donate span{display:none}.topbar a.donate{padding:5px 8px}}
+/* release polish (Oct 2026) */
+section.tab{grid-template-columns:minmax(0,1fr)}
+section.tab>*,.box,.grid2>*,.grid3>*,.mergedsec,.mergedsec>*{min-width:0}
+.wrap input,.wrap select,.wrap textarea{max-width:100%}
+#farmq{width:100%;box-sizing:border-box}
+.tablewrap{max-width:100%}
+@media (max-width:600px){.tgroups button{padding:6px 10px;font-size:12px;letter-spacing:.03em}.topbar .in{gap:8px}.topbar .brand{font-size:16px}}
+.topbar .modelab{font:600 12px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:flex;gap:8px;align-items:center}
+.qpaths{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:14px}
+.qpath{display:grid;gap:6px;align-content:start;border-top:3px solid var(--gold)}
+.qpath h3{margin:0}.qpath ol{margin:0}
+.cpbox{display:grid;gap:10px;border-color:var(--gold)}
+.cpgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:10px}
+.cpcard{display:grid;gap:4px;text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--fg);font:inherit;cursor:pointer}
+.cpcard:hover,.cpcard.cur{border-color:var(--gold)}
+.cpcard b{font-size:16px}
+.viditems{display:grid;gap:12px}
+.vidrow{display:grid;gap:3px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.vidrow:last-child{border-bottom:0;padding-bottom:0}
+details.box>summary{cursor:pointer}
+.mergedsec{display:grid;gap:22px;border-top:1px solid var(--line);padding-top:22px}
+h2.subh2{font-size:clamp(22px,4vw,28px)}
+.srcmoved{display:none}
+@media (max-width:600px){#specwrap table thead{display:none}#specwrap table,#specwrap tbody,#specwrap tr,#specwrap td{display:block;width:auto}#specwrap tr{border-bottom:1px solid var(--line);padding:8px 10px}#specwrap td{border:0;padding:3px 0}#specwrap td[data-l]::before{content:attr(data-l) ': ';font-weight:600;color:var(--muted)}}
+.tag,.xchk{text-transform:none;letter-spacing:.02em}
+#titlebox{grid-template-columns:minmax(0,1fr)}
+@media (max-width:600px){.topbar .brand{display:none}.topbar .clslab{font-size:0;gap:0}.topbar select{padding:6px 8px}.topbar .in{flex-wrap:nowrap;justify-content:space-between}.cpgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:600px){.tabbar nav.tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;-webkit-mask-image:linear-gradient(to right,#000 82%,transparent);mask-image:linear-gradient(to right,#000 82%,transparent);padding-right:36px}.tabbar nav.tabs button{padding:7px 10px}}
+@media (max-width:600px){.farmgrid{grid-template-columns:minmax(0,1fr)}}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+details.tabsrc .tabsrcbody{display:grid;gap:6px;margin-top:10px}
+details.tabsrc .tabsrcbody p{margin:0}
+.mstested{margin-top:6px}.mstested summary{cursor:pointer;color:var(--muted);font-size:13px}
+.msverdict{margin:0}
+.chgh{margin:0 0 4px;font-size:15px}
+.chglist{display:grid;gap:6px}
+.pnum{width:18px;text-align:center;color:var(--wind)}
+.pricecheck{border-left:3px solid var(--gold);padding-left:10px}
+.sitefoot .btn{font-size:13px}
+.qrow{grid-template-columns:12px 1fr}
 .tabsum{border-left:3px solid var(--wind);background:color-mix(in srgb,var(--wind) 8%,var(--panel));padding:10px 14px;border-radius:0 10px 10px 0;font-weight:600;font-size:15px}
 </style>
-<div class="topbar"><div class="in"><span class="brand">AION 2 Field Manual</span><label for="classpick">Class <select id="classpick"></select></label><div class="seg" id="modepickTop" role="group" aria-label="Mode"><button type="button" data-m="pve">PvE</button><button type="button" data-m="pvp">PvP</button></div><label class="b45" title="Show Korea-only level 46–50 content"><input type="checkbox" id="b45pick"> Lv 46–50 preview</label><span id="syncstate">Saved in this browser</span></div></div>
+<div class="topbar"><div class="in"><span class="brand">AION 2 Field Manual</span><label for="classpick" class="clslab">Class <select id="classpick"></select></label><span class="modelab" id="modelab">Build for <span class="seg" id="modepickTop" role="group" aria-labelledby="modelab" title="PvE shows the raid, mode and simulator tabs; PvP swaps them for the PvP build. Your ticks are kept for both."><button type="button" data-m="pve">PvE</button><button type="button" data-m="pvp">PvP</button></span></span><a class="donate" data-donate hidden aria-label="Tip the author (optional)" title="Everything in this guide is free. A tip is optional and changes nothing."><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1 1 1.5 1 2.5M12 3.5c0 1 1 1.5 1 2.5"/></svg><span>Tip the author (optional)</span></a></div></div>
 <div id="app"></div>
+<footer class="sitefoot"><div class="in"><p class="fl"><a data-donate hidden><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1 1 1.5 1 2.5M12 3.5c0 1 1 1.5 1 2.5"/></svg> Tip the author (optional)</a><span data-donate-sep hidden> Everything in this guide is free. · </span><a href="#credits" data-goto="credits">Sources &amp; credits</a> · <a href="#communitytools" data-goto="communitytools">Community tools</a> · <a data-feedback hidden>Report a mistake</a><span data-feedback-sep hidden> · </span>Last updated 2026-10-20</p><p><b>AION 2 Field Manual · Unofficial Fan Guide.</b> Unofficial fan-made guide. Not affiliated with, endorsed or sponsored by NCSOFT. AION 2, its names, images and icons are trademarks or property of NCSOFT Corporation.</p><p><span id="footpriv">Your ticks and settings are saved in this browser only (not in your game account); nothing is sent to us.</span> <span id="syncstate">Saved in this browser</span>. <button type="button" class="btn" id="clearall">Clear all my saved data</button></p></div></footer>
 <script>
 window.addEventListener('error',function(e){try{var d=document.getElementById('jserr');if(!d){d=document.createElement('div');d.id='jserr';d.style.cssText='position:fixed;left:8px;right:8px;bottom:8px;z-index:99;background:#5a1d1d;color:#fff;padding:10px 14px;border-radius:8px;font:13px monospace';document.body.appendChild(d)}d.textContent='Guide error (please tell Claude): '+(e.message||e)+' @'+(e.lineno||'')}catch(_){}});
 /* ---------- saved progress: browser copy + your claude.ai account ---------- */
 const STORE=(()=>{let d={};try{d=JSON.parse(localStorage.getItem('aion2fm')||'{}')||{}}catch(e){}if(!d.c)d.c={};return d})();
+const FIRST_VISIT=!STORE.ts;  /* nothing saved in this browser yet: first visit (no changes banner, show the class picker) */
 function saveLocal(){try{localStorage.setItem('aion2fm',JSON.stringify(STORE))}catch(e){}}
 let remoteRef=null,remoteTimer=null;
 function setSync(t,ok){const el=document.getElementById('syncstate');if(el){el.textContent=t;el.dataset.ok=ok?'1':'0'}}
@@ -479,5 +530,5 @@ const ALL={};const _CL={"ranger":"Ranger","gladiator":"Gladiator","templar":"Tem
 const _h=location.hash.slice(1);
 const SLUG=ALL[_h]?_h:(ALL[S.gget('cls','ranger')]?S.gget('cls','ranger'):'ranger');
 document.getElementById('app').innerHTML='<p class="muted" style="padding:24px">Loading the '+ALL[SLUG].cls+' guide…</p>';
-['data/common.js','data/'+SLUG+'.js','app.js'].forEach(function(src){var s=document.createElement('script');s.src=src+'?v=1792466109';s.async=false;s.onerror=function(){var d=document.getElementById('app');d.innerHTML='<p style="padding:24px">Could not load '+src+'. Please tell Claude.</p>'};document.body.appendChild(s)});
+['data/common.js','data/'+SLUG+'.js','app.js'].forEach(function(src){var s=document.createElement('script');s.src=src+'?v=1792519109';s.async=false;s.onerror=function(){var d=document.getElementById('app');d.innerHTML='<p style="padding:24px">Could not load '+src+'. Please tell Claude.</p>'};document.body.appendChild(s)});
 </script>

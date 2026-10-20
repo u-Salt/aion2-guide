@@ -1,7 +1,7 @@
-var SIMSRC="data/sim.js?v=1792466109";
+var SIMSRC="data/sim.js?v=1792519109";
 const P=ALL[SLUG];
 document.getElementById('app').innerHTML=P.body;
-document.title=P.cls+' · AION 2 Field Manual';
+document.title=P.cls+' Guide · AION 2 Global Field Manual (Unofficial Fan Guide)';
 const DATA=P.DATA, LINKS=P.LINKS, ICONS=P.ICONS, SKILLPLAN=P.SKILLPLAN, PHASES=P.PHASES, C=P.C, TOP=P.TOP;
 /* ---------- boards ---------- */
 const ABBR=P.ABBR;
@@ -119,9 +119,10 @@ function showStepRings(from,to){
 }
 
 /* ---------- picture lookup for skills, items, wings, pets ---------- */
-const IMGALIAS=[['manastone','Superior Manastone'],['abyssal manastone','Superior Abyssal Manastone'],['theostone',"Theostone: Tiamat's Rage"],['training arcana','Superior Training Arcana'],['arcana','Arcana: Chalice of Vigor'],['potential stone','Potential Stone (Weapon)'],['transfer stone','Transfer Stone (Weapon)'],['rainbow','Soul Crystal: Special'],['soul crystal','Soul Crystal'],['souls','Soul Crystal'],['odyle energy','Odyle Energy'],['featherdown','Sealed Wing Featherdown'],['radiant odyle','Radiant Odyle'],['amplify','Amplify Stone'],['sync stone','Enhance Stone'],['daeva pass','Oath Coin'],['empyrean trace','Wisdom Stone']];
+const IMGALIAS=[['manastone','Superior Manastone'],['abyssal manastone','Superior Abyssal Manastone'],['theostone',"Theostone: Tiamat's Rage"],['training arcana','Superior Training Arcana'],['arcana','Arcana: Chalice of Vigor'],['potential stone','Potential Stone (Weapon)'],['transfer stone','Transfer Stone (Weapon)'],['rainbow','Soul Crystal: Special'],['soul crystal','Soul Crystal'],['souls','Soul Crystal'],['odyle energy','Odyle Energy'],['featherdown','Sealed Wing Featherdown'],['radiant odyle','Radiant Odyle'],['amplify','Amplify Stone'],['sync stone','Enhance Stone'],['daeva pass','Oath Coin'],['empyrean trace','Wisdom Stone'],['kina','Kinah']];
 function findImg(n,loose){
   if(!n) return null; n=String(n).trim();
+  if(n==='Kina'||n==='Kina (Bound)') n='Kinah';  /* Global spells it Kina; the picture is still filed as Kinah */
   const I=(typeof ITEMIMG!=='undefined'&&ITEMIMG)||{};
   const FAM={Cogni:'Soul Crystal: Cogni',Fera:'Soul Crystal: Fera',Natura:'Soul Crystal: Natura',Special:'Soul Crystal: Special',Varian:'Soul Crystal'};
   if(FAM[n]&&I[FAM[n]]) return I[FAM[n]];
@@ -173,7 +174,7 @@ $('corecallout').innerHTML=`<b>Your core skills are ${C.core.map(n=>icn(n)).join
 $('skillcallout').innerHTML=`<b>Exact rank for every skill at every level</b> is in the <a href="#plan" data-goto="plan">Level plan</a> tab. Passive order: ${C.passivePriority.slice(0,6).map(n=>icn(n)).join(' → ')}.`;
 $('spectable').innerHTML=C.specs.map(s=>`<tr><td><b>${s.skill}</b></td><td>${esc(s.leveling)}</td><td>${esc(s.endgame)}</td></tr>`).join('');
 if(C.perks&&C.perks.rows){
-  const tbl=rows=>`<div class="tablewrap"><table><thead><tr><th>Skill</th><th>Slot 1</th><th>Slot 2</th><th>Slot 3</th><th>While leveling</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${r.skill}</b></td><td>${esc(r.s1)}</td><td>${esc(r.s2)}</td><td>${esc(r.s3)}</td><td class="small muted">${esc(r.leveling||'—')}</td></tr>`).join('')}</tbody></table></div>`;
+  const tbl=rows=>`<div class="tablewrap"><table><thead><tr><th>Skill</th><th>Slot 1</th><th>Slot 2</th><th>Slot 3</th><th>While leveling</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${r.skill}</b></td><td data-l="Slot 1">${esc(r.s1)}</td><td data-l="Slot 2">${esc(r.s2)}</td><td data-l="Slot 3">${esc(r.s3)}</td><td class="small muted" data-l="While leveling">${esc(r.leveling||'—')}</td></tr>`).join('')}</tbody></table></div>`;
   let h=`<h3>Specializations: best 3 for every skill</h3><p class="small muted">Fill your slots in this order. You get 1 slot at rank 8, 2 at rank 12 and 3 at rank 20; the rank on the skill icon (including Daevanion bonuses) counts. The number in brackets is the rank where that perk unlocks: if it isn't unlocked yet, skip it and take the next one. The last column is what to use instead while leveling to 45.</p>`+tbl(C.perks.rows);
   [C.perks.alt,C.perks.alt2].forEach(A=>{ if(A&&A.rows&&A.rows.length) h+=`<h3 style="font-size:18px;margin-top:16px">${esc(A.title)}</h3><p class="small muted">${esc(A.note||'')}</p>`+tbl(A.rows); });
   $('specwrap').innerHTML=h;
@@ -207,7 +208,7 @@ $('pvpstrength').textContent=C.pvp.strength?('Current standing: '+C.pvp.strength
 const W=C.wingsPets||{};
 $('wpclass').innerHTML=[['PvE wing',W.wingPve],['PvP wing',W.wingPvp],['Pet slots (PvE)',W.petPve],['Pet preset (PvP)',W.petPvp],['Notes',W.notes]].filter(r=>r[1]).map(r=>`<li><b>${r[0]}:</b> ${esc(r[1])}</li>`).join('');
 $('disagree').innerHTML=(C.disagreements||[]).map(s=>`<li>${esc(s)}</li>`).join('');
-$('sources').innerHTML=[['metabot.gg Daevanion planner &amp; top-player builds',`https://metabot.gg/en/aion-2/classes/${SLUG}`],...(C.sources||[])].slice(0,14).map(s=>`<li><a href="${s[1]}" target="_blank" rel="noopener">${s[0]}</a></li>`).join('');
+$('sources').innerHTML=[['metabot.gg Daevanion planner &amp; top-player builds',`https://metabot.gg/en/aion-2/classes/${SLUG}`],...(C.sources||[])].slice(0,14).map(s=>`<li><a href="${s[1]}" target="_blank" rel="noopener noreferrer">${s[0]}</a></li>`).join('');
 $('whyorder').innerHTML=`Each board has one node for each of your core skills (${C.core.join(', ')}). Buying those on every open board first gives each skill +1 per board; with four boards that's +4, taking them past rank 12 to open the second specialization slot. Passives come next, then your other main skills, then the orange % corners.`;
 
 if(C.leftover){const el=$('leftover');el.hidden=false;el.innerHTML=`<b>Got spare skill points?</b> ${esc(C.leftover)}${C.spPvp?' <span class="muted">PvP: '+esc(C.spPvp)+'</span>':''}`}
@@ -353,8 +354,9 @@ function renderMacro(){
   // rules: generic, plus class-specific ones that match this layout
   const hasStack=bar.some(b=>b.rows.length>1&&!b.man);
   const mi=steps.findIndex(k=>k==='LMB'||k==='RMB'), fillersLast=mi<0||steps.slice(mi).every(k=>k==='LMB'||k==='RMB');
-  const gen=['Steps run top to bottom, skip anything on cooldown, and loop while you hold the key.','Charged skills, toggles and heals are pressed by hand, never in the macro'+(/brawler/i.test(C['class']||'')?' (Brawler is the exception inside Rampage, see below).':'.'),...(fillersLast?['No-cooldown fillers go last so they never block a cooldown skill.']:[]),'10 ms delays are fine; raise to 40–50 ms if skills get skipped or your ping is 80–100 ms.'];
-  if(hasStack) gen.push('Stacked slots fire their bottom skill first when it is ready, otherwise the next one up.');
+  // how steps loop and the 10 ms delay are already in the setup text and step 3 above, so they are not repeated here
+  const gen=['Charged skills, toggles and heals are pressed by hand, never in the macro'+(/brawler/i.test(C['class']||'')?' (Brawler is the exception inside Rampage, see below).':'.'),...(fillersLast?['No-cooldown fillers go last so they never block a cooldown skill.']:[])];
+  if(hasStack) gen.push('Expected behaviour, test it: a stacked slot fires its bottom skill first when it is ready, otherwise the next one up (how creator guides describe it; not confirmed on Global, see step 6).');
   $('macrorules').innerHTML=gen.concat((macroChoice()==='alt'?C.macroAlt.rules:C.macro.rules)||[]).map(s=>`<li>${esc(s)}</li>`).join('');
   $('macrofallback').innerHTML=['Skip any skill you have not unlocked yet; add its step when you do.'].concat(C.macro.fallback||[]).map(s=>`<li>${esc(s)}</li>`).join('');
 }
@@ -393,7 +395,7 @@ const GEARSLOTS={
   {k:'ear2',n:'Earring 2',t:'acc',item:'Fire Temple / voucher chest → Splendent craft',enh:'+10'},
   {k:'ring1',n:'Ring 1',t:'acc',item:'Fire Temple / voucher chest → Splendent craft',enh:'+10'},
   {k:'ring2',n:'Ring 2',t:'acc',item:'Fire Temple / voucher chest → Splendent craft',enh:'+10'},
-  {k:'bracelet',n:'Bracelet',t:'brace',item:'Ascension Bracelet for now; Abyssal Bracelet (Ludra drop, or 3 Ludra vouchers + 5M Kinah) once Ludra returns',enh:'+10'},
+  {k:'bracelet',n:'Bracelet',t:'brace',item:'Ascension Bracelet for now; Abyssal Bracelet (Ludra drop, or 3 Ludra vouchers + 5M Kina) once Ludra returns',enh:'+10'},
   {k:'amulet',n:'Amulet',t:'none',item:'Never replaced: Substance Morph Rare → Epic → Unique, each at +10',enh:'+10 per grade'},
   {k:'belt',n:'Belt',t:'none',item:'Never replaced: Substance Morph Rare → Epic → Unique, each at +10',enh:'+10 per grade'}],
  pvp:[
@@ -454,7 +456,7 @@ document.addEventListener('change',e=>{const k=e.target&&e.target.dataset&&e.tar
 /* ---------- farming guide (shared) ---------- */
 function farmImg(n){const src=findImg(n,true);return src?`<img class="ico lg" src="${src}" alt="" loading="lazy">`:`<span class="farmdot" aria-hidden="true" data-l="${esc(String(n).slice(0,2))}"></span>`}
 function fkey(n){return 'fm-'+String(n).toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,40)}
-function farmCounts(){if(typeof FARM==='undefined'||!FARM)return;const sv=S.get('sv',{});let all=0,done=0;document.querySelectorAll('.farmcard').forEach(card=>{const boxes=card.querySelectorAll('[data-sv^="fm-"]');const d=[...boxes].filter(b=>sv[b.dataset.sv]).length;all+=boxes.length;done+=d;const c=card.querySelector('.fcount');if(c){c.textContent=d+'/'+boxes.length;c.dataset.full=d&&d===boxes.length?'1':'0'}});const t=$('farmtotal');if(t)t.innerHTML=`<div class="progress"><div class="bar"><i style="width:${all?100*done/all:0}%"></i></div><span class="readout">${done} / ${all} farming steps done</span><button class="btn" type="button" id="farmreset">Clear farming checkmarks</button></div>`;const rb=$('farmreset');if(rb)rb.onclick=()=>{const s=S.get('sv',{});Object.keys(s).forEach(k=>{if(k.startsWith('fm-'))delete s[k]});S.set('sv',s);renderFarm()}}
+function farmCounts(){const t=$('farmtotal');if(t)t.innerHTML='';}  /* farming methods repeat, so there is no done count */
 function renderFarm(){
   const host=$('farmlist'); if(!host||typeof FARM==='undefined'||!FARM) return;
   const q=($('farmq')&&$('farmq').value||'').toLowerCase().trim();
@@ -467,10 +469,10 @@ function renderFarm(){
     items.forEach((it,ii)=>{
       const id=`f-${gi}-${ii}`;
       const sv=S.get('sv',{}), fk=fkey(it.name);
-      const meth=(it.methods||[]).map((m,mi)=>`<tr><td class="num"><input type="checkbox" data-sv="${fk}-${mi}" aria-label="Done" ${sv[fk+'-'+mi]?'checked':''} style="width:18px;height:18px;accent-color:var(--wind)"></td><td><b>${esc(m.how||'')}</b>${m.where?`<br><span class="muted">${esc(m.where)}</span>`:''}</td><td class="small">${esc(m.limit||'—')}</td><td class="small muted">${esc(m.notes||'')}</td></tr>`).join('');
-      html+=`<details class="farmcard"${q?' open':''}><summary>${farmImg(it.name)}<span class="fname"><b>${esc(it.name)}</b><span class="feasy">${esc(it.easiest||'')}</span></span><span class="fcount" title="Steps done">0/0</span></summary>
+      const meth=(it.methods||[]).map((m,mi)=>`<tr data-fk="${fk}-${mi}"><td><b>${esc(m.how||'')}</b>${m.where?`<br><span class="muted">${esc(m.where)}</span>`:''}</td><td class="small">${esc(m.limit||'—')}</td><td class="small muted">${esc(m.notes||'')}</td></tr>`).join('');
+      html+=`<details class="farmcard"${q?' open':''}><summary>${farmImg(it.name)}<span class="fname"><b>${esc(it.name)}</b><span class="feasy">${esc(it.easiest||'')}</span></span></summary>
         <label class="ffav"><input type="checkbox" data-ffav="${esc(it.name)}" ${fav[it.name]?'checked':''}> Tracking this now</label>
-        <div class="tablewrap"><table><thead><tr><th class="num">Done</th><th>Best methods</th><th>Limit</th><th>Notes</th></tr></thead><tbody>${meth}</tbody></table></div>
+        <div class="tablewrap"><table><thead><tr><th>Best methods</th><th>Limit</th><th>Notes</th></tr></thead><tbody>${meth}</tbody></table></div>
         ${it.spend?`<p class="small" style="margin:8px 0 0"><b>Spend it on:</b> ${esc(it.spend)}</p>`:''}${it.globalNote?`<p class="small muted" style="margin:6px 0 0">${esc(it.globalNote)}</p>`:''}</details>`;
     });
     html+='</div>';
@@ -520,7 +522,7 @@ function setMode(m){
 
 /* ---------- daily / weekly checklist per character ---------- */
 const DWTASKS=[
- {k:'duty',t:'d',srv:1,n:'5 Duty Missions',d:'50k bound Kinah + 1k Abyss Points each. Shared by the whole server. Pick missions by their first reward (always paid; the later slots are less and less likely).'},
+ {k:'duty',t:'d',srv:1,n:'5 Duty Missions',d:'50k Kina (Bound) + 1k Abyss Points each. Shared by the whole server. Pick missions by their first reward (always paid; the later slots are less and less likely).'},
  {k:'attend',t:'d',srv:1,n:'Attendance reward',d:'Claimed once per server.'},
  {k:'shugo',t:'d',srv:1,n:'Shugo Festival keys',d:'3 per day (cap 12, 21 with membership). Server-wide.'},
  {k:'invasion',t:'d',srv:1,n:'Dimensional Invasion key',d:'1 per day (cap 7). Server-wide.'},
@@ -535,29 +537,29 @@ const DWTASKS=[
  {k:'explore',t:'w',n:'Exploration',d:'7 reward counts per Expedition dungeon.'},
  {k:'trial',t:'w',n:'Ascension Trial ×3',d:'Solo; Enhance Stones, Amplify fragments.'},
  {k:'subj',t:'w',off:1,n:'Subjugation ×3',d:'4-player. Not open on Global yet (probably Season 2), so hidden.'},
- {k:'raid',t:'w',off:1,n:'Ludra raid',d:'GS 2,800; offline for a rework (NC says it will return; a Producer\'s Letter dated 9 Oct names it first; no date yet, checked 19 Oct), so hidden. Attempts on Global unconfirmed (Korea removed its limit); 1 final-boss reward a week in Korea.'},
+ {k:'raid',t:'w',off:1,n:'Ludra raid',d:'GS 2,800; offline for a rework, so hidden. Attempts on Global unconfirmed (Korea removed its limit); 1 final-boss reward a week in Korea.'},
  {k:'abyss',t:'w',n:'Abyss time',d:'7 h a week per layer (14 h in Lower and Middle with membership). Until 27/28 Oct, Lower Abyss Rift Stones add up to 7 h more (see below). Since 14 Oct you can bank at most 7 h of entry time; how that works with membership is not stated.'},
  {k:'growth',t:'w',off:1,n:'Growth dungeons',d:'Silent Graveyard, Fafnite Amphitheater: 7 h each, Soul Crystals, Enhance Stones. Probably not open on Global yet, so hidden.'},
  {k:'arena',t:'w',n:'Arena / Arena of Tactics',d:'Solitude and Cooperation: 10 participation + 30 win rewards each. Arena of Tactics (10v10, 11:00–14:00 and 19:00–21:00 only): 3 participation + 3 win rewards.'},
  {k:'apshop',t:'w',n:'Abyss Point shop',d:'Weekly limits: Potential Stones and 50 Lesser Abyssal Manastones. Stigma Shards (200) and Azphel crystals (110) have lifetime limits that never reset: buy them as AP allows.'},
  {k:'pass',t:'w',n:'Daeva Pass cap',d:'50,000 EXP per week. Season 1 ends with the 15 Dec PST / 16 Dec CET maintenance.'},
- {k:"rift",t:"d",n:"Spacetime Rift quests",d:"Every 3h (00:00, 03:00 ... UTC), open ~10 min. Enemy-faction rift merchants: bound Kinah, 2,000 AP, Wisdom Stone, Daevanion Crystal. PvP only happens if both you and the other player have War Mode on."},
+ {k:"rift",t:"d",n:"Spacetime Rift quests",d:"Every 3h (00:00, 03:00 ... UTC), open ~10 min. Enemy-faction rift merchants: Kina (Bound), 2,000 AP, Wisdom Stone, Daevanion Crystal. PvP only happens if both you and the other player have War Mode on."},
  {k:"attend2",t:"d",srv:1,n:"Launch attendance (2 calendars)",d:"7-day and 14-day launch logs until 15 Dec. Claim both, once per server. Resets 23:00 Pacific."},
  {k:"dutycmd",t:"w",n:"Abyss Duty Commands",d:"Up to 20 scrolls a week from the Command Merchant in the Abyss: AP + Abyssal Power Shards. Stockpile them and finish before Wednesday (track them in the Journal, J)."},
- {k:"cmdcity",t:"w",srv:1,n:"Command Missions ×12",d:"Command Merchant in Verteron/Altgard: 15,000 Kinah a scroll, 12 a week (level 45). Same reward slots as Duty Missions. Scrolls keep in your bag, so buy all 12 and finish them before Wednesday."},
- {k:"corridor",t:"w",n:"Abyss Corridor",d:"After an Artifact Siege, enter the Corridor at each Artifact your faction holds: 5 minutes of monster killing for Kinah and Abyss Points (0–3 runs a siege). Open until the next siege; needs Abyss time."},
+ {k:"cmdcity",t:"w",srv:1,n:"Command Missions ×12",d:"Command Merchant in Verteron/Altgard: 15,000 Kina a scroll, 12 a week (level 45). Same reward slots as Duty Missions. Scrolls keep in your bag, so buy all 12 and finish them before Wednesday."},
+ {k:"corridor",t:"w",n:"Abyss Corridor",d:"After an Artifact Siege, enter the Corridor at each Artifact your faction holds: 5 minutes of monster killing for Kina and Abyss Points (0–3 runs a siege). Open until the next siege; needs Abyss time."},
  {k:"siege",t:"w",n:"Artifact Siege + Abyss elites",d:"Siege Mon/Thu/Sat 21:00, Executors 21:30; Nahma Fri/Sun 21:00 (server time; check the in-game timer). Sources disagree on the server clock: an EU creator says German time, while metabot.gg and allthings.how say every region runs on one GMT+9 clock. NC hasn't said; official notices only give PDT and CEST."},
  {k:"planet",t:"w",n:"Planet's Call pass",d:"Event pass: 51 levels, 40,000 EXP in total, 15,000 weekly cap. Ends at the 27 Oct PDT / 28 Oct CET maintenance; under 10,000 pass EXP you can no longer finish it."},
  {k:"passmis",t:"w",n:"Daeva Pass weekly missions",d:"Challenge Season Missions > Weekly Missions, for pass EXP."},
  {k:"wingmorph",t:"w",srv:1,n:"Sealed Wing → Enhance Stone morph",d:"Up to 20 Substance Morphs per server per week (since 7 Oct). Pick which character gets the stones."},
- {k:"spiritstone",t:"w",srv:1,n:"Resurrection Spiritstones (optional)",d:"Wind Breeze Merchants > Special (membership): 25,000 Kinah each, 10 per server per week, until 15 Dec."},
+ {k:"spiritstone",t:"w",srv:1,n:"Resurrection Spiritstones (optional)",d:"Wind Breeze Merchants > Special (membership): 25,000 Kina each, 10 per server per week, until 15 Dec."},
  {k:"halattend",t:"d",srv:1,n:"Trick or Treat attendance (Halloween)",d:"Menu > Attendance: 35 Pumpkin Coins a day, 100 on days 7 and 14. Once per server, until the 3 Nov PST / 4 Nov CET maintenance."},
  {k:"halmis",t:"w",srv:1,n:"Halloween event missions + coin shop",d:"Season Mission > Event tab: weekly missions, once per server (about 235 Pumpkin Coins). Then buy the weekly coin-shop items (Odyle Energy, Nightmare tickets, Shugo keys, Rift Stones). Until 3/4 Nov."},
  {k:"halcandy",t:"w",srv:1,n:"Halloween Candy Keys",d:"60 Candy Key Fragments (from Expedition and Transcendence clears) make a Red, Yellow or Blue Candy Key in Substance Morph, each once a week per server. Red: 20 Growth Pet Chests; Yellow: 10,000 AP; Blue: 4 Odyle Energy. Until 3/4 Nov."},
- {k:"riftstone",t:"w",n:"Lower Abyss Rift Stones (Conquerors of the Abyss)",d:"Wind Breeze Merchants > Special (membership): 50,000 Kinah each, up to 7 per character a week (level 45+), +1 h Lower Abyss time each. Deleted 7 days after you get them. Until 27/28 Oct."},
- {k:"odylebuy",t:"w",n:"Odyle Energy (Bound) (optional)",d:"Wind Breeze Merchants > Special (membership): 25 Odyle + 5 Fine Odyle + 1 Pure Odyle + 50,000 Kinah each, up to 20 per character a week since 14 Oct (no per-server limit during the server-transfer period)."},
+ {k:"riftstone",t:"w",n:"Lower Abyss Rift Stones (Conquerors of the Abyss)",d:"Wind Breeze Merchants > Special (membership): 50,000 Kina each, up to 7 per character a week (level 45+), +1 h Lower Abyss time each. Deleted 7 days after you get them. Until 27/28 Oct."},
+ {k:"odylebuy",t:"w",n:"Odyle Energy (Bound) (optional)",d:"Wind Breeze Merchants > Special (membership): 25 Odyle + 5 Fine Odyle + 1 Pure Odyle + 50,000 Kina each, up to 20 per character a week since 14 Oct (no per-server limit during the server-transfer period)."},
  {k:"supplyd",t:"d",n:"Supply Requests (Emergency)",d:"ESC > Supply Request (from level 25). Hand in the requested items for Abyss Points (about 380-6,000 a delivery) and often Enhance Stones. Emergency requests change daily. Check the list before you extract or vendor gear and crafts: some low items are requested."},
- {k:"kinahcap",t:"d",n:"Open-world Kinah (optional)",d:"Unconfirmed: monsters stop paying Kinah after about 1,000,000 per character a day. Worth it on alts once their dailies are done; stop when kills pay nothing."},
+ {k:"kinahcap",t:"d",n:"Open-world Kina (optional)",d:"Unconfirmed: monsters stop paying Kina after about 1,000,000 per character a day. Worth it on alts once their dailies are done; stop when kills pay nothing."},
  {k:"supplyw",t:"w",n:"Supply Requests (Weekly, Crafting, Boss)",d:"ESC > Supply Request. Weekly requests pay the most Abyss Points; Crafting and Boss requests take crafted items and boss drops. Resets Wednesday."},
  {k:"morphshop",t:"w",n:"Substance Morph > Special > Wind Breeze Merchants (membership)",d:"Soul Crystals and Daily Dungeon Instant Clear Tickets moved here on 14 Oct. Buy the weekly limit shown in game (creator lists with 16 per server + 4 per character are from before 14 Oct)."}
 ].filter(t=>!t.off); /* off:1 = not open on Global yet (listed under the table) */
@@ -595,22 +597,16 @@ document.addEventListener('click',e=>{
   if(r){const keys=DWTASKS.filter(t=>t.t===r.dataset.dwcreset).map(t=>t.k);const st=S.gget('dwc',{});Object.keys(st).forEach(k=>{if(keys.includes(k.split('|')[1]))delete st[k]});S.gset('dwc',st);renderDWTable()}
 });
 
-/* ---------- tick boxes added across the guide ---------- */
+/* ---------- tick boxes added across the guide ----------
+   Polish pass (Oct 2026): only ticks that drive a recommendation stay (wings owned, Arcana cards). The old one-time lists
+   (perk Set, Stigma Slotted, shard order, pet ladder, Genus guide steps, wing Do-this-now, alt steps, PvP tips) are no
+   longer drawn; their saved keys are left untouched in the browser store. */
 /* scope 'c' = saved per class, 'g' = saved once for all characters (server-wide things) */
 function slug(s){return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)}
 function boxByTitle(root,prefix){return [...document.querySelectorAll(root+' .box')].find(b=>{const h=b.querySelector('h3');return h&&h.textContent.trim().startsWith(prefix)})}
 const CHECKS=[
   {pre:'wing',scope:'c',label:'Owned',rows:()=>{const b=boxByTitle('#wings','Wing ladder');return b?[...b.querySelectorAll('table.wingtable')[0].querySelectorAll('tbody tr:not(.wgrp)')]:[]}},
-  {pre:'pet',scope:'g',label:'Owned',rows:()=>{const b=boxByTitle('#pets','Pet ladder');const t=b?b.querySelectorAll('table.wingtable'):[];return t[1]?[...t[1].querySelectorAll('tbody tr:not(.wgrp)')]:[]}},
-  {pre:'petfam',scope:'g',label:'Done',li:1,rows:()=>{const b=boxByTitle('#pets','Pet ladder');return b?[...b.querySelectorAll('ol.steps > li')]:[]}},
-  {pre:'genus',scope:'g',label:'Done',li:1,rows:()=>{const b=document.getElementById('genus');return b?[...b.querySelectorAll('ol.steps > li')]:[]}},
-  {pre:'wingnow',scope:'c',label:'Done',li:1,rows:()=>{const b=[...document.querySelectorAll('#wings .box')].find(x=>/Do this now/.test((x.querySelector('h3')||{}).textContent||''));return b?[...b.querySelectorAll('ol > li')]:[]}},
   {pre:'arcana',scope:'c',label:'Got it',rows:()=>{const t=document.querySelector('#arcana table');return t?[...t.querySelectorAll('tbody tr')]:[]}},
-  {pre:'stig',scope:'c',label:'Slotted',rows:()=>[...document.querySelectorAll('#stigtable tr')].filter(r=>r.querySelector('b'))},
-  {pre:'stigord',scope:'c',label:'Done',li:1,rows:()=>[...document.querySelectorAll('#stigorder > li')]},
-  {pre:'perk',scope:'c',label:'Set',rows:()=>[...document.querySelectorAll('#specwrap tbody tr')]},
-  {pre:'alt',scope:'g',label:'Done',li:1,rows:()=>{const b=boxByTitle('#alts','Step by step');return b?[...b.querySelectorAll('ol.steps > li')]:[]}},
-  {pre:'pvpcombo',scope:'c',label:'Practised',li:1,rows:()=>[...document.querySelectorAll('#pvptips > li')]},
 ];
 function chkStore(scope){return scope==='g'?S.gget('gsv',{}):S.get('sv',{})}
 function addChecks(){
@@ -650,7 +646,7 @@ function phaseItemsFor(ph){
 function rowHtml(it){
   const pic=it.pvp?'<span class="pctico">PvP</span>':(it.stat?'<span class="pctico">+</span>':it.isPct?'<span class="pctico">%</span>':ic(it.icon||it.target));
   const amt=it.amt!=null?it.amt:it.pvp?(/Status/.test(it.target)?'+1%':'+1.5%'):(it.isPct?'+1.5%':'+1');
-  return `<li data-pid="${it.id}"><input type="checkbox" id="${it.id}" aria-label="Done" ${pchecks[it.id]?'checked':''}><span class="chip ${it.board}">${it.board}</span>${pic}<span class="small"><b>${it.amt!=null?it.target.replace(/ ×(\d+)$/,'')+' '+amt+(/ ×\d+$/.test(it.target)?' <span class="muted">×'+it.target.split(' ×')[1]+' nodes</span>':''):it.target+' '+amt}</b><br><span class="muted">${it.from===it.to?'step '+it.to:'steps '+it.from+'–'+it.to} · ${it.cost} ${it.cur} · ${it.total} total</span></span><button class="go" type="button" data-pid="${it.id}">Show on map</button></li>`;
+  return `<li data-pid="${it.id}">${phase===99?`<span class="pnum" aria-hidden="true">${pchecks[it.id]?'✓':''}</span>`:`<input type="checkbox" id="${it.id}" aria-label="Done" ${pchecks[it.id]?'checked':''}>`}<span class="chip ${it.board}">${it.board}<span class="sr-only">: </span></span>${pic}<span class="small"><b>${it.amt!=null?it.target.replace(/ ×(\d+)$/,'')+' '+amt+(/ ×\d+$/.test(it.target)?' <span class="muted">×'+it.target.split(' ×')[1]+' nodes</span>':''):it.target+' '+amt}</b><br><span class="muted">${it.from===it.to?'step '+it.to:'steps '+it.from+'–'+it.to} · ${it.cost} ${it.cur} · ${it.total} total</span></span><button class="go" type="button" data-pid="${it.id}">Show on map</button></li>`;
 }
 function renderPhases(){
   const host=$('phasepick');
@@ -705,38 +701,29 @@ function renderProgress(){
   add('Level plan checklist',cnt('#planlist input'),'plan');
   // Daevanion: all phase lists combined
   {const ids=new Set();[12,20,30,40].forEach(l=>phaseItemsFor(l).forEach(it=>ids.add(it.id)));const all=ids.size,done=[...ids].filter(i=>pchecks[i]).length;add('Daevanion spending order (all levels)',{all,done},'boards');}
-  {const it=phaseItemsFor(99);add((typeof MODE!=='undefined'&&MODE==='pvp'?'Daevanion PvP max route':'Daevanion leftover crystals')+' (every node)',{all:it.length,done:it.filter(x=>pchecks[x.id]).length},'boards');}
   {const AZ=DATA.boards.find(b=>b.name==='Azphel');const ms=AZ&&AZ.pvp?AZ.pvp.miles:[];add('Azphel PvP board',{all:ms.length,done:ms.filter(m=>pchecks['p-Azphel-'+m[1]]).length},'boards');}
   {const keys=Object.keys(sv);const pve=GEARSLOTS.pve.reduce((n,s)=>n+2+(s.t==='none'?0:1)+(s.t==='none'?0:STONES.pve[ROLEMAP[SLUG]||'dps'][s.t].length),0);const pvp=GEARSLOTS.pvp.reduce((n,s)=>n+2+(s.t==='none'?0:1)+(s.t==='none'?0:STONES.pvp[ROLEMAP[SLUG]||'dps'][s.t].length),0);
    add('Gear planner (PvE)',{all:pve,done:keys.filter(k=>k.startsWith('g-')&&sv[k]).length},'gear');add('Gear planner (PvP)',{all:pvp,done:keys.filter(k=>k.startsWith('gv-')&&sv[k]).length},'gear');}
-  add('Gear path',cnt('[data-sv^="gp-"]',sv),'gear');
-  add('Stigmas slotted',cnt('[data-sv^="stig-"]',sv),'skills'); add('Specialization perks set',cnt('[data-sv^="perk-"]',sv),'skills');
   add('Arcana cards',cnt('[data-sv^="arcana-"]',sv),'arcana');
   add('Wings owned',cnt('[data-sv^="wing-"]',sv),'wings'); {const PD=typeof PETGUIDE!=='undefined'&&PETGUIDE&&PETGUIDE.d;add('Pets owned (server)',PD?{all:PD.length,done:PD.filter(p=>gsv[p.k]).length}:cnt('[data-gsv^="pet-"]',gsv),'pets');}
   try{if(typeof panOK==='function'&&panOK()){const pf=panFac(),d=PANTHEON.d.filter(x=>x.av==='now'&&!panOther(x,pf));add('Pantheon decorations',{all:d.length,done:d.filter(x=>sv[panKey(x)]).length},'pantheon');}}catch(e){}
   try{if(typeof cloState==='function'&&colOK('closet')){let all=0,done=0;cloState().cats.forEach(ct=>{all+=ct.rows.length;done+=ct.rows.filter(x=>x.own).length});add('Closet skins (server)',{all,done},'closet');}}catch(e){}
-  try{if(typeof monoStones==='function'&&colOK('mono')){const f0=colFac(),f=f0==='B'?'E':f0;let all=0,done=0;monoStones(f).filter(s=>!s.kr).forEach(s=>s.zones.forEach(z=>{all++;if(gsv[monoZoneKey(s,z)])done++}));add('Monolith trace zones (server)',{all,done},'monoliths');const kl=COLLECT.mono.kib[f]||[];add('Kibelisks activated',{all:kl.length,done:kl.filter(k=>sv[k.id]).length},'monoliths');}}catch(e){}
-  try{if(typeof achAll==='function'&&colOK('ach')){const a=achAll();add('Achievements done',{all:a.length,done:a.filter(x=>sv[x.r.id]).length},'achievements');}}catch(e){}
-  add('Genus Insight steps (server)',cnt('[data-gsv^="genus-"]',gsv),'pets');
+  try{if(typeof monoStones==='function'&&colOK('mono')){const f0=colFac(),f=f0==='B'?'E':f0;let all=0,done=0;monoStones(f).filter(s=>!s.kr).forEach(s=>s.zones.forEach(z=>{all++;if(gsv[monoZoneKey(s,z)])done++}));add('Monolith trace zones (server)',{all,done},'monoliths');const kl=COLLECT.mono.kib[f]||[];add('Kibelisks activated',{all:kl.length,done:sv['kib-all-'+f]?kl.length:kl.filter(k=>sv[k.id]).length},'monoliths');}}catch(e){}
   add('Titles owned',cnt('[data-sv^="ttl-"]',sv),'titles');
-  add('Farming methods',cnt('[data-sv^="fm-"]',sv),'farming');
-  add('PvP upgrades that don\'t touch PvE',cnt('[data-sv^="free-"]',sv),'pvp');
-  add('Leveling-alt steps',cnt('[data-gsv^="alt-"]',gsv),'alts');
   // daily per character
   const chars=dwChars(), st=S.gget('dwc',{});
   const dTasks=DWTASKS.filter(t=>t.t==='d'), wTasks=DWTASKS.filter(t=>t.t==='w');
   const perChar=chars.map(c=>{const f=ts=>{const own=ts.filter(t=>!t.srv),srv=ts.filter(t=>t.srv);return {all:own.length+srv.length,done:own.filter(t=>st[c.id+'|'+t.k]).length+srv.filter(t=>st['srv|'+t.k]).length}};return {c,d:f(dTasks),w:f(wTasks)}});
   const bar=c=>{const p=c.all?Math.round(100*c.done/c.all):0;return `<div class="bar"><i style="width:${p}%"></i></div><span class="readout">${c.done} / ${c.all} · ${p}%</span>`};
   const tot=pRows.reduce((a,r)=>({all:a.all+r.c.all,done:a.done+r.c.done}),{all:0,done:0});
-  host.innerHTML=`<div class="box" style="display:grid;gap:10px"><h3 style="margin:0">${C.class} overall</h3><div class="progress">${bar(tot)}</div></div>
-   <div class="progrid">${pRows.filter(r=>r.c.all).map(r=>`<button class="progcard" type="button" data-goto="${r.tab}"><span class="ptitle">${r.title}</span><div class="progress">${bar(r.c)}</div></button>`).join('')}</div>
+  host.innerHTML=`<div class="progrid">${pRows.filter(r=>r.c.all).map(r=>`<button class="progcard" type="button" data-goto="${r.tab}"><span class="ptitle">${r.title}</span><div class="progress">${bar(r.c)}</div></button>`).join('')}</div>
    <div class="box" style="display:grid;gap:10px"><h3 style="margin:0">Daily &amp; weekly by character</h3>
     <div class="tablewrap"><table><thead><tr><th>Character</th><th>Today</th><th>This week</th></tr></thead><tbody>${perChar.map(p=>`<tr><td><b>${esc(p.c.name)}</b> <span class="kr">${ALL[p.c.cls]?ALL[p.c.cls].cls:''}</span></td><td><div class="progress">${bar(p.d)}</div></td><td><div class="progress">${bar(p.w)}</div></td></tr>`).join('')}</tbody></table></div>
     <button class="btn" type="button" data-goto="daily" style="justify-self:start">Open the daily checklist</button></div>
    <div class="box" style="display:grid;gap:8px"><h3 style="margin:0">Other classes</h3><div class="small muted">Level plan, Daevanion and gear ticks saved for your other classes.</div>
     <div class="tablewrap"><table><tbody>${Object.keys(ALL).filter(k=>k!==SLUG&&STORE.c[k]).map(k=>{const o=STORE.c[k]||{};const n=o.checks?Object.values(o.checks).filter(Boolean).length:0,pc=o.pchecks?Object.values(o.pchecks).filter(Boolean).length:0,g=o.sv?Object.keys(o.sv).filter(x=>/^g/.test(x)&&o.sv[x]).length:0;return `<tr><td><b>${ALL[k].cls}</b></td><td class="small">${n} plan · ${pc} Daevanion · ${g} gear ticks</td></tr>`}).join('')||'<tr><td class="muted small">Nothing saved for other classes yet.</td></tr>'}</tbody></table></div></div>`;
 }
-document.addEventListener('change',()=>{const p=$('progress');if(p&&!p.hidden)renderProgress()});
+document.addEventListener('change',()=>{const p=$('progressbox');if(p&&p.open)renderProgress()});
 
 /* ---------- step-by-step guide for the level plan ---------- */
 let pgIdx=S.get('pgidx',null);
@@ -831,21 +818,19 @@ function renderFarmGuide(){
   const g=$('farmguide'); if(!g) return;
   const out=farmSteps(), sv=S.get('sv',{}), only=S.get('farmonly',false);
   if(!out.length){g.innerHTML=`<div class="guidehead"><span class="eyebrow">Step-by-step farming</span></div><p class="small muted" style="margin:0">${only?'Nothing is marked "Tracking this now" yet. Tick it on a card below, or turn off "Only what I\'m tracking".':'No farming data.'}</p><label class="gchk" style="justify-self:start"><input type="checkbox" id="farmonly" ${only?'checked':''}><span>Only what I'm tracking</span></label>`;bindFarmOnly();return}
-  let i=S.get('fgidx',null); if(i==null||i>=out.length){i=out.findIndex(x=>!sv[x.k]);if(i<0)i=out.length-1}
-  const it=out[i], done=out.filter(x=>sv[x.k]).length;
+  let i=S.get('fgidx',null); if(i==null||i>=out.length) i=0;
+  const it=out[i];
   const src=findImg(it.item,true);
-  g.innerHTML=`<div class="guidehead"><span class="eyebrow">Step-by-step farming · ${esc(it.group)}</span><span class="readout">${done} / ${out.length} done</span></div>
-   <div class="guidecur">${src?`<img class="ico lg" src="${src}" alt="">`:`<span class="farmdot" aria-hidden="true" data-l="${esc(it.item.slice(0,2))}"></span>`}<div><div class="small muted">Step ${i+1} of ${out.length}${sv[it.k]?' · <span style="color:var(--wind)">done</span>':''}</div><b style="font-size:16px">${esc(it.item)}</b><div class="small"><b>${esc(it.how)}</b>${it.where?' · '+esc(it.where):''}</div><div class="small muted">${it.limit?'Limit: '+esc(it.limit)+' · ':''}${esc(it.notes)}</div></div></div>
-   <div class="guidebtns"><button class="btn" type="button" id="fgprev">← Back</button><button class="btn primary" type="button" id="fgnext">${sv[it.k]?'Next step →':'Done, next step →'}</button><button class="btn" type="button" id="fgundo" ${sv[it.k]?'':'hidden'}>Untick this step</button><button class="btn" type="button" id="fgfind">Jump to first unticked</button><button class="btn" type="button" id="fgshow">Show in list ↓</button><label class="gchk"><input type="checkbox" id="farmonly" ${only?'checked':''}><span>Only what I'm tracking</span></label></div>`;
+  g.innerHTML=`<div class="guidehead"><span class="eyebrow">Step-by-step farming · ${esc(it.group)}</span><span class="readout">${i+1} / ${out.length}</span></div>
+   <div class="guidecur">${src?`<img class="ico lg" src="${src}" alt="">`:`<span class="farmdot" aria-hidden="true" data-l="${esc(it.item.slice(0,2))}"></span>`}<div><div class="small muted">Method ${i+1} of ${out.length}</div><b style="font-size:16px">${esc(it.item)}</b><div class="small"><b>${esc(it.how)}</b>${it.where?' · '+esc(it.where):''}</div><div class="small muted">${it.limit?'Limit: '+esc(it.limit)+' · ':''}${esc(it.notes)}</div></div></div>
+   <div class="guidebtns"><button class="btn" type="button" id="fgprev">← Back</button><button class="btn primary" type="button" id="fgnext">Next →</button><button class="btn" type="button" id="fgshow">Show in list ↓</button><label class="gchk"><input type="checkbox" id="farmonly" ${only?'checked':''}><span>Only what I'm tracking</span></label></div>`;
   const save=n=>S.set('fgidx',n);
   $('fgprev').onclick=()=>{save(Math.max(0,i-1));renderFarmGuide()};
-  $('fgnext').onclick=()=>{const s=S.get('sv',{});s[it.k]=true;S.set('sv',s);const cb=document.querySelector(`[data-sv="${it.k}"]`);if(cb)cb.checked=true;farmCounts();const nx=out.findIndex((x,j)=>j>i&&!s[x.k]);save(nx<0?Math.min(i+1,out.length-1):nx);renderFarmGuide()};
-  $('fgundo').onclick=()=>{const s=S.get('sv',{});delete s[it.k];S.set('sv',s);const cb=document.querySelector(`[data-sv="${it.k}"]`);if(cb)cb.checked=false;farmCounts();renderFarmGuide()};
-  $('fgfind').onclick=()=>{const s=S.get('sv',{});const n=out.findIndex(x=>!s[x.k]);save(n<0?out.length-1:n);renderFarmGuide()};
+  $('fgnext').onclick=()=>{save(Math.min(i+1,out.length-1));renderFarmGuide()};
   bindFarmOnly();
   document.querySelectorAll('#farmlist .fcurrow').forEach(el=>el.classList.remove('fcurrow'));
-  const cb=document.querySelector(`#farmlist [data-sv="${it.k}"]`);
-  if(cb){const tr=cb.closest('tr'); if(tr) tr.classList.add('fcurrow'); const det=cb.closest('details'); if(det) det.open=true;}
+  const tr=document.querySelector(`#farmlist tr[data-fk="${it.k}"]`);
+  if(tr){tr.classList.add('fcurrow'); const det=tr.closest('details'); if(det) det.open=true;}
   const sm=$('fgshow'); if(sm) sm.onclick=()=>{const r=document.querySelector('#farmlist .fcurrow'); if(r) r.scrollIntoView({behavior:'smooth',block:'center'})};
 }
 function bindFarmOnly(){const o=$('farmonly');if(o)o.onchange=()=>{S.set('farmonly',o.checked);S.set('fgidx',null);renderFarmGuide()}}
@@ -926,51 +911,83 @@ function gradeAll(){
   window[fn]=function(){const r=orig.apply(this,arguments);try{gradeAll()}catch(e){}return r};
 });
 
-/* ---------- "What changed" log + level 46-50 preview toggle ---------- */
+/* ---------- "What's new" (latest 2 updates) + "All changes (archive)" + returning-visitor banner + Beyond 45 ----------
+   Data: CHANGES = audit/changes.json (every row is kept; the archive shows all of them).
+   Old per-row "Done" ticks (keys chg-<id>) are no longer drawn; whatever is saved stays in the browser store. */
 function chT(v){return v==null?'':typeof v==='string'?v:Array.isArray(v)?v.map(chT).join('; '):typeof v==='object'?(v.name||Object.values(v).map(chT).join(' · ')):String(v)}
-function chgFor(){return ((CHANGES&&CHANGES.items)||[]).filter(c=>!c.scope||c.scope==='all'||[].concat(c.scope).includes(SLUG))}
+function chgFor(){return ((CHANGES&&CHANGES.items)||[]).filter(c=>!c.scope||c.scope==='all'||[].concat(c.scope).includes(SLUG)||(typeof c.scope==='string'&&c.scope.split(/,\s*/).includes(SLUG)))}
+function chgMine(c){return c.scope&&c.scope!=='all'&&([].concat(c.scope).includes(SLUG)||(typeof c.scope==='string'&&c.scope.split(/,\s*/).length===1&&c.scope===SLUG))}
 function chgKey(c){return 'chg-'+c.id}
+function chgDates(items){return [...new Set(items.map(c=>c.date))].sort().reverse()}
+function chgDay(d){try{const x=new Date(d+'T12:00:00Z');return x.toLocaleDateString('en-GB',{day:'numeric',month:'short',timeZone:'UTC'})}catch(e){return d}}
+function chgLabel(d){const l=CHANGES&&CHANGES.labels&&CHANGES.labels[d];return chgDay(d)+(l?': '+l:'')}
+/* plain wording: drop simulator asides like "(Simulator +2.98% (0.84% to 5.92%))" from the one-line summary; the archive keeps the full text */
+function chgPlain(t){return String(t||'').replace(/\s*\((?:[^()]*\([^()]*\))*[^()]*\b[Ss]imulator\b(?:[^()]*\([^()]*\))*[^()]*\)/g,'').replace(/\s*[Ss]imulator:?\s*[+−-]?\d[\d.]*%[^.;]*[.;]?/g,'').replace(/\s{2,}/g,' ').trim()}
+function chgRow(c){
+  const link=c.tab?` <a href="#${esc(c.tab)}" data-goto="${esc(c.tab)}">Open tab →</a>`:'';
+  return `<li><b>${esc(chT(c.area))}:</b> ${esc(chgPlain(chT(c.action==='ingame'?c.how:c.now)))}${link}</li>`;
+}
 function renderChanges(){
   const host=$('changelist'); if(!host||!CHANGES) return;
-  const items=chgFor(), sv=S.get('sv',{});
-  const byDate={}; items.forEach(c=>{(byDate[c.date]=byDate[c.date]||[]).push(c)});
-  const dates=Object.keys(byDate).sort().reverse();
-  const todo=items.filter(c=>c.action==='ingame'&&!sv[chgKey(c)]).length;
-  host.innerHTML=`<div class="callout ${todo?'warn':'ok'}"><b>${todo?`${todo} change${todo>1?'s':''} to make in game for your ${C['class']}`:'You are up to date: nothing left to change in game.'}</b><div class="small">Rows marked <span class="tag gold">Do in game</span> mean your character needs changing (respec, swap, re-pick). Tick them when done. <span class="tag">Info</span> rows are guide fixes only: nothing to change in game.</div></div>`+
-  dates.map(d=>`<div class="box" style="display:grid;gap:10px"><h3 style="margin:0">${esc(d)}${CHANGES.labels&&CHANGES.labels[d]?' · '+esc(CHANGES.labels[d]):''}</h3>
-    <div class="tablewrap"><table><thead><tr><th>What</th><th>Before (old guide)</th><th>Now (new guide)</th><th>What you do</th><th class="num">Done</th></tr></thead><tbody>${
-    byDate[d].sort((a,b)=>(a.action==='ingame'?0:1)-(b.action==='ingame'?0:1)).map(c=>`<tr><td><b>${esc(chT(c.area))}</b>${c.tab?`<div class="small"><a href="#${c.tab}" data-goto="${c.tab}">Open tab →</a></div>`:''}</td><td class="small muted">${esc(chT(c.was)||'—')}</td><td class="small">${esc(chT(c.now))}</td><td class="small">${c.action==='ingame'?'<span class="tag gold">Do in game</span> ':'<span class="tag">Info</span> '}${esc(chT(c.how))}</td><td class="num">${c.action==='ingame'?`<input type="checkbox" data-sv="${chgKey(c)}" ${sv[chgKey(c)]?'checked':''} aria-label="Done" style="width:18px;height:18px;accent-color:var(--wind)">`:''}</td></tr>`).join('')}</tbody></table></div></div>`).join('');
+  const items=chgFor(), dates=chgDates(items), recent=dates.slice(0,2), cls=C['class'];
+  let h='';
+  recent.forEach(d=>{
+    const day=items.filter(c=>c.date===d);
+    const mine=day.filter(c=>c.action==='ingame'&&chgMine(c)), all=day.filter(c=>c.action==='ingame'&&!chgMine(c)), info=day.filter(c=>c.action!=='ingame');
+    h+=`<div class="box" style="display:grid;gap:10px"><h3 style="margin:0">${esc(chgLabel(d))}</h3>`;
+    if(!mine.length&&!all.length) h+=`<p class="small" style="margin:0">Nothing to change in game: guide fixes only.</p>`;
+    if(mine.length) h+=`<div><h4 class="chgh">Change in game: your ${esc(cls)}</h4><ul class="plain small chglist">${mine.map(chgRow).join('')}</ul></div>`;
+    if(all.length) h+=`<div><h4 class="chgh">Change in game: every class</h4><ul class="plain small chglist">${all.map(chgRow).join('')}</ul></div>`;
+    if(info.length) h+=`<details class="small"><summary>Also fixed in the guide (${info.length}, nothing to do in game)</summary><ul class="plain chglist" style="margin-top:6px">${info.map(chgRow).join('')}</ul></details>`;
+    h+=`</div>`;
+  });
+  if(!recent.length) h='<p class="muted">No updates yet.</p>';
+  const older=items.length;
+  h+=`<details class="box" id="chgarchive"><summary><b>All changes (archive)</b> <span class="small muted">${older} rows for your ${esc(cls)} since ${esc(chgDay(dates[dates.length-1]||''))}: what the old guide said, what it says now, and what to do</span></summary><div id="chgarchivebody" style="display:grid;gap:14px;margin-top:10px"><p class="small muted">Loading…</p></div></details>`;
+  host.innerHTML=h;
+  const ar=$('chgarchive'); if(ar) ar.addEventListener('toggle',()=>{if(ar.open&&!ar.dataset.drawn){ar.dataset.drawn=1;renderChangeArchive()}});
+  decorate(host);
   renderChangeBanner();
 }
+function renderChangeArchive(){
+  const host=$('chgarchivebody'); if(!host) return;
+  const items=chgFor(), byDate={}; items.forEach(c=>{(byDate[c.date]=byDate[c.date]||[]).push(c)});
+  host.innerHTML=chgDates(items).map((d,i)=>`<details class="coldet"${i===0?' open':''}><summary class="pansum"><b>${esc(chgLabel(d))}</b> <span class="small muted">${byDate[d].length} rows · ${byDate[d].filter(c=>c.action==='ingame').length} in game</span></summary>
+    <div class="tablewrap" style="margin-top:8px"><table><thead><tr><th>What</th><th>Before (old guide)</th><th>Now (new guide)</th><th>What you do</th></tr></thead><tbody>${
+    byDate[d].slice().sort((a,b)=>(a.action==='ingame'?0:1)-(b.action==='ingame'?0:1)).map(c=>`<tr><td><b>${esc(chT(c.area))}</b>${c.tab?`<div class="small"><a href="#${esc(c.tab)}" data-goto="${esc(c.tab)}">Open tab →</a></div>`:''}</td><td class="small muted">${esc(chT(c.was)||'—')}</td><td class="small">${esc(chT(c.now))}</td><td class="small">${c.action==='ingame'?'<span class="tag gold">Do in game</span> ':'<span class="tag">Info</span> '}${esc(chT(c.how))}</td></tr>`).join('')}</tbody></table></div></details>`).join('');
+}
+/* banner: only for returning visitors, never on a first visit, never on Brawler (not on Global) */
+function chgLatest(){return chgDates(chgFor())[0]||''}
+function chgSeen(){
+  let v=S.gget('chgver',null);
+  if(v!=null) return v;
+  if(typeof FIRST_VISIT!=='undefined'&&FIRST_VISIT){v=chgLatest();S.gset('chgver',v);return v}
+  // a returning reader from before this banner existed: fall back to the old "Hide" date, else count the latest two updates
+  const old=S.gget('chgseen',''); if(old) return old;
+  const ds=chgDates(chgFor()); return ds[2]||'';
+}
+function chgMarkSeen(){const l=chgLatest(); if(l) S.gset('chgver',l); const b=$('changebanner'); if(b) b.hidden=true}
 function renderChangeBanner(){
   const b=$('changebanner'); if(!b||!CHANGES) return;
-  const sv=S.get('sv',{}), items=chgFor();
-  const todo=items.filter(c=>c.action==='ingame'&&!sv[chgKey(c)]).length;
-  const seen=S.gget('chgseen',''), latest=items.map(c=>c.date).sort().pop()||'';
-  const fresh=latest&&latest>seen;
-  if(!todo&&!fresh){b.hidden=true;return}
+  if(SLUG==='brawler'){b.hidden=true;return}
+  const seen=chgSeen(), fresh=chgFor().filter(c=>c.date>seen);
+  if(!fresh.length){b.hidden=true;return}
+  const act=fresh.filter(c=>c.action==='ingame').length;
   b.hidden=false;
-  b.innerHTML=`<b>Guide updated${latest?' '+esc(latest):''}.</b> ${todo?`${todo} change${todo>1?'s':''} to make in game for your ${C['class']}.`:'Guide-only fixes, nothing to change in game.'} <a href="#changes" data-goto="changes">See what changed →</a> <button class="btn" type="button" id="chgdismiss">Hide</button>`;
-  $('chgdismiss').onclick=()=>{S.gset('chgseen',latest);b.hidden=true};
+  b.innerHTML=`<b>${fresh.length} change${fresh.length>1?'s':''} since your last visit</b>${act?` (${act} need${act>1?'':'s'} an in-game change)`:' (guide fixes only)'}. <a href="#changes" data-goto="changes">See what's new →</a> <button class="btn" type="button" id="chgdismiss">Hide</button>`;
+  $('chgdismiss').onclick=chgMarkSeen;
 }
-document.addEventListener('change',e=>{const k=e.target&&e.target.dataset&&e.target.dataset.sv;if(k&&k.startsWith('chg-')){renderChanges()}});
+/* opening What's new counts as seeing the changes */
+{const o=window.show; window.show=function(id){const r=o.apply(this,arguments); try{if(id==='changes'&&SLUG!=='brawler'){const keep=$('changebanner'); chgMarkSeen(); if(keep) keep.hidden=true}}catch(e){} return r}}
 
-/* level 46-50 preview */
-function b45On(){return !!S.gget('b45',false)}
-function applyB45(){
-  const on=b45On();
-  document.querySelectorAll('[data-b45]:not(body)').forEach(el=>{el.hidden=!on});
-  document.body.hidden=false;
-  const t=$('b45pick'); if(t) t.checked=on;
-  document.body.dataset.preview=on?'1':'0';
-  const cur=document.querySelector('nav.tabs button[aria-selected="true"]');
-  if(cur&&cur.hidden) show('start',true);
-}
+/* Beyond 45 (Korea preview): now an ordinary Reference tab, no header switch. b45On/applyB45 stay for older callers. */
+function b45On(){return true}
+function applyB45(){document.body.hidden=false; document.body.dataset.preview='1'}
 function renderBeyond(){
   const host=$('beyondbox'); if(!host) return;
   if(!BEYOND){host.innerHTML='<p class="muted">No level 46–50 data yet.</p>';return}
   const B=BEYOND, cl=(B.classes||{})[SLUG]||{};
-  const noKo=t=>String(t).replace(/\s*\([^()]*[\uac00-\ud7a3][^()]*\)/g,'').replace(/[\uac00-\ud7a3]+/g,'').replace(/\s{2,}/g,' ').trim();
+  const noKo=t=>String(t).replace(/\s*\([^()]*[가-힣][^()]*\)/g,'').replace(/[가-힣]+/g,'').replace(/\s{2,}/g,' ').trim();
   const human=k=>({maxLevel:'Max level',level25Spec:'Level-25 perk',newFeatures:'New features',crystals:'Crystals',summary:'Summary',priority:'What to buy first',slots:'Slots',shards:'Shards',math:'How many you need',reset:'Reset'}[k]||k.replace(/([A-Z])/g,' $1').replace(/^./,c=>c.toUpperCase()));
   const fmt=v=>Array.isArray(v)?`<ul class="plain small">${v.map(x=>`<li>${fmt(x)}</li>`).join('')}</ul>`:(v&&typeof v==='object')?Object.entries(v).map(([k,x])=>`<div style="margin:4px 0"><b>${esc(human(k))}:</b> ${fmt(x)}</div>`).join(''):esc(noKo(v));
   const list=a=>(a||[]).length?`<ul class="plain small">${a.map(x=>`<li>${typeof x==='string'?esc(noKo(x)):fmt(x)}</li>`).join('')}</ul>`:'<p class="small muted">Nothing found yet.</p>';
@@ -989,10 +1006,9 @@ function renderBeyond(){
     <div class="box small"><h3>Stigmas</h3>${B.stigmas?fmt(B.stigmas):''}</div>
    </div>
    <div class="box"><h3>Other systems</h3>${list(B.systems)}</div>
-   ${(B.sources||[]).length?`<p class="small muted">Sources: ${B.sources.slice(0,12).map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener">${esc(String(u).replace(/^https?:\/\/(www\.)?/,'').slice(0,40))}</a>`).join(' · ')}</p>`:''}`;
+   ${(B.sources||[]).length?`<p class="small muted">Sources: ${B.sources.slice(0,12).map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(String(u).replace(/^https?:\/\/(www\.)?/,'').slice(0,40))}</a>`).join(' · ')}</p>`:''}`;
   decorate(host);
 }
-(function(){const t=document.getElementById('b45pick'); if(t) t.addEventListener('change',()=>{S.gset('b45',t.checked);applyB45()});})();
 
 /* ---------- Genus Insight panel, laid out like the in-game window ---------- */
 const GBOARDS=[['cogni','Cogni','🦉'],['fera','Fera','🐺'],['natura','Natura','🌳'],['varian','Varian','🌀'],['special','Special','✴']];
@@ -1135,10 +1151,10 @@ function cpReachOut(){
   const el=document.getElementById('cp-reach-out');if(!el)return;
   const r=cpRun(CP.g,+CP.il,CP.from,CP.to,CP.a0,CP.a1),hasA=r.as.length>0;
   const row=(lab,d)=>`<tr><td class="small">${lab}</td><td class="num"><b>${cpN(d.mean)}</b></td><td class="num">${cpN(d.p10)}</td><td class="num">${cpN(d.p50)}</td><td class="num">${cpN(d.p90)}</td><td class="num">${cpN(d.worst)}</td></tr>`;
-  el.innerHTML=`<div class="callout ok"><b>Expect about ${cpM(r.ek.mean+r.ak.mean)} Kinah</b>, ${cpN(r.eS.mean)} Enhance Stones${hasA?` and ${cpN(r.aS.mean)} Amplify Stones`:''} over about ${(r.ea+r.aa).toFixed(1)} attempts. An unlucky run (90th percentile) costs about ${cpM(r.ek.p90+r.ak.p90)} Kinah${hasA?' (enhancing and Amplify each at their 90th percentile, so a little high)':''}.</div>
+  el.innerHTML=`<div class="callout ok"><b>Expect about ${cpM(r.ek.mean+r.ak.mean)} Kina</b>, ${cpN(r.eS.mean)} Enhance Stones${hasA?` and ${cpN(r.aS.mean)} Amplify Stones`:''} over about ${(r.ea+r.aa).toFixed(1)} attempts. An unlucky run (90th percentile) costs about ${cpM(r.ek.p90+r.ak.p90)} Kina${hasA?' (enhancing and Amplify each at their 90th percentile, so a little high)':''}.</div>
   <div class="tablewrap"><table><thead><tr><th>Cost</th><th>Expected</th><th>Lucky 10%</th><th>Typical 50%</th><th>Unlucky 90%</th><th>Worst</th></tr></thead><tbody>
-   ${r.es.length?row('Enhancing: Kinah',r.ek)+row('Enhancing: Enhance Stones',r.eS):''}
-   ${hasA?row('Amplify: Kinah',r.ak)+row('Amplify: Amplify Stones',r.aS):''}
+   ${r.es.length?row('Enhancing: Kina',r.ek)+row('Enhancing: Enhance Stones',r.eS):''}
+   ${hasA?row('Amplify: Kina',r.ak)+row('Amplify: Amplify Stones',r.aS):''}
   </tbody></table></div>
   ${hasA?`<p class="small muted">${cpN(r.aS.mean)} Amplify Stones = about ${cpN(r.aS.mean*COSTPLAN.enh.ampStone.frags)} Amplify Stone Fragments + ${cpN(r.aS.mean*COSTPLAN.enh.ampStone.enh)} more Enhance Stones (Substance Morph).</p>`:''}
   <details class="small"><summary><b>Step by step</b></summary><div class="tablewrap"><table><thead><tr><th>Step</th><th>Odds</th><th>Pity/fail</th><th>Per attempt</th><th>Avg attempts</th><th>Max</th></tr></thead><tbody>
@@ -1154,13 +1170,13 @@ function cpCraftHTML(){
   <p class="small muted" style="margin-top:6px">${cpE(R.n)}. ${cpE(R.src)}</p>
   <label class="cpchk"><input type="checkbox" data-cptax="1"${CP.tax?' checked':''}> Add ${C.tax}% Marketplace tax (the sheet does)</label>
   <label class="cpchk"><input type="checkbox" data-cpfail="1"${CP.failUses?' checked':''}> Failed crafts also use up the Splendent input <span class="tag">Unconfirmed</span></label>
-  <div class="tablewrap"><table><thead><tr><th>Material</th><th>Qty / craft</th><th>Unit price (Kinah)</th><th>Cost / craft</th><th>Expected total</th></tr></thead><tbody>
+  <div class="tablewrap"><table><thead><tr><th>Material</th><th>Qty / craft</th><th>Unit price (Kina)</th><th>Cost / craft</th><th>Expected total</th></tr></thead><tbody>
   ${R.tiers.map(t=>`<tr class="cptier"><td colspan="2"><b>${cpE(t.n)}</b><br><span class="small muted">Mastery ${t.mastery}; great success: ${cpE(t.out)}</span></td><td class="cpsr small">Success % <input type="number" inputmode="decimal" min="1" max="100" step="0.1" data-cpsucc="${cpE(CP.recipe+'.'+t.k)}" value="${cpSucc(CP.recipe,t)}" aria-label="${cpE(t.n)} success rate"></td><td class="num small" colspan="2">Expected crafts <b id="cp-att-${t.k}"></b></td></tr>
    ${t.mats.map(([id,q])=>{const M=C.mats[id];return `<tr><td class="small">${cpE(M.n)}${M.sheet&&M.sheet!==M.n?` <span class="muted">(sheet: ${cpE(M.sheet)})</span>`:''}${M.ps==='analog'?' <span class="tag">no sheet price</span>':''}${M.note?`<br><span class="muted">${cpE(M.note)}</span>`:''}</td><td class="num">${q}</td><td><input type="number" inputmode="numeric" min="0" step="1" data-cpprice="${cpE(id)}" value="${cpPrice(id)}" aria-label="${cpE(M.n)} unit price"></td><td class="num" id="cp-pc-${cpE(t.k)}-${cpE(id)}"></td><td class="num" id="cp-et-${cpE(t.k)}-${cpE(id)}"></td></tr>`}).join('')}
    <tr class="cptot"><td colspan="4" class="small">Tier total</td><td class="num" id="cp-tt-${t.k}"></td></tr>`).join('')}
   <tr class="cptot"><td colspan="4">Materials subtotal</td><td class="num" id="cp-sub"></td></tr>
   <tr class="cptot"><td colspan="4">Marketplace tax</td><td class="num" id="cp-tax"></td></tr>
-  <tr class="cptot"><td colspan="4">Total Kinah</td><td class="num cpbig" id="cp-total"></td></tr>
+  <tr class="cptot"><td colspan="4">Total Kina</td><td class="num cpbig" id="cp-total"></td></tr>
   </tbody></table></div>
   <div id="cp-craft-sum"></div>
   <p><button type="button" class="btn" data-cpreset="1">Reset prices and success rates to the defaults</button></p>
@@ -1171,7 +1187,7 @@ function cpCraftOut(){
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
   c.tiers.forEach(x=>{set('cp-att-'+x.t.k,x.att.toFixed(2));x.t.mats.forEach(([id,q])=>{set('cp-pc-'+x.t.k+'-'+id,cpN(q*cpPrice(id)));set('cp-et-'+x.t.k+'-'+id,cpN(q*cpPrice(id)*x.att))});set('cp-tt-'+x.t.k,cpN(x.tot))});
   set('cp-sub',cpN(c.sub));set('cp-tax',cpN(c.tax));set('cp-total',cpN(c.total));
-  const s=document.getElementById('cp-craft-sum');if(s)s.innerHTML=`<div class="callout ok"><b>About ${cpM(c.total)} Kinah for one True Dragon Lord ${CP.recipe==='weapon'?'weapon':'earring'} (IL62)</b> at these prices. It comes out Splendent (IL70) ${C.combo}% of the time; aiming for Splendent straight from the craft means about 4 True Dragon Lord successes, so about <b>${cpM(c.total*4)}</b>. Crafting materials only: enhancing it is extra (see Cost to reach, IL62/70).</div>`;
+  const s=document.getElementById('cp-craft-sum');if(s)s.innerHTML=`<div class="callout ok"><b>About ${cpM(c.total)} Kina for one True Dragon Lord ${CP.recipe==='weapon'?'weapon':'earring'} (IL62)</b> at these prices. It comes out Splendent (IL70) ${C.combo}% of the time; aiming for Splendent straight from the craft means about 4 True Dragon Lord successes, so about <b>${cpM(c.total*4)}</b>. Crafting materials only: enhancing it is extra (see Cost to reach, IL62/70).</div>`;
 }
 
 function cpSoulHTML(){
@@ -1182,10 +1198,10 @@ function cpSoulHTML(){
   <div class="cpgrid"><label class="cpf">Bind steps already done ${cpSel('cpsbfrom',CP.sbFrom,[[0,'None'],...[1,2,3,4,5,6,7,8,9,10].map(i=>[i,i+(i===10?' (100%)':'')])])}</label>
    <label class="cpf">Resets planned <input type="number" inputmode="numeric" min="0" step="1" data-cpn="resets" value="${+CP.resets||0}"></label>
    <label class="cpf">Syncs planned <input type="number" inputmode="numeric" min="0" step="1" data-cpn="syncs" value="${+CP.syncs||0}"></label></div>
-  ${g==='Unique'?`<label class="cpchk"><input type="checkbox" data-cpfuse="1"${CP.fuse?' checked':''}> Soul Fuse at 100% (${So.fuse.stones} Philosopher's Stone: Revelation + ${cpN(So.fuse.k)} Kinah)</label>`:''}
+  ${g==='Unique'?`<label class="cpchk"><input type="checkbox" data-cpfuse="1"${CP.fuse?' checked':''}> Soul Fuse at 100% (${So.fuse.stones} Philosopher's Stone: Revelation + ${cpN(So.fuse.k)} Kina)</label>`:''}
   <div id="cp-soul-out"></div>
-  <details class="small"><summary><b>Bind cost per step (${cpE(g)})</b></summary><div class="tablewrap"><table><thead><tr><th>Step</th><th>Kinah</th><th>Soul Codex</th><th>Kinah so far</th><th>Codex so far</th></tr></thead><tbody>${rows}</tbody></table></div></details>
-  <ul class="plain small"><li>${cpE(So.bindNote)}</li><li>Reset (Rebind) on ${cpE(g)}: ${cpN(So.rebind[g][0])} Kinah + ${So.rebind[g][1]} Soul Codex: Reset. ${cpE(So.rebindNote)}</li><li>${cpE(So.sync)}</li><li>${cpE(So.fuse.shop)} ${cpE(So.fuse.note)}</li><li>${cpE(So.potential.note)}</li></ul>
+  <details class="small"><summary><b>Bind cost per step (${cpE(g)})</b></summary><div class="tablewrap"><table><thead><tr><th>Step</th><th>Kina</th><th>Soul Codex</th><th>Kina so far</th><th>Codex so far</th></tr></thead><tbody>${rows}</tbody></table></div></details>
+  <ul class="plain small"><li>${cpE(So.bindNote)}</li><li>Reset (Rebind) on ${cpE(g)}: ${cpN(So.rebind[g][0])} Kina + ${So.rebind[g][1]} Soul Codex: Reset. ${cpE(So.rebindNote)}</li><li>${cpE(So.sync)}</li><li>${cpE(So.fuse.shop)} ${cpE(So.fuse.note)}</li><li>${cpE(So.potential.note)}</li></ul>
   <h4>Manastone / Soulstone engraving</h4>${cpSeg('cpeg',eg,Object.keys(En.fee).map(k=>[k,k]))}
   <div class="cpgrid"><label class="cpf">Engraves <input type="number" inputmode="numeric" min="0" step="1" data-cpn="engr" value="${+CP.engr||0}"></label>
    <label class="cpf">Stones per engrave <input type="number" inputmode="numeric" min="0" step="1" data-cpn="stoneN" value="${CP.stoneN==null?En.slots[eg]:+CP.stoneN}"></label>
@@ -1197,9 +1213,9 @@ function cpSoulOut(){
   const So=COSTPLAN.soul,En=COSTPLAN.engrave,g=So.bind[CP.sbg]?CP.sbg:'Unique',eg=En.fee[CP.eg]!=null?CP.eg:'Unique';
   const rest=So.bind[g].slice(CP.sbFrom),bk=rest.reduce((a,x)=>a+x[0],0),bc=rest.reduce((a,x)=>a+x[1],0),rs=Math.max(0,+CP.resets||0),sy=Math.max(0,+CP.syncs||0),fu=g==='Unique'&&CP.fuse;
   const k=bk+rs*So.rebind[g][0]+(fu?So.fuse.k:0);
-  const a=document.getElementById('cp-soul-out');if(a)a.innerHTML=`<div class="callout ok"><b>${cpN(k)} Kinah</b> + ${cpN(bc)} Soul Codex${rs?` + ${cpN(rs*So.rebind[g][1])} Soul Codex: Reset`:''}${sy?` + ${cpN(sy)} Sync Stones (${cpN(sy)} spare Unique pieces)`:''}${fu?` + ${So.fuse.stones} Philosopher's Stone: Revelation`:''}.<br><span class="small">Bind to 100% from step ${CP.sbFrom}: ${cpN(bk)} Kinah + ${cpN(bc)} Codex${rs?`; resets: ${cpN(rs*So.rebind[g][0])} Kinah`:''}${fu?`; Soul Fuse: ${cpN(So.fuse.k)} Kinah`:''}.</span></div>`;
+  const a=document.getElementById('cp-soul-out');if(a)a.innerHTML=`<div class="callout ok"><b>${cpN(k)} Kina</b> + ${cpN(bc)} Soul Codex${rs?` + ${cpN(rs*So.rebind[g][1])} Soul Codex: Reset`:''}${sy?` + ${cpN(sy)} Sync Stones (${cpN(sy)} spare Unique pieces)`:''}${fu?` + ${So.fuse.stones} Philosopher's Stone: Revelation`:''}.<br><span class="small">Bind to 100% from step ${CP.sbFrom}: ${cpN(bk)} Kina + ${cpN(bc)} Codex${rs?`; resets: ${cpN(rs*So.rebind[g][0])} Kina`:''}${fu?`; Soul Fuse: ${cpN(So.fuse.k)} Kina`:''}.</span></div>`;
   const n=Math.max(0,+CP.engr||0),sn=CP.stoneN==null?En.slots[eg]:Math.max(0,+CP.stoneN||0),sp=Math.max(0,+CP.stoneP||0);
-  const b=document.getElementById('cp-eng-out');if(b)b.innerHTML=`<div class="callout ok"><b>${cpN(n*(En.fee[eg]+sn*sp))} Kinah</b> for ${cpN(n)} engraves on ${cpE(eg)} gear (${cpN(En.fee[eg])} fee + ${sn} × ${cpN(sp)} stones each)${sp?'':'. Add your stone price to include the stones'}: ${cpN(n*sn)} stones used.</div>`;
+  const b=document.getElementById('cp-eng-out');if(b)b.innerHTML=`<div class="callout ok"><b>${cpN(n*(En.fee[eg]+sn*sp))} Kina</b> for ${cpN(n)} engraves on ${cpE(eg)} gear (${cpN(En.fee[eg])} fee + ${sn} × ${cpN(sp)} stones each)${sp?'':'. Add your stone price to include the stones'}: ${cpN(n*sn)} stones used.</div>`;
 }
 
 function cpMilesHTML(){
@@ -1208,17 +1224,17 @@ function cpMilesHTML(){
   const fmt=x=>`<b>${cpM(x.k)}</b><br><span class="small muted">${cpN(x.s)} stones${x.a?` + ${cpN(x.a)} Amp`:''}<br>unlucky ${cpM(x.k90)}</span>`;
   const rows=[['+10 (always succeeds)',il=>cell(il,10,0)],['+12',il=>cell(il,12,0)],['+15',il=>cell(il,15,0)],['+15 and Amplify +3',il=>cell(il,15,3)],['+15 and Amplify max (+3 at IL70, +5 at 86/102)',il=>cell(il,15,cpCap(il,false))]];
   const t62=cell(62,15,1),t70s=cell(70,15,1);
-  return `<p class="small"><b>Expected averages</b> for one piece from +0 (Kinah fees; stones listed under). Weapons, armor and accessories cost the same at the same item level. Multiply by the pieces you plan to do. "Unlucky" = 90th percentile.</p>
+  return `<p class="small"><b>Expected averages</b> for one piece from +0 (Kina fees; stones listed under). Weapons, armor and accessories cost the same at the same item level. Multiply by the pieces you plan to do. "Unlucky" = 90th percentile.</p>
   <div class="tablewrap"><table><thead><tr><th>Checkpoint</th>${ils.map(i=>`<th>IL${i} piece</th>`).join('')}</tr></thead><tbody>
   ${rows.map(([n,f])=>`<tr><td class="small">${cpE(n)}</td>${ils.map(il=>`<td class="num">${fmt(f(il))}</td>`).join('')}</tr>`).join('')}
   </tbody></table></div>
   <h4>Crafted True Dragon Lord (${CP.recipe==='weapon'?'weapon':'earrings'} recipe, prices from the Crafting section)</h4>
-  <div class="tablewrap"><table><thead><tr><th>Goal</th><th>Expected Kinah</th></tr></thead><tbody>
+  <div class="tablewrap"><table><thead><tr><th>Goal</th><th>Expected Kina</th></tr></thead><tbody>
    <tr><td class="small">Craft one True Dragon Lord (IL62)</td><td class="num"><b>${cpM(c.total)}</b></td></tr>
    <tr><td class="small">…then +15 and Amplify +1 (IL62 cap)</td><td class="num"><b>${cpM(c.total+t62.k)}</b><br><span class="small muted">+ ${cpN(t62.s)} stones + ${cpN(t62.a)} Amp</span></td></tr>
    <tr><td class="small">Splendent True Dragon Lord (IL70) straight from the craft (about 4 successes), +15 and Amplify +1</td><td class="num"><b>${cpM(c.total*4+t70s.k)}</b></td></tr>
   </tbody></table></div>
-  <p class="small muted">Enhance and Amplify Stones are farmed, not bought, so they are listed rather than priced. 1 Amplify Stone = 4 Fragments + 2,500 Enhance Stones. Soul Binding to 100% adds 2.13M Kinah + 408 Soul Codex per Unique piece.</p>`;
+  <p class="small muted">Enhance and Amplify Stones are farmed, not bought, so they are listed rather than priced. 1 Amplify Stone = 4 Fragments + 2,500 Enhance Stones. Soul Binding to 100% adds 2.13M Kina + 408 Soul Codex per Unique piece.</p>`;
 }
 
 function cpTransferHTML(){
@@ -1422,7 +1438,7 @@ function opCands(ms,ctx){
   return out;
 }
 
-/* ----- greedy plan: best % DPS per Kinah first, re-evaluated after every step ----- */
+/* ----- greedy plan: best % DPS per Kina first, re-evaluated after every step ----- */
 function opPlan(){
   const W=opW(),c=opClsState(),pr={};['enhStone','ampStone','mana','piece','theoU','codex','phil'].forEach(k=>pr[k]=opPrice(k));
   const ms=OP_SLOTS.map(([id])=>opModel(id,c.slots[id]||{},W));const w=ms.find(m=>m.kind==='wpn');if(w)w.theo=c.theo||'';
@@ -1470,7 +1486,7 @@ function opFromMyChar(){
     else{row.best=0;row.stones=0}
     c.slots[id]=row;n++});
   c.src='mychar';const cp=+M.cp||0;OP.sheet=cp>=95000?'p10':'median';
-  return `Loaded ${n} pieces from ${M.name||'your character'}${M.gear.some(g=>g.detail)?'':' (no item details: Soul Binding lines and stones are set to 0; load the full character data for them)'}. Stat weights: ${OP.sheet==='p10'?'Top 10%':'Typical'} sheet (combat power ${opN(cp)}).`;
+  return `Loaded ${n} pieces from ${M.name||'your character'}${M.gear.some(g=>g.detail)?'':' (no item details: Soul Binding lines and stones are set to 0; load the full character data for them)'}. Stat weights: ${OP.sheet==='p10'?'Top 10%':'Typical'} gear (combat power ${opN(cp)}).`;
 }
 
 /* ----- rendering ----- */
@@ -1510,11 +1526,11 @@ function renderOptimizer(){
   const pi=(k,l)=>`<label class="opf">${opE(l)}<input type="number" inputmode="numeric" min="0" step="1" data-opp="${k}" value="${opPrice(k)}"></label>`;
   const si=(k,l)=>`<label class="opf">${opE(l)}<input type="number" inputmode="numeric" min="0" step="1" data-ops="${k}" value="${+OP.stock[k]||0}"></label>`;
   const hasChar=typeof chGet==='function'&&(()=>{try{return !!chGet()}catch(e){return false}})();
-  host.innerHTML=`<p class="small">Enter your gear (or load it from My character), your Kinah budget and what you have on hand. The plan lists the next upgrades in the order that gives the <b>most damage per Kinah</b>, re-checking after every step, until the budget runs out.</p>
+  host.innerHTML=`<p class="small">Enter your gear (or load it from My character), your Kina budget and what you have on hand. The plan lists the next upgrades in the order that gives the <b>most damage per Kina</b>, re-checking after every step, until the budget runs out.</p>
   <div class="chrow"><button type="button" class="btn primary" data-opb="mychar">Use My character</button><button type="button" class="btn" data-opb="typical">Fill: Typical gear</button><button type="button" class="btn" data-opb="top">Fill: Top-10% gear</button></div>
   <div id="op-msg" class="small muted">${hasChar?'A character is loaded in My character: press "Use My character" to copy its gear here.':'Tip: load your character in the My character tab, then press "Use My character".'}</div>
   <div class="opgrid">
-   <label class="opf">Budget (Kinah)<input type="number" inputmode="numeric" min="0" step="100000" data-opk="budget" value="${+OP.budget||0}"></label>
+   <label class="opf">Budget (Kina)<input type="number" inputmode="numeric" min="0" step="100000" data-opk="budget" value="${+OP.budget||0}"></label>
    <label class="opf">Stat weights ${opSel('opk="sheet"',OP.sheet,[['median','Typical player'],['p10','Top 10%']])}</label>
    <label class="opf">Weapon Theostone ${opSel('opk="theo"',c.theo||'',[['','None']].concat(th.map(t=>[t,t.replace(/^Theostone: /,'')])).concat(c.theo&&!th.includes(c.theo)?[[c.theo,c.theo.replace(/^Theostone: /,'')]]:[]))}</label>
   </div>
@@ -1523,7 +1539,7 @@ function renderOptimizer(){
   <details class="small"><summary><b>Stones on hand and prices</b></summary>
    <div class="opgrid">${si('enh','Enhance Stones')}${si('amp','Amplify Stones')}${si('codex','Soul Codex')}${si('phil',"Philosopher's Stones")}${si('piece','Spare Unique pieces')}${si('mana','Superior Manastones')}</div>
    <div class="opgrid">${pi('enhStone','Enhance Stone price')}${pi('ampStone','Amplify Stone price')}${pi('mana','Superior stone price')}${pi('piece','Spare Unique piece price')}${pi('theoU','Theostone price')}${pi('codex','Soul Codex price')}${pi('phil',"Philosopher's Stone price")}</div>
-   <ul class="plain small">${Object.entries(OPTDATA.priceNotes).map(([,v])=>`<li>${opE(v)}</li>`).join('')}<li>Stones on hand are used first and cost no Kinah, but the ranking still counts them at their price, so they go where they help most.</li></ul>
+   <ul class="plain small">${Object.entries(OPTDATA.priceNotes).map(([,v])=>`<li>${opE(v)}</li>`).join('')}<li>Stones on hand are used first and cost no Kina, but the ranking still counts them at their price, so they go where they help most.</li></ul>
    <p><button type="button" class="btn" data-opb="resetprices">Reset prices to the defaults</button></p></details>
   <div id="op-out"></div>`;
   opRun();
@@ -1537,21 +1553,20 @@ function opRun(){
   const notes=[];if(R.blocked['Soul Codex'])notes.push('Some Bind steps were left out: not enough Soul Codex on hand (Soul Codex is bound; add what you own under "Stones on hand").');
   if(R.blocked["Philosopher's Stone"])notes.push("Soul Fuse left out: it needs 2 Philosopher's Stone: Revelation (Season Shop, 30,000 Oath Coins each, 2 per account). Enter them under Stones on hand.");
   if(R.left<1)notes.push('The budget ran out; raise it to see the next steps.');
-  el.innerHTML=rows.length?`<div class="callout ok"><b>${opP(R.cumG)} DPS for about ${opM(R.cum)} Kinah</b> (${rows.length} steps, ${opM(R.left)} left over)${Object.keys(tot).length?`, using ${Object.entries(tot).filter(([,n])=>n>=0.5).map(([k,n])=>`${opN(n)} ${SN[k]}`).join(', ')}`:''}. Expected averages; gains add up approximately.</div>
-  <div class="tablewrap"><table><thead><tr><th>#</th><th>Item</th><th>Upgrade</th><th>Expected cost</th><th>DPS</th><th>Per 1M Kinah</th><th>Total cost</th><th>Total DPS</th><th>Why</th></tr></thead><tbody>
+  el.innerHTML=rows.length?`<div class="callout ok"><b>${opP(R.cumG)} DPS for about ${opM(R.cum)} Kina</b> (${rows.length} steps, ${opM(R.left)} left over)${Object.keys(tot).length?`, using ${Object.entries(tot).filter(([,n])=>n>=0.5).map(([k,n])=>`${opN(n)} ${SN[k]}`).join(', ')}`:''}. Expected averages; gains add up approximately.</div>
+  <div class="tablewrap"><table><thead><tr><th>#</th><th>Item</th><th>Upgrade</th><th>Expected cost</th><th>DPS</th><th>Per 1M Kina</th><th>Total cost</th><th>Total DPS</th><th>Why</th></tr></thead><tbody>
   ${rows.map((r,i)=>`<tr><td class="num">${i+1}</td><td class="small"><b>${opE(r.lbl)}</b></td><td class="small">${opE(r.act)}</td>
    <td class="num"><b>${opM(r.kin)}</b>${r.val>r.kin+1?`<br><span class="small muted">worth ${opM(r.val)} with stones</span>`:''}${r.unl?`<br><span class="small muted">unlucky ${opM(r.unl)}</span>`:''}${stTxt(r)?`<br><span class="small muted">${opE(stTxt(r))}</span>`:''}</td>
    <td class="num">${opP(r.g)}</td><td class="num">${r.r>=100?'very high':opP(r.r,3)}</td><td class="num">${opM(r.cum)}</td><td class="num opbig">${opP(r.cumG)}</td><td class="small opwhy">${opE(r.why)}</td></tr>`).join('')}
   </tbody></table></div>`:`<div class="callout"><b>No upgrade fits.</b> ${R.left<1?'Add a budget.':'Everything that adds damage is done or blocked, or the next step costs more than the budget.'}</div>`;
   el.innerHTML+=`${notes.length?`<ul class="plain small">${notes.map(n=>`<li>${opE(n)}</li>`).join('')}</ul>`:''}
   <details class="small"><summary><b>How this works and what it leaves out</b></summary><ul class="plain small">
-   <li><b>Damage</b>: each stat's worth comes from the guide's simulator (raid bosses Divine Auldor and Kromede's Desire, the ${OP.sheet==='p10'?'Top-10%':'Typical'} stat sheet, guide rotation), measured at one and three steps of each stat, so caps (Critical Hit 50%) and diminishing returns shrink later gains.</li>
-   <li><b>Cost</b>: the same exact maths as the cost planner above (odds, pity, fees by item level); stones turned into Kinah at your prices. Unlucky = 90th percentile.</li>
+   <li><b>Damage</b>: each stat's worth comes from the guide's simulator (raid bosses Divine Auldor and Kromede's Desire, ${OP.sheet==='p10'?'top 10%':'typical'} gear, guide rotation), measured at one and three steps of each stat, so caps (Critical Hit 50%) and diminishing returns shrink later gains.</li>
+   <li><b>Cost</b>: the same exact maths as the cost planner above (odds, pity, fees by item level); stones turned into Kina at your prices. Unlucky = 90th percentile.</li>
    <li><b>Stats per step</b>: enhancement and Amplify tables from Global client data (metabot.gg item pages); Soul Binding pools and best lines from this guide's reroll targets. Binding moves each line toward its maximum (an assumption: the game only says the rate raises line values).</li>
    <li>Never enhance past +10 an item you will replace: untick Keep and the plan stops it at +10 (the cost planner explains why).</li>
    <li>Armor + and Amplify add Defense/HP only, so they never rank for damage; do them for survival. Bracelets, belt and amulet are not modelled.</li>
-   <li>Not ranked (no Kinah price): Daevanion boards, Arcana, Stigma levels, wings and the White/Wise Dragon Lord upgrade recipes. See their tabs.</li>
-   <li>${opE(OPTDATA.note)}</li></ul></details>`;
+   <li>Not ranked (no Kina price): Daevanion boards, Arcana, Stigma levels, wings and the White/Wise Dragon Lord upgrade recipes. See their tabs.</li></ul></details>`;
 }
 function opSched(){clearTimeout(opTimer);opTimer=setTimeout(()=>{opSave();opRun()},250)}
 function opIn(t){return t&&t.closest&&t.closest('#optimizer')}
@@ -1604,7 +1619,7 @@ const CH_COLG={white:'Common',green:'Rare',blue:'Epic',yellow:'Unique',orange:'H
 const CH_GRANK={Common:1,Rare:2,Epic:3,Unique:4,Heroic:5,Special:4};
 const CH_SKCOST={2:1,3:1,4:1,5:2,6:2,7:2,8:4,9:4,10:4};
 const CH_COST={free:1,cheap:2,shards:3,crystals:3,kinah:5,grind:8};
-const CH_COSTW={free:'Free',cheap:'Cheap',shards:'Stigma Shards',crystals:'Daevanion crystals',kinah:'Kinah + materials',grind:'Farming'};
+const CH_COSTW={free:'Free',cheap:'Cheap',shards:'Stigma Shards',crystals:'Daevanion crystals',kinah:'Kina + materials',grind:'Farming'};
 const CH_DMGSTONE=/^(pvp )?(weapon |critical |back attack |front attack )?damage boost$/;
 let chNotice='';
 
@@ -2869,7 +2884,7 @@ function onShow(){
   const ORDER=['nightmare','trial','daily','arena'];
   // PvP mode puts the arena card first; the tab itself shows in both modes
   const order=()=>((typeof MODE!=='undefined'&&MODE==='pvp')?['arena','nightmare','trial','daily']:ORDER);
-  // mode facts (Global unless marked; sim/research/modes.md, 2026-10-17)
+  // mode facts (Global unless marked; checked 2026-10-17)
   const INFO={
     nightmare:{name:'Nightmare',kind:'Solo boss duel',
       facts:'One named boss in its own arena: no party, no healer, no party buffs. Season 1 has 7 bosses open on Global, each with its own tiers 1–10. Every boss goes berserk at 5:00 (warning at 4:00). A failed run costs no attempt.'},
@@ -2968,12 +2983,12 @@ function onShow(){
     const rows=(A.barChanges||[]).map(barLi).concat(A.macroSteps?[macLi(A.macroSteps)]:[]).concat((A.manual||[]).map(x=>`<li class="msrow"><span class="msic kbd">H</span><div><strong>By hand</strong><div>${h(x)}</div></div></li>`));
     return `<div class="mssec msalt"><h4>New macro option${gain} <span class="tag wind">optional</span></h4>`+
       `<p class="small">${h(A.summary||'')} The setup above still works; this is the version that tested better.</p>`+
-      (rows.length?`<ul class="mschg">${rows.join('')}</ul>`:'')+(g.note?`<p class="small muted">${h(g.note)}</p>`:'')+`</div>`;
+      (rows.length?`<ul class="mschg">${rows.join('')}</ul>`:'')+(g.note?`<details class="mstested"><summary>How we tested</summary><p class="small muted">${h(g.note)}</p></details>`:'')+`</div>`;
   }
   function card(k,M){
-    const I=INFO[k]; const done=!!S.get('mode-'+k,false); const isA=k==='arena';
+    const I=INFO[k]; const done=false; const isA=k==='arena';
     const head=`<header class="mshead"><div><span class="eyebrow">${h(I.kind)}</span><h3>${h(M&&M.title||I.name)}</h3></div>`+
-      `<label class="msdone"><input type="checkbox" data-msdone="${k}"${done?' checked':''}${M?'':' disabled'}> Done</label></header>`+
+      `</header>`+
       `<p class="msfacts small muted">${h(I.facts)}</p>`;
     // Brawler is Korea-only: no Global simulator data, so the Global PvE mode cards can't be filled
     if(!M&&!isA&&/brawler/i.test(C['class']||'')) return `<article class="box mscard soon" data-mscard="${k}">${head}<p class="mssoon"><b>No setup for this mode.</b> `+
@@ -2995,10 +3010,18 @@ function onShow(){
     const chgSec=`<div class="mssec"><h4>What to change from your raid setup</h4>${ch.length?`<ul class="mschg">${ch.join('')}</ul>`:'<p class="small muted">Nothing: keep your raid setup.</p>'}</div>`;
     const stigSec=`<div class="mssec"><h4>Stigmas</h4><div class="mschips">${stig}</div>${M.stigmaNote?`<p class="small muted">${h(M.stigmaNote)}</p>`:''}${!M.barChanges||!M.barChanges.length?'<p class="small muted">Skill bar and macro: no changes.</p>':(M.macroSteps?'':'<p class="small muted">Macro steps: unchanged.</p>')}</div>`;
     const conf=`<span class="tag gold">${h(CONF[String(M.confidence||'').toLowerCase()]||'Confidence: '+(M.confidence||'?'))}</span>`;
-    const foot=`<footer class="mssim"><div class="msmeta">`+
-      (isA?`<span class="tag">From research and class mechanics</span>${hasSim?'<span class="tag wind">Simulator check</span>':''}`
-          :`<span class="tag wind">Simulator</span>${s.robust===true?'<span class="tag">robust across sheets and assumptions</span>':s.robust===false?'<span class="tag">depends on assumptions</span>':''}`)+
-      `${conf}</div>${hasSim||!isA?simLine(s):''}${s.note?`<p class="small muted">${h(s.note)}</p>`:''}</footer>`;
+    // one plain verdict line stays visible; the simulator numbers move into a closed "How we tested"
+    const g0=typeof s.gainPct==='number'?s.gainPct:null, tm=/time/i.test(String(s.metric||''));
+    const verdict=isA?'Built from research and class mechanics'+(hasSim?', with a simulator check.':'.')
+      :g0==null?'Tested in our simulator against your raid setup.'
+      :Math.abs(g0)<0.5?'About the same as your raid setup in our tests; use it if you prefer it.'
+      :tm?`Clears about ${Math.abs(g0).toFixed(0)}% ${g0>=0?'faster':'slower'} than your raid setup in our tests.`
+      :`Worth about ${g0>=0?'+':''}${g0.toFixed(Math.abs(g0)<1?1:0)}% ${String(s.metric||'damage').replace(/^Damage$/,'damage')} over your raid setup in our tests.`;
+    const tested=(hasSim||!isA)?`<details class="mstested"><summary>How we tested</summary><div class="msmeta">`+
+      (isA?`<span class="tag">From research and class mechanics</span> ${hasSim?'<span class="tag wind">Simulator check</span>':''}`
+          :`<span class="tag wind">Simulator</span> ${s.robust===true?'<span class="tag">same result with typical and top 10% gear and every assumption we tried</span>':s.robust===false?'<span class="tag">depends on gear and assumptions</span>':''}`)+
+      `</div>${simLine(s)}${s.note?`<p class="small muted">${h(s.note)}</p>`:''}</details>`:'';
+    const foot=`<footer class="mssim"><p class="small msverdict"><b>Verdict:</b> ${h(verdict)} ${conf}</p>${tested}</footer>`;
     if(isA) return `<article class="box mscard arena${done?' done':''}" data-mscard="${k}">${head}`+
       `<p class="mssum">${h(M.summary)}</p>`+
       `<div class="mscols"><div class="mscol">${chgSec}${stigSec}${burstFlow(M.burst)}</div>`+
@@ -3016,12 +3039,10 @@ function onShow(){
     drawnMode=typeof MODE!=='undefined'?MODE:null;
     host.innerHTML=order().map(k=>card(k,M&&M[k])).join('');
     if(typeof decorate==='function') decorate(host);
-    const n=ORDER.filter(k=>M&&M[k]&&S.get('mode-'+k,false)).length, tot=ORDER.filter(k=>M&&M[k]).length;
-    const st=document.getElementById('modesstate'); if(st) st.textContent=tot?`${n} of ${tot} set up in game`:'';
   }
   // Mode setups is useful in PvE and PvP (arena card): stop the PvE/PvP switch from hiding its tab
   function unhideModesTab(){
-    const tb=document.querySelector('nav.tabs button[data-tab="modes"]');
+    const tb=document.querySelector('nav.tabs button[data-tab="builds"]')||document.querySelector('nav.tabs button[data-tab="modes"]');
     if(tb){tb.removeAttribute('data-mode'); tb.hidden=false;}
     const intro=document.querySelector('#modes > div:first-child p.muted');
     if(intro&&!intro.dataset.arena){intro.dataset.arena=1; intro.insertAdjacentHTML('beforeend',' The <b>PvP arena</b> card is for Arena of Solitude (1v1) and the team arenas; it also lists only what to change from your raid setup.');}
@@ -3032,13 +3053,6 @@ function onShow(){
   try{unhideModesTab()}catch(e){console.error(e)}
   // re-order the cards when you switch between PvE and PvP
   {const o=window.renderModeBits;if(typeof o==='function')window.renderModeBits=function(){const r=o.apply(this,arguments);try{unhideModesTab();if((typeof MODE!=='undefined'?MODE:null)!==drawnMode)renderModeSetups()}catch(e){}return r}}
-  document.addEventListener('change',e=>{
-    const k=e.target&&e.target.dataset&&e.target.dataset.msdone; if(!k) return;
-    S.set('mode-'+k,!!e.target.checked);
-    const c=e.target.closest('.mscard'); if(c) c.classList.toggle('done',!!e.target.checked);
-    const M=C.modeSetups||{}; const n=ORDER.filter(x=>M[x]&&S.get('mode-'+x,false)).length, tot=ORDER.filter(x=>M[x]).length;
-    const st=document.getElementById('modesstate'); if(st) st.textContent=tot?`${n} of ${tot} set up in game`:'';
-  });
   window.renderModeSetups=renderModeSetups;
   try{renderModeSetups()}catch(e){console.error(e)}
   // re-draw after your account copy of the progress loads
@@ -3081,23 +3095,53 @@ function onShow(){
       '.dgbody{display:grid;gap:14px;padding:0 16px 16px;min-width:0}',
       '.dgfacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin:0}',
       '.dgfacts div{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:7px 10px;min-width:0}',
-      '.dgfacts dt{font:600 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}',
+      '.dgfacts dt{font:600 12px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}',
       '.dgfacts dd{margin:2px 0 0;font-size:14px;overflow-wrap:anywhere}',
       '.dgboss{border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:10px;min-width:0}',
-      '.dgboss>h4{margin:0;font-size:16px}',
+      '.dgbhead{display:flex;gap:10px;align-items:center;min-width:0}',
+      '.dgbhead h4{margin:0;font-size:16px;min-width:0;overflow-wrap:anywhere}',
+      '.dgpic{display:grid;gap:2px;justify-items:center;flex:none}',
+      '.dgpic img{width:56px;height:56px;border-radius:10px;object-fit:cover;background:var(--panel2);border:1px solid var(--line)}',
+      '.dgcredit{font-size:12px;color:var(--muted);line-height:1.2}',
+      '.dgcredit a{color:inherit}',
       '.dgmech{display:grid;gap:6px;margin:0;padding:0;list-style:none}',
-      '.dgmech li{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:6px 10px;align-items:start;background:var(--panel2);border-radius:8px;padding:7px 10px;font-size:14px}',
+      '.dgmech li{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;align-items:start;background:var(--panel2);border-radius:8px;padding:7px 10px;font-size:14px}',
+      '.dgmech li.hasfig{grid-template-columns:64px minmax(0,1fr)}',
+      '.dgtxt{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:6px 10px;align-items:start;min-width:0}',
       '.dgmech .arrow{color:var(--gold)}',
       '.dgmech .dgsee::before{content:"See: ";font-weight:600;color:var(--muted)}',
       '.dgmech .dgdo::before{content:"Do: ";font-weight:600;color:var(--wind)}',
+      '.dgwatch{grid-column:1/-1;font-size:12.5px;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}',
+      '.dgwatch a{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:999px;border:1px solid var(--line);text-decoration:none;color:var(--fg);font-weight:600;white-space:nowrap}',
+      '.dgwatch a:hover,.dgwatch a:focus-visible{border-color:var(--gold)}',
+      '.dgwatch .muted{overflow-wrap:anywhere}',
+      '.dgfig{width:64px;height:64px;display:block}',
+      '.dgfig .ar{fill:none;stroke:var(--line);stroke-width:1.2}',
+      '.dgfig .bo{fill:var(--fg)}',
+      '.dgfig .pl{fill:var(--n-legend)}',
+      '.dgfig .mk{fill:var(--gold);stroke:var(--bg);stroke-width:.8}',
+      '.dgfig .dz{fill:rgba(239,91,91,.32);stroke:#ef5b5b;stroke-width:1}',
+      '.dgfig .dl{fill:none;stroke:#ef5b5b;stroke-width:2.4;stroke-linecap:round}',
+      '.dgfig .rg{fill:none;stroke:#ef5b5b;stroke-width:1.6}',
+      '.dgfig .sf{fill:rgba(95,194,141,.14);stroke:var(--n-rare);stroke-width:1.2;stroke-dasharray:3 2}',
+      '.dgfig .tz{stroke:#7fb2ff;stroke-width:1.8;stroke-dasharray:2 1.5}',
+      '.dgfig .rk{fill:var(--muted)}',
+      '.dgfig .mv{stroke:var(--muted);stroke-width:1.3;fill:none}',
+      '.dgfig .mh{fill:var(--muted)}',
+      '.dgkey{margin:4px 0 0;font-size:12px}',
+      'details.dgmore>summary{cursor:pointer;font-size:13.5px;color:var(--muted)}',
+      'details.dgmore[open]>summary{margin-bottom:8px}',
+      'details.dgmore .mssec+.mssec{margin-top:8px}',
       '.dgwipe li{color:var(--warn)}',
       '.dgroles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}',
       '.dgroles div{font-size:14px;background:var(--panel2);border-radius:8px;padding:7px 10px}',
       '.dgvids{display:grid;gap:8px;margin:0;padding:0;list-style:none}',
       '.dgvids li{font-size:14px;overflow-wrap:anywhere}',
       '.dgvids a{font-weight:600}',
+      '.dghead{margin:0;display:grid;gap:3px}',
+      '.dghead img{width:100%;max-height:200px;object-fit:cover;border-radius:10px;display:block;background:var(--panel2)}',
       '.dgcount{font:600 12px var(--f-mono);letter-spacing:.04em;color:var(--muted)}',
-      '@media (max-width:640px){.dgmech li{grid-template-columns:1fr}.dgmech .arrow{display:none}details.dgcard>summary{padding:12px}.dgbody{padding:0 12px 12px}}'
+      '@media (max-width:640px){.dgtxt{grid-template-columns:minmax(0,1fr)}.dgmech .arrow{display:none}.dgmech li.hasfig{grid-template-columns:52px minmax(0,1fr)}.dgfig{width:52px;height:52px}details.dgcard>summary{padding:12px}.dgbody{padding:0 12px 12px}.dgboss{padding:10px}.dgpic img{width:48px;height:48px}}'
     ].join('\n');
     document.head.appendChild(el);
   }
@@ -3105,17 +3149,79 @@ function onShow(){
   const done=id=>{try{return !!S.get('dg-'+id,false)}catch(e){return false}};
   const list=(t,a,cls)=>{a=arr(a);return a.length?`<div class="mssec"><h4>${t}</h4><ul class="plain small${cls?' '+cls:''}">${a.map(x=>`<li>${h(x)}</li>`).join('')}</ul></div>`:''};
 
+  // ---- self-drawn top-down diagrams (fixed presets; no data goes into the markup) ----
+  const C=(x,y,r,c)=>`<circle class="${c}" cx="${x}" cy="${y}" r="${r}"/>`;
+  const BOSS=(x,y,dn)=>C(x,y,5,'bo')+`<path class="bo" d="M${x-3} ${y+(dn?4:-4)} L${x} ${y+(dn?9:-9)} L${x+3} ${y+(dn?4:-4)}Z"/>`;
+  const P=(x,y)=>C(x,y,2.6,'pl'), MK=(x,y)=>C(x,y,3,'mk');
+  const MV=(x1,y1,x2,y2)=>{const a=Math.atan2(y2-y1,x2-x1),l=3.2,w=.55;
+    return `<line class="mv" x1="${x1}" y1="${y1}" x2="${(x2-Math.cos(a)*2).toFixed(1)}" y2="${(y2-Math.sin(a)*2).toFixed(1)}"/><path class="mh" d="M${x2} ${y2} L${(x2-l*Math.cos(a-w)).toFixed(1)} ${(y2-l*Math.sin(a-w)).toFixed(1)} L${(x2-l*Math.cos(a+w)).toFixed(1)} ${(y2-l*Math.sin(a+w)).toFixed(1)}Z"/>`};
+  const RING=(x,y,R,r,c)=>`<path class="${c}" fill-rule="evenodd" d="M${x-R} ${y}a${R} ${R} 0 1 0 ${2*R} 0a${R} ${R} 0 1 0 ${-2*R} 0ZM${x-r} ${y}a${r} ${r} 0 1 0 ${2*r} 0a${r} ${r} 0 1 0 ${-2*r} 0Z"/>`;
+  const AR=C(32,32,29,'ar');
+  const FIG={
+    stack:['Stack on the marked player',BOSS(32,13)+C(32,42,10,'dz')+MK(32,42)+P(13,50)+MV(15,49,24,45)+P(51,50)+MV(49,49,40,45)+P(32,59)+MV(32,57,32,52)],
+    away:['Marked player: others keep out of the circle',BOSS(32,13)+C(42,44,10,'dz')+MK(42,44)+P(37,38)+MV(35,37,24,32)+P(49,37)+MV(50,35,54,25)],
+    spread:['Spread out so circles do not overlap',BOSS(32,32)+C(15,20,7,'dz')+P(15,20)+C(49,20,7,'dz')+P(49,20)+C(15,45,7,'dz')+P(15,45)+C(49,45,7,'dz')+P(49,45)],
+    donut:['Donut: stand close to the boss',RING(32,32,27,11,'dz')+C(32,32,10,'sf')+BOSS(32,32)+P(40,35)+P(25,36)],
+    out:['Leave the big circle around the boss',C(32,32,17,'dz')+BOSS(32,32)+P(21,25)+MV(20,24,11,18)+P(43,25)+MV(44,24,53,18)+P(32,44)+MV(32,46,32,57)],
+    behind:['Frontal attack: stand behind the boss',`<path class="dz" d="M32 30 L9 9 A31 31 0 0 1 55 9Z"/>`+BOSS(32,30)+C(32,47,6.5,'sf')+P(29,47)+P(35,47)],
+    rings:['Rings move outward: jump each one',BOSS(32,32)+C(32,32,10,'rg')+C(32,32,17,'rg')+C(32,32,24,'rg')+P(46,45)+`<path class="mv" d="M41 50 Q45 39 50 41"/>`],
+    line:['Charge line: get out of it',`<rect class="dz" x="27.5" y="15" width="9" height="44" rx="2"/>`+BOSS(32,12,true)+MK(32,55)+P(30,30)+MV(28,30,17,30)+P(34,40)+MV(36,40,47,40)],
+    gaps:['Fan of lines: stand in a gap',BOSS(32,11,true)+`<path class="dl" d="M32 16 L9 47 M32 16 L19 58 M32 16 L32 61 M32 16 L45 58 M32 16 L55 47"/>`+C(25.5,49,4.5,'sf')+P(25.5,49)],
+    edge:['Outer floor is dangerous: stay in the middle',RING(32,32,29,19,'dz')+C(32,32,15,'sf')+BOSS(32,30)+P(25,39)+P(39,39)],
+    apart:['Linked pair: walk apart until it breaks',BOSS(32,12)+`<line class="tz" x1="28" y1="38" x2="36" y2="38"/>`+MK(28,38)+MK(36,38)+MV(25,39,13,44)+MV(39,39,51,44)],
+    close:['Chained to the boss: stay close',C(32,30,13,'sf')+BOSS(32,30)+`<line class="tz" x1="32" y1="30" x2="41" y2="37"/>`+MK(41,37)+P(52,50)+MV(50,48,44,42)],
+    cover:['Hide behind a rock (line of sight)',C(32,32,29,'dz')+`<path class="sf" d="M45 20 L51 26 L60 18 L52 7Z"/>`+`<rect class="rk" x="42" y="19" width="7" height="7" rx="1.5"/>`+BOSS(32,34)+P(52,15)],
+    kite:['Chasing circle: lead it away from the group',BOSS(20,18)+P(14,38)+P(20,43)+C(42,52,6,'dz')+MK(47,44)+MV(48,42,53,30)],
+    edgedrop:['Marked: drop the puddle at the edge',BOSS(32,24)+P(25,36)+P(39,36)+MK(32,40)+MV(32,43,32,52)+C(32,56,4.5,'dz')],
+    beam:['Beam on the marked player: point it away',BOSS(32,28)+`<rect class="dz" x="28" y="33" width="8" height="28" rx="2"/>`+MK(32,56)+P(26,11)+P(38,11)],
+    circles:['Circles under each player: step out',BOSS(32,13)+C(17,40,6,'dz')+P(17,40)+MV(17,42,13,51)+C(32,48,6,'dz')+P(32,48)+MV(34,49,42,55)+C(47,40,6,'dz')+P(47,40)+MV(48,42,53,49)]
+  };
+  const figSvg=k=>{const f=Object.prototype.hasOwnProperty.call(FIG,k)&&FIG[k]; if(!f) return '';
+    return `<svg class="dgfig" viewBox="0 0 64 64" role="img" aria-label="Diagram: ${h(f[0])}"><title>${h(f[0])}</title>${AR}${f[1]}</svg>`};
+
+  // ---- "watch this moment" link (opens YouTube at the time; no embed, no download) ----
+  function ytAt(v){
+    if(!v||typeof v!=='object') return null;
+    let u; try{u=new URL(String(v.url||''))}catch(e){return null}
+    if(u.protocol!=='https:'||!/(^|\.)youtube\.com$|^youtu\.be$/i.test(u.hostname)) return null;
+    const id=u.hostname==='youtu.be'?u.pathname.slice(1):u.searchParams.get('v'); if(!/^[\w-]{11}$/.test(id||'')) return null;
+    const t=parseInt(String(u.searchParams.get('t')||'0').replace(/s$/,''),10)||0;
+    return {href:`https://www.youtube.com/watch?v=${id}&t=${t}s`,t,label:v.label,channel:v.channel,lang:v.lang};
+  }
+  const mmss=t=>`${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;
+  function watchHtml(v){
+    const y=ytAt(v); if(!y) return '';
+    const who=[y.channel,y.lang&&`in ${y.lang}`].filter(Boolean).map(h).join(' · ');
+    return `<div class="dgwatch"><a href="${h(y.href)}" target="_blank" rel="noopener noreferrer" title="${h((y.label?y.label+' · ':'')+'opens YouTube at '+mmss(y.t))}">▶ Watch this (${mmss(y.t)})</a>`+(who?`<span class="muted">${who}</span>`:'')+`</div>`;
+  }
+
+  // ---- pictures: only official images (data: URI or https) with a credit line ----
+  const okSrc=s=>/^data:image\/(webp|png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(String(s||''))||/^https:\/\//i.test(String(s||''));
+  function credit(p){const c=h(p.credit||'');const u=safeUrl(p.page);return c?`<span class="dgcredit">Image: ${u?`<a href="${h(u)}" target="_blank" rel="noopener noreferrer">${c}</a>`:c}</span>`:''}
+  function portrait(b){const p=b.portrait; if(!p||!okSrc(p.src)) return '';
+    return `<span class="dgpic"><img src="${h(p.src)}" alt="${h(p.alt||b.name||'Boss')}" width="56" height="56" loading="lazy" decoding="async">${credit(p)}</span>`}
+  function header(D){const p=D.header; if(!p||!okSrc(p.src)) return '';
+    return `<figure class="dghead"><img src="${h(p.src)}" alt="${h(p.alt||D.name||'')}" loading="lazy" decoding="async">${credit(p)}</figure>`}
+
+  function mechHtml(m){
+    const fig=figSvg(m.fig);
+    return `<li${fig?' class="hasfig"':''}>${fig}<div class="dgtxt"><span class="dgsee">${h(m.see)}</span><span class="arrow" aria-hidden="true">→</span><span class="dgdo">${h(m.do)}</span>${watchHtml(m.videoAt)}</div></li>`;
+  }
+
   function bossHtml(b){
     const mech=arr(b.mechanics).filter(m=>m&&(m.see||m.do));
     const roles=b.roles||{};
     const R=[['tank','Tank'],['healer','Healer'],['dps','DPS']].filter(([k])=>roles[k]);
-    return `<section class="dgboss"><h4>${h(b.name||'Boss')}</h4>`+
+    const anyFig=mech.some(m=>figSvg(m.fig));
+    const more=(R.length?`<div class="mssec"><h4>Role notes</h4><div class="dgroles">${R.map(([k,l])=>`<div><span class="tag">${l}</span> ${h(roles[k])}</div>`).join('')}</div></div>`:'')+list('Common mistakes',b.mistakes);
+    const moreT=[R.length&&'Role notes',arr(b.mistakes).length&&'common mistakes'].filter(Boolean).join(' and ').replace(/^./,c=>c.toUpperCase());
+    return `<section class="dgboss"><div class="dgbhead">${portrait(b)}<h4>${h(b.name||'Boss')}</h4></div>`+
       (b.enrage?`<p class="small" style="margin:0"><span class="tag gold">Enrage</span> ${h(b.enrage)}</p>`:'')+
       list('Phases',b.phases)+
-      (mech.length?`<div class="mssec"><h4>Mechanics · what you see → what to do</h4><ul class="dgmech">${mech.map(m=>`<li><span class="dgsee">${h(m.see)}</span><span class="arrow" aria-hidden="true">→</span><span class="dgdo">${h(m.do)}</span></li>`).join('')}</ul></div>`:'')+
+      (mech.length?`<div class="mssec"><h4>Mechanics · what you see → what to do</h4><ul class="dgmech">${mech.map(mechHtml).join('')}</ul>`+
+        (anyFig?`<p class="dgkey muted">Diagrams are drawn by this guide (top-down, not to scale): white = boss, yellow = marked player, blue = other players, red = damage, green dashes = where to stand.</p>`:'')+`</div>`:'')+
       list('Wipes the group',b.wipe,'dgwipe')+
-      (R.length?`<div class="mssec"><h4>Role notes</h4><div class="dgroles">${R.map(([k,l])=>`<div><span class="tag">${l}</span> ${h(roles[k])}</div>`).join('')}</div></div>`:'')+
-      list('Common mistakes',b.mistakes)+`</section>`;
+      (more?`<details class="dgmore"><summary>${moreT}</summary>${more}</details>`:'')+`</section>`;
   }
 
   function vidHtml(v){
@@ -3143,6 +3249,7 @@ function onShow(){
     const id=String(D.id||''); const dn=done(id);
     const vids=arr(D.videos).map(vidHtml).filter(Boolean);
     const bosses=arr(D.bosses);
+    const nClip=bosses.reduce((a,b)=>a+arr(b.mechanics).filter(m=>m&&ytAt(m.videoAt)).length,0);
     const chips=[D.type&&`<span class="tag wind">${h(D.type)}</span>`,
       lvChip(D.level),
       D.party&&String(D.party).length<=14&&`<span class="tag">${h(/player|solo/i.test(D.party)?D.party:D.party+' players')}</span>`,
@@ -3154,13 +3261,13 @@ function onShow(){
     return `<details class="box dgcard${dn?' done':''}" data-dg="${h(id)}"${st.open.has(id)?' open':''}>`+
       `<summary><div class="dgsumm"><b>${h(D.name||id)}</b><div class="dgchips">${chips}</div></div>`+
       `<label class="msdone"><input type="checkbox" data-dgdone="${h(id)}"${dn?' checked':''}> Cleared</label></summary>`+
-      `<div class="dgbody">`+
+      `<div class="dgbody">`+header(D)+
       (D.summary?`<p class="mssum" style="margin:0">${h(D.summary)}</p>`:'')+
-      (F.length?`<dl class="dgfacts">${F.map(([k,v])=>`<div><dt>${k}</dt><dd>${h(v)}</dd></div>`).join('')}</dl>`:'')+
+      (F.length?`<details class="dgmore"><summary>Entry, resets and unlock</summary><dl class="dgfacts">${F.map(([k,v])=>`<div><dt>${k}</dt><dd>${h(v)}</dd></div>`).join('')}</dl></details>`:'')+
       list('Rewards',D.rewards)+
       bosses.map(bossHtml).join('')+
       list('Tips and consumables',D.tips)+
-      `<div class="mssec"><h4>Videos</h4>${vids.length?`<ul class="dgvids">${vids.join('')}</ul><p class="small muted" style="margin:0">Videos open on YouTube in a new tab. KR = Korean server: mechanics match, but numbers and gear may differ on Global.</p>`:'<p class="small muted" style="margin:0">No checked guide video yet.</p>'}</div>`+
+      `<div class="mssec"><h4>Videos</h4>${vids.length?`<ul class="dgvids">${vids.join('')}</ul><p class="small muted" style="margin:0">Videos open on YouTube in a new tab.${nClip?' “▶ Watch this” buttons jump to the moment a mechanic is shown; the full video is worth watching too.':''} KR = Korean server: mechanics match, but numbers and gear may differ on Global.</p>`:'<p class="small muted" style="margin:0">No checked guide video yet.</p>'}</div>`+
       `<div class="msmeta" style="display:flex;flex-wrap:wrap;gap:6px">${conf}</div>`+
       srcHtml(D)+`</div></details>`;
   }
@@ -3203,7 +3310,7 @@ function onShow(){
       G.map(g=>`<button type="button" data-dgseg="${h(g.id)}" aria-pressed="${st.grp===g.id}">${h(g.name)}</button>`).join('')+`</div>`;
     box.innerHTML=`<div class="box dgctl">${seg}`+
       `<input type="search" id="dgsearch" placeholder="Search a dungeon, boss or mechanic" aria-label="Search dungeons, bosses and mechanics" value="${h(st.q)}">`+
-      `<div class="small muted">Open a card for boss-by-boss mechanics (what you see → what to do), role notes and guide videos. Tick <b>Cleared</b> when you've done it. <span class="dgcount" id="dgstate"></span>${D.updated?` · updated ${h(D.updated)}`:''}</div></div>`+
+      `<div class="small muted">Open a card for boss-by-boss mechanics (what you see → what to do), with a jump to the moment in a guide video where one shows it. Tick <b>Cleared</b> when you've done it. <span class="dgcount" id="dgstate"></span>${D.updated?` · updated ${h(D.updated)}`:''}</div></div>`+
       G.map(g=>`<section class="dggrp" data-dggrp="${h(g.id)}"><h3>${h(g.name)}</h3>${g.intro?`<p class="small muted">${h(g.intro)}</p>`:''}`+
         arr(g.dungeons).map(card).join('')+`</section>`).join('')+
       `<p class="box small muted" id="dgnone" hidden>Nothing matches your search.</p>`;
@@ -3248,7 +3355,7 @@ function onShow(){
   const ROLE={healer:'Healer',dps:'Damage',tank:'Tank',hybrid:'Hybrid'};
   function hideTab(){
     const tb=document.querySelector('nav.tabs button[data-tab="builds"]');
-    if(tb&&!(C.builds&&C.builds.length)){tb.hidden=true;tb.dataset.nobuilds=1;}
+    if(tb){tb.hidden=false;tb.removeAttribute('data-mode');}
   }
   function bar(b){
     if(!b||!b.length) return '';
@@ -3267,7 +3374,7 @@ function onShow(){
     const sb=(B.soulBinding||[]).length?`<div class="mssec"><h4>Soul Binding</h4><div class="tablewrap"><table><thead><tr><th>Slot</th><th>Lines, best first</th></tr></thead><tbody>${B.soulBinding.map(r=>`<tr><td>${h(r.slot)}</td><td>${h(r.lines)}${r.note?`<div class="small muted">${h(r.note)}</div>`:''}</td></tr>`).join('')}</tbody></table></div></div>`:'';
     const steps=(B.barSteps||[]).map(k=>KN[k]||k).join(', ');
     const man=(B.manual||[]).map(m=>`<li><b>${h(m.name)}</b>${m.key?` <span class="kbd">${h(KN[m.key]||m.key)}</span>`:''}: ${h(m.note)}</li>`).join('');
-    const simTxt=g.gainPct!=null?`<p class="small"><b>Simulator (${h(g.metric||'damage')}):</b> ${g.gainPct>0?'+':''}${h(g.gainPct)}%${g.min!=null?` (${h(g.min)}% to ${h(g.max)}%)`:''}. ${h(g.note||'')}</p>`:(g.note?`<p class="small">${h(g.note)}</p>`:'');
+    const simTxt=g.gainPct!=null?`<p class="small msverdict"><b>Verdict:</b> worth about ${g.gainPct>0?'+':''}${h(Math.round(g.gainPct*10)/10)}% ${h(String(g.metric||'damage').replace(/^Damage$/,'damage'))} in our tests for the job it is built for.</p><details class="mstested"><summary>How we tested</summary><p class="small">Simulator (${h(g.metric||'damage')}): ${g.gainPct>0?'+':''}${h(g.gainPct)}%${g.min!=null?` (${h(g.min)}% to ${h(g.max)}%)`:''}. ${h(g.note||'')}</p></details>`:(g.note?`<details class="mstested"><summary>How we tested</summary><p class="small">${h(g.note)}</p></details>`:'');
     const src=(B.sources||[]).length?`<details class="mssrc"><summary>Sources (${B.sources.length})</summary><ul class="plain small">${B.sources.map(s=>`<li><span class="tag${String(s.scope).toUpperCase()==='KR'?'':' wind'}">${h(s.scope||'?')}</span> ${/^https?:/.test(s.url||'')?`<a href="${h(s.url)}" target="_blank" rel="noopener noreferrer">${h((s.url.match(/^https?:\/\/(?:www\.)?([^/]+)/)||[])[1]||s.url)}</a>: `:''}${h(s.what)}</li>`).join('')}</ul></details>`:'';
     return `<article class="box mscard" data-build="${h(B.id)}">`+
       `<header class="mshead"><div><span class="eyebrow">${h(ROLE[B.role]||B.role||'')} build</span><h3>${h(C['class'])}: ${h(B.name)}</h3></div><span class="tag gold">Confidence: ${h(B.confidence||'?')}</span></header>`+
@@ -3287,7 +3394,7 @@ function onShow(){
     hideTab();
     const host=document.getElementById('buildsbox'); if(!host) return;
     const L=C.builds||[];
-    if(!L.length){host.innerHTML='<p class="muted">This class has one build: see Rotation &amp; macro.</p>';return}
+    if(!L.length){host.innerHTML='<p class="muted">This class has one main build: see <a href="#rotation" data-goto="rotation">Rotation &amp; macro</a>. Setups for each game mode are below.</p>';return}
     const sel=S.get('buildPick',L[0].id), cur=L.find(b=>b.id===sel)||L[0];
     const main=C.mainBuildName||'Main build';
     host.innerHTML=`<div class="seg" role="group" aria-label="Build"><button type="button" data-bpick="main" aria-pressed="false">${h(main)} (Rotation &amp; macro)</button>`+
@@ -3302,6 +3409,262 @@ function onShow(){
   try{renderBuilds()}catch(e){console.error(e)}
   {const o=window.applyStore;if(typeof o==='function')window.applyStore=function(){const r=o.apply(this,arguments);try{renderBuilds()}catch(e){}return r}}
   {const o=window.renderModeBits;if(typeof o==='function')window.renderModeBits=function(){const r=o.apply(this,arguments);try{hideTab()}catch(e){}return r}}
+})();
+
+/* ---------- Community tools: ranked cards with category chips (data: global COMTOOLS = audit/r7/tools.json) ---------- */
+(function(){
+  const h=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const data=()=>(typeof COMTOOLS!=='undefined'&&COMTOOLS)||window.COMTOOLS||null;
+  const safeUrl=u=>/^https:\/\//i.test(String(u||''))?String(u):'';
+  const host=u=>{try{return new URL(u).hostname.replace(/^www\./,'')}catch(e){return ''}};
+  const st={cat:'all',web:false};
+  try{st.cat=S.get('tlcat','all')||'all'; st.web=!!S.get('tlweb',false)}catch(e){}
+
+  function addStyle(){
+    if(document.getElementById('tlstyle')) return;
+    const el=document.createElement('style'); el.id='tlstyle';
+    el.textContent=[
+      '#toolsbox{display:grid;gap:14px;min-width:0}',
+      '#toolsbox .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}',
+      '.tlbest{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px;margin:10px 0 0;padding:0;list-style:none}',
+      '.tlbest li{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 11px;display:grid;gap:3px;min-width:0}',
+      '.tlbest .k{font:600 12px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}',
+      '.tlbest b{color:var(--gold)}',
+      '.tlchips{display:flex;flex-wrap:wrap;gap:6px}',
+      '.tlchips button{background:var(--panel2);border:1px solid var(--line);color:var(--fg);font:600 13px var(--f-body);padding:6px 12px;border-radius:999px;cursor:pointer}',
+      '.tlchips button[aria-pressed="true"]{background:var(--wind);border-color:var(--wind);color:var(--bg)}',
+      '.tlweb{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--muted);cursor:pointer;margin-top:4px}.tlweb input{accent-color:var(--wind);width:16px;height:16px}',
+      '.tlgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;min-width:0}',
+      '.tlcard{display:flex;flex-direction:column;padding:0;overflow:hidden;min-width:0}',
+      '.tlcard.top{border-color:color-mix(in srgb,var(--gold) 55%,var(--line))}',
+      '.tlimg{height:84px;display:flex;align-items:center;gap:14px;padding:0 16px;overflow:hidden;border-bottom:1px solid var(--line);background:linear-gradient(135deg,color-mix(in srgb,var(--wind) 14%,var(--panel2)),var(--panel2) 70%)}',
+      '.tlimg span{font:400 44px var(--f-display);color:var(--gold);line-height:1;width:52px;height:52px;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--gold) 45%,transparent);border-radius:12px;background:var(--panel)}',
+      '.tlimg svg{color:var(--wind);flex:0 0 auto}',
+      '.tlimg em{font:600 12px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-style:normal}',
+      '.tlbody{display:grid;gap:9px;padding:12px 14px 14px;min-width:0}',
+      '.tlhead{display:flex;flex-wrap:wrap;gap:6px;align-items:center}',
+      '.tlhead h3{margin:0 auto 0 0;font-size:18px;overflow-wrap:anywhere}',
+      '.tlranks{display:flex;flex-wrap:wrap;gap:5px}',
+      '.tlrank{font:600 12px var(--f-mono);padding:2px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}',
+      '.tlrank.r1{color:var(--bg);background:var(--gold);border-color:var(--gold)}',
+      '.tlfacts{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:0;font-size:14px}',
+      '.tlfacts dt{font:600 12px var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding-top:3px}',
+      '.tlfacts dd{margin:0;overflow-wrap:anywhere}',
+      '.tlwarn{border-left:3px solid var(--warn);background:color-mix(in srgb,var(--warn) 9%,var(--panel));padding:8px 10px;border-radius:0 8px 8px 0;font-size:14px}',
+      '.tlok{border-left:3px solid var(--wind);background:color-mix(in srgb,var(--wind) 7%,var(--panel));padding:6px 10px;border-radius:0 8px 8px 0;font-size:14px}',
+      '.tlrate{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--muted)}',
+      '.tlrate i{font-style:normal;color:var(--gold);letter-spacing:1px}',
+      '.tlwhy{margin:0;padding-left:18px;font-size:14px;display:grid;gap:3px}',
+      '.tlfoot{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;margin-top:auto;padding:0 14px 14px}',
+      '.tlfoot a.go{font-weight:700}',
+      '.tlfoot .cr{font-size:12px;color:var(--muted)}',
+    ].join('\n');
+    document.head.appendChild(el);
+  }
+  const dots=n=>{n=Math.max(0,Math.min(5,+n||0));return '<i aria-hidden="true">'+'●'.repeat(n)+'○'.repeat(5-n)+'</i> <span class="sr">'+n+'/5</span>'};
+  // our own generic category icons (no third-party logos or images are used)
+  const sv=p=>`<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+  const ICON={
+    logs:sv('<path d="M3 20h18"/><path d="M6 16v-5"/><path d="M11 16V6"/><path d="M16 16v-8"/><path d="M20 16v-3"/>'),
+    lookup:sv('<circle cx="10" cy="8" r="3.5"/><path d="M3.5 19c.8-3.4 3.4-5 6.5-5 1.6 0 3 .4 4.1 1.2"/><circle cx="17" cy="16" r="2.6"/><path d="m19 18 2 2"/>'),
+    db:sv('<ellipse cx="12" cy="6" rx="7" ry="2.6"/><path d="M5 6v12c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6V6"/><path d="M5 12c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6"/>'),
+    builder:sv('<path d="m14 6 4 4"/><path d="M4 20l1-4L16 5l3 3L8 19z"/>'),
+    map:sv('<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14"/><path d="M15 6v14"/>'),
+    market:sv('<path d="M4 7h16l-1.5 11h-13z"/><path d="M9 7a3 3 0 0 1 6 0"/>'),
+    collect:sv('<path d="M12 20s-7-4.4-7-9.5A3.8 3.8 0 0 1 12 8a3.8 3.8 0 0 1 7 2.5C19 15.6 12 20 12 20z"/>'),
+    timers:sv('<circle cx="12" cy="13" r="7"/><path d="M12 9v4l2.5 2"/><path d="M10 3h4"/>'),
+    craft:sv('<path d="M14.5 5.5a4 4 0 0 0-5 5L4 16l4 4 5.5-5.5a4 4 0 0 0 5-5l-2.5 2.5-3-3z"/>'),
+    apps:sv('<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>'),
+  };
+  const INST={none:['Website only','tlok','Nothing to install.'],overlay:['Optional overlay app','tlok',''],packet:['Needs a program that reads game packets','tlwarn','']};
+
+  function card(t,D){
+    const cats=D.categories, cn={}; cats.forEach(c=>cn[c.id]=c.name);
+    const url=safeUrl(t.url), tile=t.tile||{};
+    const letter=String(tile.letter||(t.name||'?').replace(/^[^A-Za-z0-9]+/,'').charAt(0)||'?').toUpperCase().slice(0,1);
+    const pic=`<div class="tlimg tile ic-${h(tile.icon||'db')}" aria-hidden="true"><span>${h(letter)}</span>${ICON[tile.icon]||ICON.db}<em>${h(cn[tile.icon]||'')}</em></div>`;
+    const ranks=Object.entries(t.cats||{}).sort((a,b)=>a[1]-b[1]).map(([c,r])=>`<span class="tlrank${r===1?' r1':''}" title="Rank ${r} in ${h(cn[c]||c)}">#${r} ${h(cn[c]||c)}</span>`).join('');
+    const inst=INST[t.install]||INST.none;
+    let instHtml='';
+    if(t.install==='packet') instHtml=`<div class="tlwarn"><b>⚠ ${h(inst[0])}.</b> ${h(t.program||'')}. NCSoft has banned and blocked third-party programs; see <a href="#economy" data-goto="economy">Ban risks</a>.${t.note?' '+h(t.note):''}</div>`;
+    else if(t.install==='overlay') instHtml=`<div class="tlok"><b>${h(inst[0])}:</b> ${h(t.program||'')}. Still a third-party program: <a href="#economy" data-goto="economy">ban risks</a>. The website needs nothing.</div>`;
+    else instHtml=`<div class="tlok"><b>Website only.</b> ${h(t.program||inst[2])}${t.install==='none'&&/reads network/.test(t.program||'')?' NCSoft has banned and blocked third-party programs; see <a href="#economy" data-goto="economy">Ban risks</a>.':''}</div>`;
+    const why=Object.entries(t.reason||{}).filter(([c])=>st.cat==='all'||c===st.cat).map(([c,r])=>`<li><b>${h(cn[c]||c)}:</b> ${h(r)}</li>`).join('');
+    const top=st.cat!=='all'&&(t.cats||{})[st.cat]===1;
+    return `<article class="box tlcard${top?' top':''}" data-tl="${h(t.id)}" data-cats="${h(Object.keys(t.cats||{}).join(' '))}" data-inst="${h(t.install)}">${pic}<div class="tlbody">`+
+      `<div class="tlhead"><h3>${h(t.name)}</h3>${t.pick?'<span class="tag t-ok" title="The guide owner uses this one; ranked on the same reasons as the rest">Owner uses</span>':''}<span class="tag${t.global?' wind':' t-bad'}">${t.global?'Global':'KR / TW'}</span></div>`+
+      `<div class="tlranks">${ranks}</div>`+
+      `<p class="small" style="margin:0">${h(t.what)}</p>`+
+      `<dl class="tlfacts"><dt>Region</dt><dd>${h(t.region)}</dd><dt>Cost</dt><dd>${h(t.cost)}</dd><dt>Activity</dt><dd>${h(t.activity)}</dd></dl>`+
+      instHtml+
+      (why?`<ul class="tlwhy">${why}</ul>`:'')+
+      `<div class="tlrate"><span>Useful ${dots(t.rate&&t.rate.use)}</span><span>Fresh ${dots(t.rate&&t.rate.fresh)}</span><span>Easy ${dots(t.rate&&t.rate.ease)}</span></div>`+
+      `</div><div class="tlfoot">${url?`<a class="go" href="${h(url)}" target="_blank" rel="noopener noreferrer">Open ${h(host(url))} ↗</a>`:''}<span class="cr">checked ${h(t.checked||D.updated||'')}</span></div></article>`;
+  }
+
+  function render(){
+    const box=document.getElementById('toolsbox'); if(!box) return;
+    const D=data();
+    if(!D||!Array.isArray(D.tools)){box.innerHTML='<p class="box muted">Community tools could not load.</p>';return}
+    addStyle();
+    const cats=D.categories||[];
+    if(st.cat!=='all'&&!cats.some(c=>c.id===st.cat)) st.cat='all';
+    const byId={}; D.tools.forEach(t=>byId[t.id]=t);
+    const best=cats.filter(c=>c.best&&c.top&&byId[c.top]).map(c=>{const t=byId[c.top];return `<li><span class="k">${h(c.best)}</span><span><b>${h(t.name)}</b>${t.pick?' <span class="tag t-ok">Owner uses</span>':''}</span><span class="small muted">${h((t.reason||{})[c.id]||'')}</span></li>`}).join('');
+    let list=D.tools.filter(t=>(st.cat==='all'||(t.cats||{})[st.cat])&&(!st.web||t.install==='none'));
+    const minr=t=>Math.min(...Object.values(t.cats||{9:9}));
+    list.sort(st.cat==='all'?(a,b)=>minr(a)-minr(b)||(b.rate.use+b.rate.fresh+b.rate.ease)-(a.rate.use+a.rate.fresh+a.rate.ease)||a.name.localeCompare(b.name):(a,b)=>a.cats[st.cat]-b.cats[st.cat]);
+    const chips=`<div class="tlchips" role="group" aria-label="Filter tools by category"><button type="button" data-tlcat="all" aria-pressed="${st.cat==='all'}">All (${D.tools.length})</button>`+
+      cats.map(c=>{const n=D.tools.filter(t=>(t.cats||{})[c.id]).length;return `<button type="button" data-tlcat="${h(c.id)}" aria-pressed="${st.cat===c.id}">${h(c.name)} (${n})</button>`}).join('')+`</div>`;
+    box.innerHTML=
+      `<div class="callout"><b>Read this before installing anything.</b> ${h(D.warning)} <a href="#economy" data-goto="economy">Ban risks →</a></div>`+
+      `<div class="box"><h3 style="margin:0">Best in each category</h3><ul class="tlbest">${best}</ul><p class="small muted" style="margin:10px 0 0">${h(D.ownerPicks||'')} ${h(D.scale||'')}</p></div>`+
+      `<div class="box" style="display:grid;gap:8px">${chips}<label class="tlweb"><input type="checkbox" id="tlwebonly" ${st.web?'checked':''}> Websites only (hide anything that needs a program)</label><div class="small muted" id="tlstate">${list.length} shown · ${h(D.intro||'')}</div></div>`+
+      (list.length?`<div class="tlgrid">${list.map(t=>card(t,D)).join('')}</div>`:'<p class="box muted">No tool matches this filter.</p>')+
+      `<div class="box small"><p style="margin:0 0 6px"><b>In-game first:</b> ${h(D.inGame||'')}</p><p class="muted" style="margin:0">${h(D.notListed||'')} Site names are their owners' trademarks; we show only our own icons and plain links, and copy no data from these sites.</p></div>`;
+  }
+  function wire(){
+    const box=document.getElementById('toolsbox'); if(!box||box.dataset.tlwired) return; box.dataset.tlwired=1;
+    box.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-tlcat]'); if(!b) return; st.cat=b.dataset.tlcat; try{S.set('tlcat',st.cat)}catch(x){} render()});
+    box.addEventListener('change',e=>{if(e.target&&e.target.id==='tlwebonly'){st.web=!!e.target.checked; try{S.set('tlweb',st.web)}catch(x){} render()}});
+  }
+  window.renderTools=function(){render(); wire()};
+  try{window.renderTools()}catch(e){console.error(e)}
+})();
+
+/* ---------- Sources & credits: every cited source, grouped and searchable (data: global GUIDESOURCES = audit/r7/sources.json) ---------- */
+(function(){
+  const h=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const data=()=>(typeof GUIDESOURCES!=='undefined'&&GUIDESOURCES)||window.GUIDESOURCES||null;
+  const safeUrl=u=>/^https?:\/\//i.test(String(u||''))?String(u):'';
+  const st={grp:'all',q:''};
+  const PAGE=60;
+  const shown={};   // site index -> how many links are drawn
+
+  function addStyle(){
+    if(document.getElementById('srcstyle')) return;
+    const el=document.createElement('style'); el.id='srcstyle';
+    el.textContent=[
+      '#creditsbox{display:grid;gap:14px;min-width:0}',
+      '.srchow{margin:0;padding-left:20px;display:grid;gap:6px}',
+      '.srcnums{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:12px 0 0}',
+      '.srcnums div{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:7px 10px}',
+      '.srcnums b{display:block;font:400 22px var(--f-display);color:var(--gold)}',
+      '.srcnums span{font:600 12px var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}',
+      '.srcctl{display:grid;gap:10px}',
+      '.srcctl .seg{flex-wrap:wrap;max-width:100%}',
+      '.srcctl input[type=search]{width:100%;max-width:440px;box-sizing:border-box;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:inherit;font:inherit}',
+      '.srcgrp{display:grid;gap:8px;min-width:0}',
+      '.srcgrp>h3{margin:6px 0 0}.srcgrp>p{margin:0}',
+      'details.srcsite{padding:0;min-width:0}',
+      'details.srcsite>summary{list-style:none;cursor:pointer;padding:11px 14px;display:grid;gap:4px}',
+      'details.srcsite>summary::-webkit-details-marker{display:none}',
+      '.srcrow{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline}',
+      '.srcrow b{font-size:16px;overflow-wrap:anywhere}',
+      '.srcrow .n{margin-left:auto;font:600 12px var(--f-mono);color:var(--muted)}',
+      '.srctabs{display:flex;flex-wrap:wrap;gap:4px}',
+      '.srctabs a{font:600 12px var(--f-mono);padding:1px 7px;border-radius:999px;border:1px solid var(--line);color:var(--wind);text-decoration:none}',
+      '.srclinks{margin:0;padding:0 14px 12px 32px;display:grid;gap:5px;font-size:14px}',
+      '.srclinks li{overflow-wrap:anywhere}',
+      '.srclinks .u{color:var(--muted);font-size:12px}',
+      '.srcmore{margin:0 14px 12px}',
+    ].join('\n');
+    document.head.appendChild(el);
+  }
+  const tabLinks=(tabs,D)=>(tabs||[]).filter(t=>document.getElementById(t)).map(t=>`<a href="#${h(t)}" data-goto="${h(t)}">${h((D.tabNames||{})[t]||t)}</a>`).join('');
+
+  function linkItem(l,D){
+    const u=safeUrl(l[0]); if(!u) return '';
+    const label=l[1]||u.replace(/^https?:\/\/(www\.)?/,'');
+    return `<li><a href="${h(u)}" target="_blank" rel="noopener noreferrer">${h(label)}</a>${l[2]?` <span class="muted">— ${h(l[2])}</span>`:''}${l[1]?`<br><span class="u">${h(u)}</span>`:''}</li>`;
+  }
+  function drawLinks(det){
+    const D=data(); const i=+det.dataset.si; const s=D.sites[i]; if(!s) return;
+    const q=st.q.trim().toLowerCase();
+    const links=q?s.links.filter(l=>(l[0]+' '+l[1]+' '+l[2]).toLowerCase().includes(q)):s.links;
+    const use=links.length?links:s.links;
+    const n=Math.min(use.length,shown[i]||PAGE);
+    let html=`<ul class="srclinks">${use.slice(0,n).map(l=>linkItem(l,D)).join('')}${!s.links.length?`<li class="muted">Cited by name only (${s.named} times), without a link${s.host?'':''}.</li>`:''}</ul>`;
+    if(use.length>n) html+=`<button type="button" class="srcmore" data-srcmore="${i}">Show ${Math.min(PAGE,use.length-n)} more of ${use.length-n}</button>`;
+    const body=det.querySelector('.srcbody'); if(body) body.innerHTML=html;
+  }
+
+  function render(){
+    const box=document.getElementById('creditsbox'); if(!box) return;
+    const D=data();
+    if(!D||!Array.isArray(D.sites)){box.innerHTML='<p class="box muted">Sources could not load.</p>';return}
+    addStyle();
+    const G=D.groups||[], C=D.counts||{}, bt=C.byType||{}, sbt=C.sitesByType||{};
+    const seg=`<div class="seg" role="group" aria-label="Source type"><button type="button" data-srcgrp="all" aria-pressed="${st.grp==='all'}">All</button>`+
+      G.map(g=>`<button type="button" data-srcgrp="${h(g.id)}" aria-pressed="${st.grp===g.id}">${h(g.name)}</button>`).join('')+`</div>`;
+    const nums=`<div class="srcnums"><div><b>${h(C.urls)}</b><span>links</span></div><div><b>${h(C.sites)}</b><span>sites &amp; creators</span></div>`+
+      G.map(g=>`<div><b>${h(bt[g.id]||0)}</b><span>${h(g.name)} · ${h(sbt[g.id]||0)} sites</span></div>`).join('')+`</div>`;
+    box.innerHTML=
+      `<div class="box"><h3 style="margin:0 0 8px">How this guide was made</h3><ul class="srchow">${(D.howMade||[]).map(x=>`<li>${h(x)}</li>`).join('')}</ul>${nums}</div>`+
+      `<div class="box srcctl">${seg}<input type="search" id="srcsearch" placeholder="Search a site, creator, page or link" aria-label="Search sources" value="${h(st.q)}"><div class="small muted"><span id="srcstate"></span> · Open a site to see every page we used. Tab chips jump to the tab that uses it. Updated ${h(D.updated||'')}.</div></div>`+
+      G.map(g=>{
+        const rows=D.sites.map((s,i)=>[s,i]).filter(([s])=>s.type===g.id);
+        if(!rows.length) return '';
+        return `<section class="srcgrp" data-srcg="${h(g.id)}"><h3>${h(g.name)}</h3><p class="small muted">${h(g.intro||'')}</p>`+
+          rows.map(([s,i])=>`<details class="box srcsite" data-si="${i}"><summary><div class="srcrow"><b>${h(s.name)}</b>${s.host&&s.host!==s.name?`<span class="small muted">${h(s.host)}</span>`:''}${s.tool?`<a class="tag wind" href="#communitytools" data-goto="communitytools">In Community tools</a>`:''}<span class="n">${s.n?h(s.n)+(s.n===1?' link':' links'):''}${s.named?(s.n?' + ':'')+h(s.named)+' named':''}</span></div>`+
+            `<div class="small">${h(s.what||'')}</div><div class="srctabs">${tabLinks(s.tabs,D)}</div></summary><div class="srcbody"></div></details>`).join('')+`</section>`;
+      }).join('')+
+      `<p class="box small muted" id="srcnone" hidden>Nothing matches your search.</p>`+
+      `<p class="small muted" style="margin:0">All trademarks and game assets belong to their owners (AION 2: NCSoft). Linked sites are credited as the place we read the information; we are not affiliated with any of them.</p>`;
+    // search text per site (built once per render)
+    box.querySelectorAll('details.srcsite').forEach(d=>{const s=D.sites[+d.dataset.si]; d._hay=(s.name+' '+s.host+' '+s.what+' '+(s.tabs||[]).map(t=>(D.tabNames||{})[t]||t).join(' ')+' '+s.links.map(l=>l[0]+' '+l[1]+' '+l[2]).join(' ')).toLowerCase()});
+    apply();
+  }
+  function apply(){
+    const box=document.getElementById('creditsbox'); if(!box) return;
+    const q=st.q.trim().toLowerCase(); let vis=0, links=0; const D=data();
+    box.querySelectorAll('[data-srcgrp]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.srcgrp===st.grp));
+    box.querySelectorAll('section.srcgrp').forEach(sec=>{
+      const on=st.grp==='all'||sec.dataset.srcg===st.grp; let any=0;
+      sec.querySelectorAll('details.srcsite').forEach(d=>{const m=on&&(!q||d._hay.includes(q)); d.hidden=!m; if(m){any++;vis++;links+=D.sites[+d.dataset.si].n; if(d.open) drawLinks(d)}});
+      sec.hidden=!any;
+    });
+    const n=document.getElementById('srcnone'); if(n) n.hidden=vis>0;
+    const s=document.getElementById('srcstate'); if(s) s.textContent=`${vis} sites · ${links} links shown`;
+  }
+  function wire(){
+    const box=document.getElementById('creditsbox'); if(!box||box.dataset.srcwired) return; box.dataset.srcwired=1;
+    box.addEventListener('click',e=>{
+      const b=e.target.closest&&e.target.closest('[data-srcgrp]'); if(b){st.grp=b.dataset.srcgrp; apply(); return}
+      const m=e.target.closest&&e.target.closest('[data-srcmore]'); if(m){const i=+m.dataset.srcmore; shown[i]=(shown[i]||PAGE)+PAGE; const d=m.closest('details'); if(d) drawLinks(d)}
+    });
+    box.addEventListener('input',e=>{if(e.target&&e.target.id==='srcsearch'){st.q=e.target.value||''; apply()}});
+    box.addEventListener('toggle',e=>{const d=e.target; if(d&&d.classList&&d.classList.contains('srcsite')&&d.open) drawLinks(d)},true);
+  }
+  window.renderSources=function(){render(); wire()};
+  try{window.renderSources()}catch(e){console.error(e)}
+})();
+
+/* ---------- site settings: the ONE place to set the donation link ----------
+   DONATE_URL: your Ko-fi / Buy Me a Coffee / PayPal.me link, e.g. 'https://ko-fi.com/yourname'.
+   Leave it '' and the "Support this guide" button and the footer donation link stay hidden. */
+var SITE_CONFIG={DONATE_URL:'', FEEDBACK_URL:''};  /* FEEDBACK_URL: e.g. your GitHub issues page; '' hides the footer link */
+
+/* footer + header button wiring (the markup is written by build_hub.py; everything starts hidden) */
+(function(){
+  function apply(){
+    var u=String((SITE_CONFIG&&SITE_CONFIG.DONATE_URL)||'').trim();
+    var ok=/^https:\/\/[^\s"'<>]+$/i.test(u);
+    document.querySelectorAll('[data-donate]').forEach(function(a){
+      if(ok){a.href=u;a.target='_blank';a.rel='noopener noreferrer';a.hidden=false}
+      else{a.removeAttribute('href');a.hidden=true}
+    });
+    document.querySelectorAll('[data-donate-sep]').forEach(function(s){s.hidden=!ok});
+    var fu=String((SITE_CONFIG&&SITE_CONFIG.FEEDBACK_URL)||'').trim(), fok=/^https:\/\/[^\s"'<>]+$/i.test(fu);
+    document.querySelectorAll('[data-feedback]').forEach(function(a){if(fok){a.href=fu;a.target='_blank';a.rel='noopener noreferrer';a.hidden=false}else{a.removeAttribute('href');a.hidden=true}});
+    document.querySelectorAll('[data-feedback-sep]').forEach(function(s){s.hidden=!fok});
+    // the guide also keeps a copy in your claude.ai account when it is opened there (store.js); say so honestly
+    var p=document.getElementById('footpriv');
+    if(p&&window.claude&&typeof window.claude.use==='function')
+      p.textContent='Your ticks and settings are saved in this browser and, because you opened the guide on claude.ai, synced to your claude.ai account so they follow you (not your game account). Nothing is sent anywhere else.';
+  }
+  try{apply()}catch(e){console.error(e)}
+  window.applySiteConfig=apply;
 })();
 
 /* ---------- grouped tab bar: pick a group, then a tab inside it ---------- */
@@ -3405,7 +3768,7 @@ function renderPantheon(){
   // ---- easiest wins first
   h+=`<div class="box" style="display:grid;gap:10px"><h3 style="margin:0">Easiest wins first</h3>
     <p class="small muted" style="margin:0">Do these in order: each one is the biggest gain for the least effort from where you are now. Tick it when you have it and the list moves on.</p>
-    ${pl.steps.length?`<ol class="pansteps">${pl.steps.map(st=>{const x=st.x;return `<li><label class="panstephead">${chk(x)}${panIco(x.d)}<span>${panName(x.d)} <span class="small muted">${PAN_SLOTN[x.d.s]}</span> ${panEffTag(x.ef)} <b class="panval">${panPct(st.gain)}</b></span></label>
+    ${pl.steps.length?`<ol class="pansteps">${pl.steps.map(st=>{const x=st.x;return `<li><label class="panstephead">${panIco(x.d)}<span>${panName(x.d)} <span class="small muted">${PAN_SLOTN[x.d.s]}</span> ${panEffTag(x.ef)} <b class="panval">${panPct(st.gain)}</b></span></label>
       <div class="small">${st.rep?`Replaces ${esc(st.rep.d.n)}. `:`Fills an empty ${PAN_SLOTN[x.d.s]} slot. `}${panHow(x,fac)}</div></li>`}).join('')}</ol>`
       :`<p class="callout ok small" style="margin:0">Nothing left to gain: your Pantheon is the best you can build right now.</p>`}</div>`;
   // ---- full table
@@ -3476,7 +3839,7 @@ function cloCats(){
 function cloRows(c){const K=COLLECT.closet,wc=K.wcls[SLUG];return c===wc?((typeof P!=='undefined'&&P.COLIC)||[]):K.skins.filter(s=>s.c===c)}
 function cloIco(r){const u=r.u||(r.ic!=null?(COLLECT.closet.icons||[])[r.ic]:'');return u?`<img class="colico" src="${u}" alt="" width="26" height="26" loading="lazy" style="border-color:${colGC(r.g)}">`:`<span class="colico" style="border-color:${colGC(r.g)}"></span>`}
 function cloHow(r){
-  if(r.s==='rs') return 'Black Cloud Merchant (Shop menu, <span class="kbd">H</span>): random stock, new every hour, Kinah';
+  if(r.s==='rs') return 'Black Cloud Merchant (Shop menu, <span class="kbd">H</span>): random stock, new every hour, Kina';
   if(r.s==='shop') return `${esc(r.cur)}: <b>${esc(r.pr)}</b>, 1 per character${r.pvp?`. ${esc(r.pvp)}`:''}${/Oath/.test(r.cur)?'. Oath Coin expires on 16 Dec: check the Wings tab before you spend 210,000 on Talisra Wings':''}`;
   if(r.s==='cube') return 'Hidden Cubes (a rare roll; opening with a key doubles the skin chance)';
   if(r.s==='chest') return 'Weapon skin chest with no Global source yet';
@@ -3526,15 +3889,15 @@ function renderCloset(){
   const buy=miss.filter(x=>x.r.s==='shop'||x.r.s==='cube').sort((a,b)=>b.val/cloPrice(b.r)-a.val/cloPrice(a.r)||b.val-a.val);
   const cheap=buy.filter(x=>cloEffOf(x.r)<=2), dear=buy.filter(x=>cloEffOf(x.r)>2);
   const noneMiss=miss.filter(x=>x.r.s==='none');
-  const stepItem=x=>`<li><label class="panstephead">${chk(x.r)}${cloIco(x.r)}<span>${nm(x.r)} <span class="small muted">${esc(x.ct.short)} · ${esc(x.r.g)}</span> ${colEff(cloEffOf(x.r))} <b class="panval">${colPct(x.val)}</b></span></label><div class="small">${cloHow(x.r)}</div></li>`;
+  const stepItem=x=>`<li><label class="panstephead">${cloIco(x.r)}<span>${nm(x.r)} <span class="small muted">${esc(x.ct.short)} · ${esc(x.r.g)}</span> ${colEff(cloEffOf(x.r))} <b class="panval">${colPct(x.val)}</b></span></label><div class="small">${cloHow(x.r)}</div></li>`;
   const sumv=a=>a.reduce((t,x)=>t+x.val,0);
   let steps=`<li><b>Use the skin items you already have.</b> <div class="small">Open your bag (<span class="kbd">I</span>) and use every item named "(Skin: …)": it unlocks the look in the Closet and adds its points. If the Closet says you already own it, keep the item for Skin Combine instead.</div></li>`;
-  if(rsMiss.length) steps+=`<li><b>Check the Black Cloud Merchant every hour, on every character.</b> ${colEff(1)} <b class="panval">up to ${colPct(sumv(rsMiss))}</b><div class="small">Shop menu (<span class="kbd">H</span>) › Black Cloud Merchants. Free new stock every hour, different on each character, and the Closet is shared on your server, so alts give you extra rolls. A paid refresh starts at 500 Kinah (the 10th costs 15,000). Buy any of these ${rsMiss.length} when they show up, best first: ${rsMiss.slice(0,10).map(x=>`<span style="color:${colGC(x.r.g)}">${esc(x.r.n)}</span> <span class="muted">(${esc(x.ct.short)})</span>`).join(', ')}${rsMiss.length>10?`, and ${rsMiss.length-10} more in the table below`:''}.</div></li>`;
+  if(rsMiss.length) steps+=`<li><b>Check the Black Cloud Merchant every hour, on every character.</b> ${colEff(1)} <b class="panval">up to ${colPct(sumv(rsMiss))}</b><div class="small">Shop menu (<span class="kbd">H</span>) › Black Cloud Merchants. Free new stock every hour, different on each character, and the Closet is shared on your server, so alts give you extra rolls. A paid refresh starts at 500 Kina (the 10th costs 15,000). Buy any of these ${rsMiss.length} when they show up, best first: ${rsMiss.slice(0,10).map(x=>`<span style="color:${colGC(x.r.g)}">${esc(x.r.n)}</span> <span class="muted">(${esc(x.ct.short)})</span>`).join(', ')}${rsMiss.length>10?`, and ${rsMiss.length-10} more in the table below`:''}.</div></li>`;
   steps+=`<li><b>Extract the gear you replace instead of selling it.</b> ${colEff(1)}<div class="small">Item Extraction can give a random skin (one guide: about 25% from Common to Epic gear, 10% from Unique and Heroic; Korean players say guards and rings never give skins). Every new skin counts toward the titles even when it is not for your slots.</div></li>`;
   steps+=cheap.slice(0,10).map(stepItem).join('');
-  if(noneMiss.length) steps+=`<li><b>Combine spare skins.</b> ${colEff(2)}<div class="small">Skin Combine turns spare skins into a random skin of the same grade, or one grade higher: Common 25% (600 Kinah), Rare 20% (1,000), Epic 15% to Unique (6,000). ${noneMiss.length} of your ${esc(wcat.short)}/Earring/Necklace Uniques have no shop or drop, so Combine is the way to them. Save Lucky Auras (+10% upgrade chance; achievements give 18 Lucky Aura, 14 Rare and 1 Epic) for Epic combines. Results are random across all slots, so combine for the skin count, not for one look.</div></li>`;
+  if(noneMiss.length) steps+=`<li><b>Combine spare skins.</b> ${colEff(2)}<div class="small">Skin Combine turns spare skins into a random skin of the same grade, or one grade higher: Common 25% (600 Kina), Rare 20% (1,000), Epic 15% to Unique (6,000). ${noneMiss.length} of your ${esc(wcat.short)}/Earring/Necklace Uniques have no shop or drop, so Combine is the way to them. Save Lucky Auras (+10% upgrade chance; achievements give 18 Lucky Aura, 14 Rare and 1 Epic) for Epic combines. Results are random across all slots, so combine for the skin count, not for one look.</div></li>`;
   steps+=dear.slice(0,6).map(stepItem).join('');
-  h+=`<div class="box" style="display:grid;gap:10px"><h3 style="margin:0">Easiest wins first</h3><p class="small muted" style="margin:0">Work down the list. Values are damage for a ${esc(cls)} from that skin's points (estimated points by grade). Tick a skin when you have it.</p><ol class="pansteps">${steps}</ol></div>`;
+  h+=`<div class="box" style="display:grid;gap:10px"><h3 style="margin:0">Easiest wins first</h3><p class="small muted" style="margin:0">Work down the list. Values are damage for a ${esc(cls)} from that skin's points (estimated points by grade). Tick the skins you own in the table below and this list moves on.</p><ol class="pansteps">${steps}</ol></div>`;
   // ---- full table
   const ct=st.cats.find(x=>x.c===view)||wcat;
   const rows=ct.rows.filter(x=>!missOnly||!x.own).sort((a,b)=>(a.own-b.own)||(cloEffOf(a.r)-cloEffOf(b.r))||b.val-a.val||a.r.n.localeCompare(b.r.n));
@@ -3551,7 +3914,7 @@ function renderCloset(){
       <li><b>Weapon slots</b> raise that weapon type's Attack ("${esc(wcat.short)} Attack increase"), so only your own weapon's skins help. Korean testing puts it on your weapon's Attack, before Weapon Damage Boost and Attack Increase. With a typical level-45 ${esc(cls)} weapon (about ${colNum(W.wav)} average Attack) each point is about ${colPct(W.w,3)} damage.</li>
       <li><b>Necklace and Earrings</b> raise that piece's Attack and Defense by 0.1% a point (about 120 Attack on a level-45 necklace, about 100 on each of your two earrings). The 7 armor slots raise that piece's Defense only.</li>
       <li><b>Centurion and Decanus</b> are the only skins with stats while worn: +1% PvP Damage Tolerance per armor piece, +2% PvP Damage Boost for the earrings and the necklace. Decanus gives the same for under a third of the Abyss Points.</li></ul>
-    <div class="tablewrap" style="margin-top:8px"><table><thead><tr><th>Skin Combine</th><th>Kinah</th><th>Result</th><th>Designs (same / next grade)</th></tr></thead><tbody>${K.combine.map(r=>`<tr><td class="small">${r[0]}</td><td class="small">${r[1]}</td><td class="small">${r[2]}</td><td class="small">${r[3]}</td></tr>`).join('')}</tbody></table></div>
+    <div class="tablewrap" style="margin-top:8px"><table><thead><tr><th>Skin Combine</th><th>Kina</th><th>Result</th><th>Designs (same / next grade)</th></tr></thead><tbody>${K.combine.map(r=>`<tr><td class="small">${r[0]}</td><td class="small">${r[1]}</td><td class="small">${r[2]}</td><td class="small">${r[3]}</td></tr>`).join('')}</tbody></table></div>
     <p class="small muted" style="margin:8px 0 0"><b>Not sure yet:</b> points per grade (Common 1 to Heroic 5) come from one fan guide, not the client; Special skins are assumed to be worth 5. The extraction skin chance is from one guide. Damage values use the guide's DPS simulator (Attack value of a typical level-45 ${esc(cls)}), are the same in PvP${m==='pvp'?' (estimate)':''}, and assume the earring bonus applies to both earrings. Sources: metabot.gg (Global client: skins, sources, prices, collection bonus, Combine odds), dtgre.com (points by grade), gamerblurb.com (Black Cloud Merchant), Korean community tests (inven.co.kr). Checked 18 Oct 2026.</p></details>`;
   host.innerHTML=h;
 }
@@ -3633,17 +3996,19 @@ function renderMono(){
 function renderKib(){
   const host=$('kibbox'); if(!host||!colOK('mono')) return;
   const M=COLLECT.mono, f0=colFac(), f=f0==='B'?'E':f0, list=M.kib[f]||[], fin=M.kib[f+'_final'], sv=S.get('sv',{});
-  const n=list.filter(k=>sv[k.id]).length, map=f==='E'?'Verteron':'Altgard';
+  const allKey='kib-all-'+f, allDone=!!sv[allKey], got=k=>allDone||!!sv[k.id];
+  const n=list.filter(got).length, map=f==='E'?'Verteron':'Altgard';
   const tiers=[[2000,'Towns and camps on your quest path'],[3000,'Mid-level zones'],[4000,'Sky islands, cliffs and the far corners (fly there)']];
-  const row=k=>`<tr class="${sv[k.id]?'panrowown':''}"><td class="num"><input type="checkbox" class="colchk" data-sv="${k.id}" ${sv[k.id]?'checked':''} aria-label="Activated ${esc(k.n)}"></td><td class="small"><b>${esc(k.n)}</b></td><td class="small">${esc(k.zone||'')}</td><td class="small">${esc(k.lvl||'')}</td><td class="num small">${colNum(k.k)}</td></tr>`;
+  const row=k=>`<tr class="${got(k)?'panrowown':''}"><td class="small">${got(k)?'<span class="muted">✓ </span>':''}<b>${esc(k.n)}</b></td><td class="small">${esc(k.zone||'')}</td><td class="small">${esc(k.lvl||'')}</td><td class="num small">${colNum(k.k)}</td></tr>`;
   const st=M.kibstatue;
   let h=`<div class="box coltop"><h3 style="margin:0">Kibelisks: activate all ${list.length} in ${map}</h3>
-    <p class="small" style="margin:0">Walk up to every Kibelisk (teleport stone) on ${map} once. Each one pays 2,000 to 4,000 bound Kinah, and all ${list.length} complete <i>${esc(fin?fin.n:'')}</i>: ${colTitle(M.kibtitle)}${st?`, plus <b>Statue: ${esc(st.n)}</b> for the <a href="#pantheon" data-goto="pantheon">Pantheon</a> (${Object.keys(st.st).map(k=>`${(M.stats[k]||[k])[0]} +${st.st[k]}`).join(', ')})`:''} and 9,000 Kinah.</p>
-    <div class="panbar"><span>Activated <b>${n} / ${list.length}</b></span><span>Kinah left <b>${colNum(list.filter(k=>!sv[k.id]).reduce((a,k)=>a+k.k,0))}</b></span></div>
-    <p class="small muted" style="margin:0">Saved per character. Activated Kibelisks show as destinations on the World Map (<span class="kbd">M</span>), which also has a Kibelisk list for your map: anything missing there is still to do.</p></div>`;
-  const firstOpen=tiers.findIndex(([kk])=>list.some(x=>x.k===kk&&!sv[x.id]));
-  h+=tiers.map(([k,t],i)=>{const ks=list.filter(x=>x.k===k), left=ks.filter(x=>!sv[x.id]).length;return `<details class="box"${i===firstOpen?' open':''}><summary class="pansum"><b>${i+1}. ${t}</b> <span class="small muted">${ks.length} Kibelisks · ${colNum(k)} Kinah each · ${left} left</span></summary>
-    <div class="tablewrap" style="margin-top:10px"><table class="pantable"><thead><tr><th class="num">Done</th><th>Kibelisk</th><th>Zone</th><th>Zone level</th><th class="num">Kinah</th></tr></thead><tbody>${ks.map(row).join('')}</tbody></table></div></details>`}).join('');
+    <p class="small" style="margin:0">Walk up to every Kibelisk (teleport stone) on ${map} once. Each one pays 2,000 to 4,000 Kina (Bound), and all ${list.length} complete <i>${esc(fin?fin.n:'')}</i>: ${colTitle(M.kibtitle)}${st?`, plus <b>Statue: ${esc(st.n)}</b> for the <a href="#pantheon" data-goto="pantheon">Pantheon</a> (${Object.keys(st.st).map(k=>`${(M.stats[k]||[k])[0]} +${st.st[k]}`).join(', ')})`:''} and 9,000 Kina.</p>
+    <label class="gchk" style="justify-self:start"><input type="checkbox" class="colchk" data-sv="${allKey}" ${allDone?'checked':''}><span>All ${list.length} on ${map} activated</span></label>
+    <div class="panbar"><span>Activated <b>${n} / ${list.length}</b></span><span>Kina left <b>${colNum(list.filter(k=>!got(k)).reduce((a,k)=>a+k.k,0))}</b></span></div>
+    <p class="small muted" style="margin:0">One tick for the whole map, saved per character. Activated Kibelisks show as destinations on the World Map (<span class="kbd">M</span>), which also has a Kibelisk list for your map: anything missing there is still to do. The lists below are by area.</p></div>`;
+  const firstOpen=tiers.findIndex(([kk])=>list.some(x=>x.k===kk&&!got(x)));
+  h+=tiers.map(([k,t],i)=>{const ks=list.filter(x=>x.k===k), left=ks.filter(x=>!got(x)).length;return `<details class="box"${i===firstOpen?' open':''}><summary class="pansum"><b>${i+1}. ${t}</b> <span class="small muted">${ks.length} Kibelisks · ${colNum(k)} Kina each · ${left} left</span></summary>
+    <div class="tablewrap" style="margin-top:10px"><table class="pantable"><thead><tr><th>Kibelisk</th><th>Zone</th><th>Zone level</th><th class="num">Kina</th></tr></thead><tbody>${ks.map(row).join('')}</tbody></table></div></details>`}).join('');
   host.innerHTML=h;
 }
 
@@ -3655,7 +4020,7 @@ function renderAch(){
   const host=$('achbox'); if(!host||!colOK('ach')) return;
   const A=COLLECT.ach, sv=S.get('sv',{}), all=achAll(), cls=colCls();
   const open=all.filter(x=>!sv[x.r.id]);
-  const chk=r=>`<input type="checkbox" class="colchk" data-sv="${r.id}" ${sv[r.id]?'checked':''} aria-label="Done ${esc(r.n)}">`;
+  const chk=r=>sv[r.id]?'<span class="muted" title="Marked done earlier">✓ </span>':'';  // read-only: the game tracks achievements
   const sumOf=(list,re)=>list.reduce((t,x)=>t+x.r.rew.filter(i=>re.test(i[1])).reduce((a,i)=>a+i[0],0),0);
   const season=open.filter(x=>x.g.season);
   const ef=x=>x.r.e!=null?x.r.e:x.g.eff;
@@ -3666,13 +4031,13 @@ function renderAch(){
   const easy=avail.slice().sort((a,b)=>b.r.sc/achCost(ef(b))-a.r.sc/achCost(ef(a))||b.r.sc-a.r.sc).slice(0,15);
   const best=avail.slice().sort((a,b)=>b.r.sc-a.r.sc).slice(0,15).filter(x=>!easy.includes(x));
   let h=`<div class="box coltop"><p class="small" style="margin:0"><b>${all.length} achievements</b> (plus the 124 Kibelisk ones on the <a href="#monoliths" data-goto="monoliths">Monoliths</a> tab). Every tier pays its own reward and ${all.filter(x=>x.r.ti).length} give a title. <b>Season 1 achievements only count until ${esc(A.seasonEnd)}</b>: what you have left there pays <b>${colNum(sumOf(season,/^Oath Coin/))} Oath Coin</b> (Talisra Wings cost 210,000), ${colNum(sumOf(season,/^Abyss Points/))} Abyss Points, ${colNum(sumOf(season,/^Soul Codex$/))} Soul Codex and ${colNum(sumOf(season,/^Amplify Stone \(Unique\)/))} Unique Amplify Stones.</p>
-    <div class="panbar"><span>Done <b>${all.length-open.length} / ${all.length}</b></span><span>Season 1 left <b>${season.length}</b></span></div>
-    <p class="small muted" style="margin:0">Saved per character. Tick an achievement once you have its last tier (or when you stop at the tier you want). Open the in-game list from the Journal / Achievements menu to see your tiers.</p></div>`;
+    <div class="panbar"><span>Season 1 achievements <b>${season.length}</b></span></div>
+    <p class="small muted" style="margin:0">The game tracks your achievements: open the Journal / Achievements menu to see your tiers. The lists below are a reading guide, best value first.</p></div>`;
   h+=`<div class="box" style="display:grid;gap:10px"><h3 style="margin:0">Easiest wins first</h3><p class="small muted" style="margin:0">Biggest reward for the least effort. Rewards count titles you would equip, Soul Codex, Amplify Stones, Oath Coin, Pantheon decorations, Lucky Auras and Hidden Cube keys the most.</p><ol class="pansteps">${easy.map(item).join('')}</ol></div>`;
   if(best.length) h+=`<div class="box" style="display:grid;gap:10px"><h3 style="margin:0">Best rewards (harder)</h3><ol class="pansteps">${best.map(item).join('')}</ol></div>`;
   const gsort=A.groups.slice().sort((a,b)=>b.season-a.season||a.eff-b.eff||a.n.localeCompare(b.n));
-  h+=`<div class="box" style="display:grid;gap:8px"><h3 style="margin:0">All achievements by group</h3>${gsort.map(g=>{const left=g.rows.filter(r=>!sv[r.id]).length;return `<details class="coldet"><summary class="pansum"><b>${esc(g.n)}</b> <span class="small muted">${g.season?'Season 1 (until '+esc(A.seasonEnd)+') · ':''}${A.effn[g.eff]} · ${g.rows.length-left}/${g.rows.length} done${g.id==='sanctuary'?' · the Ludra raid is offline on Global for a rework':''}</span></summary>
-    <div class="tablewrap" style="margin-top:8px"><table class="pantable coltable"><thead><tr><th class="num">Done</th><th>Achievement</th><th>Goal (first tier)</th><th>Tiers</th><th>All tiers pay</th></tr></thead><tbody>${g.rows.slice().sort((a,b)=>b.sc-a.sc).map(r=>`<tr class="${sv[r.id]?'panrowown':''}"><td class="num">${chk(r)}</td><td class="small"><b>${esc(r.n)}</b></td><td class="small">${esc(r.goal)}</td><td class="small">${esc(r.t)}</td><td class="small">${r.ti?achTitle(r)+'<br>':''}${achRew(r)}</td></tr>`).join('')}</tbody></table></div></details>`}).join('')}</div>`;
+  h+=`<div class="box" style="display:grid;gap:8px"><h3 style="margin:0">All achievements by group</h3>${gsort.map(g=>{const left=g.rows.filter(r=>!sv[r.id]).length;return `<details class="coldet"><summary class="pansum"><b>${esc(g.n)}</b> <span class="small muted">${g.season?'Season 1 (until '+esc(A.seasonEnd)+') · ':''}${A.effn[g.eff]} · ${g.rows.length} achievements${g.id==='sanctuary'?' · the Ludra raid is offline on Global for a rework':''}</span></summary>
+    <div class="tablewrap" style="margin-top:8px"><table class="pantable coltable"><thead><tr><th>Achievement</th><th>Goal (first tier)</th><th>Tiers</th><th>All tiers pay</th></tr></thead><tbody>${g.rows.slice().sort((a,b)=>b.sc-a.sc).map(r=>`<tr class="${sv[r.id]?'panrowown':''}"><td class="small">${chk(r)}<b>${esc(r.n)}</b></td><td class="small">${esc(r.goal)}</td><td class="small">${esc(r.t)}</td><td class="small">${r.ti?achTitle(r)+'<br>':''}${achRew(r)}</td></tr>`).join('')}</tbody></table></div></details>`}).join('')}</div>`;
   h+=`<div class="box small"><h3 style="font-size:18px">Good to know</h3><ul class="plain">
     <li>Achievements unlock at level 9. Season 1 ones (Abyss, Arena, Nightmare, Transcendence, Ascension Trial and the weekly challenges) stop counting at the end of Season 1; the rest never reset.</li>
     <li>Titles from achievements are ranked on the <a href="#titles" data-goto="titles">Titles</a> tab; tick them there too once you have them.</li>
@@ -3756,7 +4121,7 @@ function pgBest(p,fac,P,ctx){
   if(p.mail&&Date.now()<PG_MAILEND) free.push({e:0,t:'Launch mail',kind:'mail'});
   if(p.pick==='adv'&&ctx.adv===p.id&&Date.now()<PG_MAILEND) free.push({e:0,t:'Launch mail',kind:'adv'});
   if(free.length&&(!best||best.e>0)) best=free[0];
-  if(!best&&p.kinah) best={e:1,t:'Kinah',kind:'kinah'};
+  if(!best&&p.kinah) best={e:1,t:'Kina',kind:'kinah'};
   if(!best&&p.paid) best={e:3,t:'Paid',kind:'paid'};
   if(!best&&p.none) best={e:-1,t:'Not yet',kind:'none'};
   if(!best&&Object.keys(p.lk||{}).length) best={e:3,t:'Luck',kind:'luck',kr:all.some(r=>r.kr)};
@@ -3884,7 +4249,7 @@ function renderPetGuide(){
   // ---- next pets to get
   h+=`<div class="box" style="display:grid;gap:10px"><h3 style="margin:0">Next pets to get</h3>
     <p class="small muted" style="margin:0">Easiest first; when two are just as easy, the better one for a ${pgE(cn)} comes first. Tick a pet when you have it and the list moves on.${L<45?` Set for level ${L}: monsters above your level wait until later.`:''}</p>
-    ${top.length?`<ol class="pgsteps">${top.map(x=>`<li><label class="pgstephead">${pgChk(x)}${pgIco(x.p)}<span><b>${pgE(x.p.n)}</b> ${pgFtag(x.p.f)} ${pgEff(x)} <span class="pgval" title="Value for a ${pgE(cn)} (100 = best)">value ${pgV(x.v)}</span></span></label>
+    ${top.length?`<ol class="pgsteps">${top.map(x=>`<li><label class="pgstephead">${pgIco(x.p)}<span><b>${pgE(x.p.n)}</b> ${pgFtag(x.p.f)} ${pgEff(x)} <span class="pgval" title="Value for a ${pgE(cn)} (100 = best)">value ${pgV(x.v)}</span></span></label>
       <div class="small">${pgHow(x.p,x.b)}</div></li>`).join('')}</ol>`:`<p class="callout ok small" style="margin:0">You own every pet you can get right now.</p>`}</div>`;
   // ---- best families for this class
   const mx=P.val[cls][m][fams[0]][1]||1;
@@ -3947,7 +4312,7 @@ function pgCss(){
 .pgfamhead{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
 .pgmeter{height:6px;border-radius:99px;background:color-mix(in srgb,var(--fc) 15%,var(--panel));overflow:hidden}
 .pgmeter i{display:block;height:100%;background:var(--fc);border-radius:99px}
-.pgfam{display:inline-block;font:600 11px var(--f-mono);letter-spacing:.04em;padding:1px 7px;border-radius:999px;border:1px solid color-mix(in srgb,var(--fc) 55%,transparent);color:var(--fg);white-space:nowrap}
+.pgfam{display:inline-block;font:600 12px var(--f-mono);letter-spacing:.04em;padding:1px 7px;border-radius:999px;border:1px solid color-mix(in srgb,var(--fc) 55%,transparent);color:var(--fg);white-space:nowrap}
 .pgsteps{margin:0;padding-left:26px;display:grid;gap:12px}
 .pgsteps li::marker{color:var(--gold);font-family:var(--f-mono);font-weight:600}
 .pgstephead{display:flex;gap:9px;align-items:center;flex-wrap:wrap;cursor:pointer;margin-bottom:3px}
@@ -4041,7 +4406,7 @@ function wgPlan(){
     if(!pick) break;
     steps.push(pick); used.add(pick.x.d.id); cur=Math.max(cur,pick.x.wv); cnt++;
   }
-  // enhance these first: cheapest owned-bonus gain per million Kinah (Rare/Epic wings that grow a stat)
+  // enhance these first: cheapest owned-bonus gain per million Kina (Rare/Epic wings that grow a stat)
   const enh=owned.filter(x=>x.d.trk&&x.lv<10).map(x=>{const t=P.trk[x.d.trk];let k=0,s=0,e=0;
     for(let l=x.lv;l<10;l++){k+=t.k[l]*t.x[l];s+=t.s[l]*t.x[l];e+=t.e[l]*t.x[l]}
     const gain=x.ov10-x.ov;return {x,k,s,e,gain,per:gain/(k/1e6),fp:(10-x.lv)*x.d.fp[1]}});
@@ -4079,25 +4444,25 @@ function renderWingGuide(){
     <p class="small muted" style="margin:0">Boss Attack and Boss Damage Boost only work on bosses, which is why the boss wing can differ from the farming one. Swap wings in your presets like gear.</p></div>`;
   // ---- easiest wins first
   h+=`<div class="box" style="display:grid;gap:10px"><h3 style="margin:0">Easiest wins first</h3>
-    <p class="small muted" style="margin:0">Do these in order: each one is the most gain for the least effort from where you are now (its owned bonus, plus how much better it is to wear than your best one, plus a step toward the wing titles). Tick it when you have it and the list moves on.${L<45?` Set for level ${L}: wings that need a higher level wait below.`:''}</p>
-    ${pl.steps.length?`<ol class="wgsteps">${pl.steps.map(st=>{const x=st.x;return `<li><label class="wgstephead">${chk2(x)}${wgIco(x.d)}<span>${wgName(x.d)} ${wgEffTag(x)} <span class="wgval" title="Gain for a ${wgE(cn)}">${wgPct(st.gain)}</span>${st.up>=0.005?` <span class="small muted">(wear upgrade ${wgPct(st.up)})</span>`:''}${x.d.tr?' <span class="tag">Market</span>':''}</span></label>
+    <p class="small muted" style="margin:0">Do these in order: each one is the most gain for the least effort from where you are now (its owned bonus, plus how much better it is to wear than your best one, plus a step toward the wing titles). Tick the wings you own in the All wings table and the list moves on.${L<45?` Set for level ${L}: wings that need a higher level wait below.`:''}</p>
+    ${pl.steps.length?`<ol class="wgsteps">${pl.steps.map(st=>{const x=st.x;return `<li><label class="wgstephead">${wgIco(x.d)}<span>${wgName(x.d)} ${wgEffTag(x)} <span class="wgval" title="Gain for a ${wgE(cn)}">${wgPct(st.gain)}</span>${st.up>=0.005?` <span class="small muted">(wear upgrade ${wgPct(st.up)})</span>`:''}${x.d.tr?' <span class="tag">Market</span>':''}</span></label>
       ${wgSteps(x.d,fac)}${x.d.note?`<div class="small muted">${wgE(x.d.note)}</div>`:''}</li>`}).join('')}</ol>`
       :`<p class="callout ok small" style="margin:0">You own every wing you can get right now.</p>`}
     ${pl.later.length?`<p class="small muted" style="margin:0">At a higher level: ${pl.later.map(x=>`${wgE(x.d.n)} (Lv ${x.d.lv})`).join(', ')}.</p>`:''}</div>`;
   // ---- enhance these first
   h+=`<div class="box" style="display:grid;gap:10px"><h3 style="margin:0">Enhance these first</h3>
-    <p class="small muted" style="margin:0">Enhancing only raises the <b>owned</b> bonus: +10 Flight Power per level on every wing, plus one growing stat on most Epic and Rare wings. Set each wing's level in the table (Lv box) and this list updates. Sorted by gain per million Kinah.</p>
-    ${pl.enhUse.length?`<div class="tablewrap"><table class="wgenh"><thead><tr><th>Wing</th><th>Grows</th><th class="num">Gain</th><th class="num">Kinah to +10</th><th class="num">Sync Stones</th><th class="num">Enhance Stones</th></tr></thead><tbody>
+    <p class="small muted" style="margin:0">Enhancing only raises the <b>owned</b> bonus: +10 Flight Power per level on every wing, plus one growing stat on most Epic and Rare wings. Set each wing's level in the table (Lv box) and this list updates. Sorted by gain per million Kina.</p>
+    ${pl.enhUse.length?`<div class="tablewrap"><table class="wgenh"><thead><tr><th>Wing</th><th>Grows</th><th class="num">Gain</th><th class="num">Kina to +10</th><th class="num">Sync Stones</th><th class="num">Enhance Stones</th></tr></thead><tbody>
       ${pl.enhUse.map(z=>`<tr><td><span class="wgname">${wgIco(z.x.d)}<span>${wgName(z.x.d)}<small class="muted">+${z.x.lv} → +10 · always succeeds</small></span></span></td><td class="small">${Object.keys(z.x.d.grow).map(k=>wgFmt(k,z.x.d.grow[k]*(10-z.x.lv))).join(', ')}, Flight Power +${z.fp}</td><td class="num small">${wgPct(z.gain)}</td><td class="num small">${Math.round(z.k).toLocaleString('en-US')}</td><td class="num small">${Math.round(z.s)}</td><td class="num small">${Math.round(z.e).toLocaleString('en-US')}</td></tr>`).join('')}</tbody></table></div>`
       :`<p class="small" style="margin:0">${pl.owned.some(x=>x.d.trk&&x.d.trk!=='U')?'Nothing useful left to enhance for this mode.':'Tick an Epic or Rare wing (for example Intermediate or Superior Daeva Wings) to see what is worth enhancing.'}</p>`}
-    ${pl.enhFp.length?`<p class="small" style="margin:0"><b>Leave for last:</b> ${pl.enhFp.map(z=>wgE(z.x.d.n.replace(' Wings',''))).join(', ')}. For you they gain little beyond Flight Power (+10 per level; a Unique wing to +10 averages about 16.7M Kinah). A new wing adds +200 Flight Power, more than taking one wing from +0 to +10.</p>`:''}</div>`;
+    ${pl.enhFp.length?`<p class="small" style="margin:0"><b>Leave for last:</b> ${pl.enhFp.map(z=>wgE(z.x.d.n.replace(' Wings',''))).join(', ')}. For you they gain little beyond Flight Power (+10 per level; a Unique wing to +10 averages about 16.7M Kina). A new wing adds +200 Flight Power, more than taking one wing from +0 to +10.</p>`:''}</div>`;
   // ---- collection + titles
   const T=P.tiers, nx=T.find(t=>t[0]>nOwn), freeLeft=pl.all.filter(x=>!x.own&&x.d.av==='now').sort((a,b)=>(a.ef<0?9:a.ef)-(b.ef<0?9:b.ef)||b.ov0-a.ov0);
   const t12=P.titles['12'], t25=P.titles['25'];
   h+=`<div class="box" style="display:grid;gap:12px"><h3 style="margin:0">Your collection and the wing titles</h3>
     <div class="wgbar"><span>Owned <b>${nOwn} / ${P.d.length}</b></span><span>Flight Power from wings <b>${Math.round(pl.fp).toLocaleString('en-US')}</b></span><span>Owned bonuses now <b>${wgPct(pl.ownSum)}</b></span><span>All you can get at +10 <b>${wgPct(pl.ownMax)}</b></span></div>
     <div class="wgmeter" role="img" aria-label="${nOwn} of 25 wings for the title"><i style="width:${Math.min(100,Math.round(100*nOwn/25))}%"></i>${T.map(t=>`<span class="wgtick ${nOwn>=t[0]?'on':''}" style="left:${100*t[0]/25}%" title="${t[0]} wings: ${wgE(t[1])}">${t[0]}</span>`).join('')}</div>
-    <p class="small" style="margin:0">Achievement <b>Veteran Wing Collector</b> (3 / 7 / 12 / 18 / 25 wings) pays Hidden Cube Keys and Kinah on the way, ${nx?`next at <b>${nx[0]}</b> wings (${nx[0]-nOwn} to go): ${wgE(nx[1])}.`:'and you have finished it.'}</p>
+    <p class="small" style="margin:0">Achievement <b>Veteran Wing Collector</b> (3 / 7 / 12 / 18 / 25 wings) pays Hidden Cube Keys and Kina on the way, ${nx?`next at <b>${nx[0]}</b> wings (${nx[0]-nOwn} to go): ${wgE(nx[1])}.`:'and you have finished it.'}</p>
     <ul class="plain small" style="margin:0"><li><b style="color:${wgGC(t12.g)}">${wgE(t12.n)}</b> at 12 wings: equip ${wgStats(t12.eq,w,WG_BOSS)} (${wgPct(wgVal(t12.eq,w,WG_BOSS))} for you); owned ${wgStats(t12.own,w,WG_BOSS)}.</li>
       <li><b style="color:${wgGC(t25.g)}">${wgE(t25.n)}</b> at 25 wings: equip ${wgStats(t25.eq,w,WG_BOSS)}; owned ${wgStats(t25.own,w,WG_BOSS)}.</li></ul>
     <p class="small muted" style="margin:0">Global has exactly 25 wings you can get without paying, so the 25-wing title needs all of them, including the three Poko's Skin Bundle wings and Radiant Love Wings (all four are tradable: the Market is the easy way). ${nOwn<25&&freeLeft.length?`Still missing: ${freeLeft.slice(0,25).map(x=>wgE(x.d.n.replace(' Wings',''))).join(', ')}.`:''}</p></div>`;
@@ -4120,11 +4485,11 @@ function renderWingGuide(){
     </tbody></table></div></details>`;
   // ---- enhancement rules
   const U=P.trk.U;
-  h+=`<details class="box" data-wgd="enh" ${WG_OPEN.enh?'open':''}><summary class="wgsum"><b>Enhancement rules and costs</b> <span class="small muted">odds, pity, Kinah, Sync Stones</span></summary>
+  h+=`<details class="box" data-wgd="enh" ${WG_OPEN.enh?'open':''}><summary class="wgsum"><b>Enhancement rules and costs</b> <span class="small muted">odds, pity, Kina, Sync Stones</span></summary>
     <ul class="plain small" style="margin:10px 0 0">
       <li><b>What it raises:</b> only the owned bonus (Flight Power +10 per level, +200 → +300; plus the growing stat on Epic/Rare wings). Worn stats never change. Lesser Daeva and Special wings have no track.</li>
-      <li><b>Rare:</b> +0 → +10 always succeeds: 3,494,000 Kinah, 34 Sync Stones, 13,440 Enhance Stones. <b>Epic:</b> always succeeds: 5,960,000 Kinah, 53 Sync Stones, 23,040 Enhance Stones.</li>
-      <li><b>Unique:</b> safe to +3, then ${U.p.slice(3).map((p,i)=>`+${i+4} ${p}%`).join(', ')}. Each fail adds +10% to the next try at that level and never drops the level; on average about 16.7M Kinah, 137 Sync Stones and 66,000 Enhance Stones to +10 (worst luck 50.3M).</li>
+      <li><b>Rare:</b> +0 → +10 always succeeds: 3,494,000 Kina, 34 Sync Stones, 13,440 Enhance Stones. <b>Epic:</b> always succeeds: 5,960,000 Kina, 53 Sync Stones, 23,040 Enhance Stones.</li>
+      <li><b>Unique:</b> safe to +3, then ${U.p.slice(3).map((p,i)=>`+${i+4} ${p}%`).join(', ')}. Each fail adds +10% to the next try at that level and never drops the level; on average about 16.7M Kina, 137 Sync Stones and 66,000 Enhance Stones to +10 (worst luck 50.3M).</li>
       <li><b>Materials:</b> Sync Stone (Unique) drops in Krao Cave, Urugugu Canyon, Vakron Sky Island, Ferocious Horn Den, Fire Temple and Draupnir (also Substance Morph from a spare Unique piece, and the Daeva Pass). Gear Soul Binding uses the same stones, so check your gear first. Enhance Stones: Daily Dungeon (10,000 a clear), quests, Ascension Trial.</li>
       <li><b>Spare sealed wing?</b> Substance Morph turns a duplicate Sealed expedition wing into 10,000 Enhance Stones (20 a week per server).</li></ul></details>`;
   // ---- Korea-only
@@ -4188,7 +4553,7 @@ function wgCss(){
 .wgbar b{color:var(--wind);font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 .wgmeter{position:relative;height:8px;border-radius:99px;background:color-mix(in srgb,var(--wind) 15%,var(--panel));margin:4px 10px 18px}
 .wgmeter i{display:block;height:100%;background:var(--wind);border-radius:99px}
-.wgtick{position:absolute;top:10px;transform:translateX(-50%);font:600 11px var(--f-mono);color:var(--muted)}
+.wgtick{position:absolute;top:10px;transform:translateX(-50%);font:600 12px var(--f-mono);color:var(--muted)}
 .wgtick.on{color:var(--wind)}
 .wgsteps{margin:0;padding-left:26px;display:grid;gap:12px}
 .wgsteps li::marker{color:var(--gold);font-family:var(--f-mono);font-weight:600}
@@ -4223,6 +4588,165 @@ document.addEventListener('click',e=>{const c=e.target.closest&&e.target.closest
 window.renderWingGuide=renderWingGuide;
 {const _ap=window.applyStore; if(typeof _ap==='function') window.applyStore=function(){const r=_ap.apply(this,arguments);try{renderWingGuide()}catch(e){}return r}}
 try{renderWingGuide()}catch(e){console.error('wingguide',e)}
+
+/* ---------- "Our builds on questlog.gg": the ONE place to paste the guide's questlog.gg build links ----------
+   Paste each full https://questlog.gg/... link between the quotes. Any link left '' is hidden, and a class with no
+   links at all shows no box. Shown on each class's Rotation & macro tab (polish_fn.js reads this).
+   raid  = the main raid / boss build on Rotation & macro
+   modes = one build per game mode (Nightmare, Ascension Trial, Daily Dungeon, PvP arena)
+   pvp   = the PvP build tab
+   extra = the class's other builds (ids match the "Other builds & modes" tab); add more as {name:'...', url:'...'} */
+var QUESTLOG_LINKS={
+  ranger:      {raid:'', modes:{nightmare:'', trial:'', daily:'', arena:''}, pvp:'', extra:[]},
+  gladiator:   {raid:'', modes:{nightmare:'', trial:'', daily:'', arena:''}, pvp:'', extra:[{id:'tank', name:'Tank', url:''}]},
+  templar:     {raid:'', modes:{nightmare:'', trial:'', daily:'', arena:''}, pvp:'', extra:[]},
+  assassin:    {raid:'', modes:{nightmare:'', trial:'', daily:'', arena:''}, pvp:'', extra:[]},
+  sorcerer:    {raid:'', modes:{nightmare:'', trial:'', daily:'', arena:''}, pvp:'', extra:[]},
+  spiritmaster:{raid:'', modes:{nightmare:'', trial:'', daily:'', arena:''}, pvp:'', extra:[]},
+  cleric:      {raid:'', modes:{nightmare:'', trial:'', daily:'', arena:''}, pvp:'', extra:[{id:'healer', name:'Healer', url:''}, {id:'dps', name:'DPS', url:''}]},
+  chanter:     {raid:'', modes:{nightmare:'', trial:'', daily:'', arena:''}, pvp:'', extra:[]},
+  brawler:     {raid:'', modes:{arena:''}, pvp:'', extra:[]}
+};
+
+/* ---------- Release polish (Oct 2026) ----------
+   - merged tabs: old tab ids (arcana, modes, closet, achievements, notes, progress) open the tab that now holds them
+   - first visit: "Pick your class" grid on Start here
+   - Recommended videos (VIDEOS = audit/r7/class_videos.json, recommended:true only; links, never embeds)
+   - "Our builds on questlog.gg" (QUESTLOG_LINKS in questlog_links.js; empty links hidden)
+   - one closed "Sources for this tab" block per tab (the original lines are hidden, not deleted)
+   - "Clear all my saved data" (footer), Brawler "Korea preview" label, saved-progress box on Start here */
+(function(){
+  const h=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const okUrl=u=>/^https:\/\/[^\s"'<>]+$/i.test(String(u||'').trim());
+
+  /* ---- merged tabs ---- */
+  const ALIAS={arcana:'gear',modes:'builds',closet:'pantheon',achievements:'monoliths',notes:'credits',progress:'start'};
+  const orig=window.show;
+  window.show=function(id,push){
+    const to=ALIAS[id];
+    if(to){
+      const r=orig.call(this,to,push);
+      const el=document.getElementById(id==='progress'?'progressbox':id);
+      if(el){ if(el.tagName==='DETAILS'){el.open=true; if(id==='progress'&&typeof renderProgress==='function') renderProgress();}
+        setTimeout(()=>{try{el.scrollIntoView({block:'start'})}catch(e){}},0); }
+      try{tidySources(to)}catch(e){}
+      return r;
+    }
+    const r=orig.apply(this,arguments);
+    try{tidySources(id)}catch(e){}
+    try{const nav=document.querySelector('.tabbar nav.tabs'),b=nav&&nav.querySelector('button[aria-selected="true"]');  // phones: keep the open tab visible in the scrolling row
+      if(b&&nav.scrollWidth>nav.clientWidth) nav.scrollLeft=Math.max(0,b.offsetLeft-nav.offsetLeft-16)}catch(e){}
+    return r;
+  };
+
+  /* ---- Brawler is not on Global ---- */
+  if(SLUG==='brawler'){const e=document.querySelector('header.hero .eyebrow'); if(e) e.textContent='AION 2 · Brawler · Korea preview (not on Global yet) · Level cap 45';}
+
+  /* ---- first visit: pick your class ---- */
+  const ROLE={ranger:'Bow. Ranged burst that kites, slows and nukes from 20 m.',gladiator:'Greatsword. Melee damage and off-tank.',templar:'Sword and shield. The main tank.',
+    assassin:'Daggers. Melee burst from behind the boss; top duelist.',sorcerer:'Spellbook. Ranged burst and area damage.',spiritmaster:'Orb. Ranged summoner with spirits that fight for you.',
+    cleric:'Mace. The healer, with real damage between heals.',chanter:'Staff. Melee support: party buffs, damage and backup heals.',brawler:'Gauntlets. Melee damage. Korea only, not on Global yet.'};
+  function renderPicker(force){
+    const host=document.getElementById('classpickgrid'); if(!host) return;
+    const hashCls=location.hash.slice(1)&&ALL[location.hash.slice(1)];
+    // shown until a class is picked (or kept) once; a link to a class page counts as a pick
+    const show=force||(!hashCls&&!S.gget('cls',null)&&!S.gget('pickdone',false));
+    if(!show){host.hidden=true;host.innerHTML='';return}
+    host.hidden=false;
+    host.innerHTML=`<div class="box cpbox"><h3 style="margin:0">Pick your class</h3><p class="small muted" style="margin:0">The whole guide follows the class you pick. You can switch any time with the Class menu at the top. <a href="#start" data-keepcls="1">Keep ${h(ALL[SLUG].cls)}</a></p>
+      <div class="cpgrid">${Object.keys(ALL).map(k=>`<button type="button" class="cpcard${k===SLUG?' cur':''}" data-pickcls="${h(k)}"><b>${h(ALL[k].cls)}</b>${k==='brawler'?' <span class="tag">Korea only</span>':''}<span class="small muted">${h(ROLE[k]||'')}</span></button>`).join('')}</div></div>`;
+    host.querySelectorAll('[data-pickcls]').forEach(b=>b.addEventListener('click',()=>{
+      const k=b.dataset.pickcls; S.gset('cls',k); S.gset('pickdone',true);
+      if(k===SLUG){host.hidden=true;host.innerHTML='';return}
+      try{history.replaceState(null,'','#'+k)}catch(e){} location.reload();
+    }));
+    const keep=host.querySelector('[data-keepcls]'); if(keep) keep.addEventListener('click',e=>{e.preventDefault(); S.gset('cls',SLUG); S.gset('pickdone',true); host.hidden=true; host.innerHTML='';});
+  }
+  document.addEventListener('click',e=>{const b=e.target.closest('[data-openpicker]'); if(!b) return; e.preventDefault(); renderPicker(true); const g=document.getElementById('classpickgrid'); if(g) g.scrollIntoView({behavior:'smooth',block:'start'})});
+
+  /* ---- recommended videos ---- */
+  const scopeTag=s=>/KR/i.test(s)&&!/Global/i.test(s)?'<span class="tag">Korea</span>':'<span class="tag wind">Global</span>';
+  const vday=d=>{try{return new Date(d+'T12:00:00Z').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'})}catch(e){return d}};
+  function vidItem(v,showDiff){
+    if(!okUrl(v.url)) return '';
+    return `<li class="vidrow"><div><a href="${h(v.url)}" target="_blank" rel="noopener noreferrer"><b>${h(v.title)}</b></a></div>
+      <div class="small muted">${okUrl(v.channelUrl)?`<a href="${h(v.channelUrl)}" target="_blank" rel="noopener noreferrer">${h(v.channel)}</a>`:h(v.channel)} · ${h(vday(v.date))} ${scopeTag(v.scope||'')}</div>
+      ${v.why?`<div class="small"><b>Why watch:</b> ${h(v.why)}</div>`:''}
+      ${showDiff&&v.differences?`<div class="small"><b>Differs from us on:</b> ${h(v.differences)}</div>`:''}</li>`;
+  }
+  function renderVideos(){
+    if(typeof VIDEOS==='undefined'||!VIDEOS) return;
+    const cv=document.getElementById('classvideos');
+    if(cv){const L=((VIDEOS.classes||{})[SLUG]||[]).filter(v=>v.recommended);
+      cv.innerHTML=L.length?`<div class="box vidbox"><h3 style="margin:0 0 4px">Recommended videos</h3><p class="small muted" style="margin:0 0 8px">Creator guides we checked against this build${SLUG==='brawler'?' (Korean servers)':''}. They open on YouTube in a new tab. Where a video does something differently, it says so.</p><ul class="plain viditems">${L.map(v=>vidItem(v,true)).join('')}</ul><p class="small muted" style="margin:8px 0 0">All videos belong to their creators: please like and subscribe if they help you. Checked ${h(vday(VIDEOS.updated||''))}.</p></div>`:'';}
+    const sv=document.getElementById('startvideos');
+    if(sv){const L=(VIDEOS.getting_started||[]).filter(v=>v.recommended);
+      sv.innerHTML=L.length?`<details class="box vidbox"><summary><b>Videos to get started</b> <span class="small muted">${L.length} creator guides: macro, leveling, gear, dailies</span></summary><ul class="plain viditems" style="margin-top:10px">${L.map(v=>vidItem(v,false)).join('')}</ul><p class="small muted" style="margin:8px 0 0">All videos belong to their creators. Opens YouTube in a new tab.</p></details>`:'';}
+  }
+
+  /* ---- questlog.gg build links ---- */
+  function renderQuestlog(){
+    const host=document.getElementById('questlogbox'); if(!host) return;
+    const Q=(typeof QUESTLOG_LINKS!=='undefined'&&QUESTLOG_LINKS&&QUESTLOG_LINKS[SLUG])||null;
+    const rows=[];
+    if(Q){
+      if(okUrl(Q.raid)) rows.push(['Raid / boss build (this tab)',Q.raid]);
+      const MN={nightmare:'Nightmare',trial:'Ascension Trial',daily:'Daily Dungeon',arena:'PvP arena'};
+      Object.entries(Q.modes||{}).forEach(([k,u])=>{if(okUrl(u)) rows.push([MN[k]||k,u])});
+      if(okUrl(Q.pvp)) rows.push(['PvP build',Q.pvp]);
+      (Q.extra||[]).forEach(x=>{if(x&&okUrl(x.url)) rows.push([(x.name||'Extra build')+' build',x.url])});
+    }
+    if(!rows.length){host.hidden=true;host.innerHTML='';return}
+    host.hidden=false;
+    host.innerHTML=`<div class="box"><h3 style="margin:0 0 6px">Our builds on questlog.gg</h3><p class="small muted" style="margin:0 0 8px">The same builds as this guide, in questlog.gg's build planner. Opens in a new tab.</p><ul class="plain small">${rows.map(([t,u])=>`<li><a href="${h(u)}" target="_blank" rel="noopener noreferrer">${h(t)} ↗</a></li>`).join('')}</ul></div>`;
+  }
+
+  /* ---- one "Sources for this tab" block per tab ---- */
+  const SRC_SKIP=new Set(['credits','communitytools','dungeonguide','changes']);
+  const isSrc=el=>/^\s*Sources?\s*:/.test(el.textContent||'');
+  function tidySources(id){
+    const sec=document.getElementById(id); if(!sec||sec.tagName!=='SECTION'||SRC_SKIP.has(id)) return;
+    let det=sec.querySelector(':scope > details.tabsrc');
+    const lines=[...sec.querySelectorAll('p')].filter(p=>!p.closest('details.tabsrc')&&isSrc(p));
+    if(!lines.length&&!det) return;
+    if(!det){det=document.createElement('details');det.className='tabsrc box';sec.appendChild(det)}
+    const seen=new Set(), out=[];
+    lines.forEach(p=>{
+      p.classList.add('srcmoved');
+      const box=p.closest('.box,.mergedsec,details,section'); const t=box&&box.querySelector('h3,h4,summary b');
+      const key=(p.textContent||'').trim(); if(seen.has(key)) return; seen.add(key);
+      const c=p.cloneNode(true); c.classList.remove('srcmoved'); c.removeAttribute('style'); c.className='small muted';
+      if(t&&t.textContent.trim()) c.insertAdjacentHTML('afterbegin',`<b>${h(t.textContent.trim().replace(/\s+/g,' ').slice(0,80))}.</b> `);
+      out.push(c.outerHTML);
+    });
+    det.innerHTML=`<summary><b>Sources for this tab</b> <span class="small muted">${out.length} source note${out.length===1?'':'s'}; every source is also on <a href="#credits" data-goto="credits">Sources &amp; credits</a></span></summary><div class="tabsrcbody">${out.join('')}</div>`;
+    sec.appendChild(det);
+  }
+  let tidyT=null;
+  const tidyCur=()=>{clearTimeout(tidyT);tidyT=setTimeout(()=>{const s=document.querySelector('section.tab:not([hidden])');if(s)try{tidySources(s.id)}catch(e){}},60)};
+  document.addEventListener('change',tidyCur); document.addEventListener('click',tidyCur);
+  window.tidySources=tidySources;
+
+  /* ---- saved-progress box on Start here (was the Progress tab) ---- */
+  const pb=document.getElementById('progressbox');
+  if(pb) pb.addEventListener('toggle',()=>{if(pb.open&&typeof renderProgress==='function') try{renderProgress()}catch(e){}});
+
+  /* ---- clear all my saved data (this guide's key only) ---- */
+  async function clearAll(){
+    if(!window.confirm('Clear all my saved data?\n\nThis deletes every tick, character, setting and class choice this guide has saved in this browser, for all classes'+(typeof remoteRef!=='undefined'&&remoteRef?' (and the copy in your claude.ai account)':'')+'. It cannot be undone.')) return;
+    try{Object.keys(STORE).forEach(k=>delete STORE[k]); STORE.c={}; STORE.ts=Date.now();
+      if(typeof remoteRef!=='undefined'&&remoteRef){try{await remoteRef.set({ts:STORE.ts,json:JSON.stringify(STORE)})}catch(e){}}
+      localStorage.removeItem('aion2fm');}catch(e){}
+    try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
+    location.reload();
+  }
+  document.addEventListener('click',e=>{const b=e.target.closest('#clearall'); if(!b) return; e.preventDefault(); clearAll()});
+
+  /* ---- re-draw after the claude.ai copy of your progress loads ---- */
+  function all(){renderPicker(false);renderVideos();renderQuestlog()}
+  try{all()}catch(e){console.error(e)}
+  {const o=window.applyStore;if(typeof o==='function')window.applyStore=function(){const r=o.apply(this,arguments);try{renderQuestlog()}catch(e){}return r}}
+})();
 
 /* ---------- daily / weekly checklist ---------- */
 function renderDW(){const dw=S.get('dw',{});document.querySelectorAll('[data-dw]').forEach(i=>{i.checked=!!dw[i.dataset.dw]})}
