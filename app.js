@@ -1,4 +1,4 @@
-var SIMSRC="data/sim.js?v=1792543965";
+var SIMSRC="data/sim.js?v=1792548029";
 const P=ALL[SLUG];
 document.getElementById('app').innerHTML=P.body;
 document.title=P.cls+' Guide · AION 2 Global Field Manual (Unofficial Fan Guide)';
@@ -903,7 +903,7 @@ function gradeAll(){
     const gs=[...td.querySelectorAll('b')].map(b=>GRADES.names[b.textContent.trim()]).filter(Boolean);
     [...new Set(gs)].forEach(g=>{const b=td.querySelectorAll('b');b[b.length-1].insertAdjacentHTML('afterend',' '+gradeTag(g))});
   });
-  ['#wings td b','#wings li b','#pets td b','#pets li b','#upgrades td b','#content td b','#wpclass','#gearplan td.small','#gearguide .what','#farmlist .fname b','#farmpins','#farmguide b','#arcana td b','#arcana li b'].forEach(sel=>document.querySelectorAll(sel).forEach(gradeColor));
+  ['#wings td b','#wings li b','#pets td b','#pets li b','#upgrades td b','#content td b','#enhance td b','#soulbind td b','#stones td b','#crafting td b','#events td b','#insight td b','#insight li b','#wpclass','#gearplan td.small','#gearguide .what','#farmlist .fname b','#farmpins','#farmguide b','#arcana td b','#arcana li b'].forEach(sel=>document.querySelectorAll(sel).forEach(gradeColor));
   const key=document.getElementById('gradekey');
   if(key&&!key.innerHTML) key.innerHTML=`<span class="muted">Name colour = in-game grade, lowest to highest:</span>${GORDER.filter(gradeHex).map(g=>`<b style="color:${gradeHex(g)}">${g}</b>`).join('')}`;
 }
@@ -928,19 +928,27 @@ function chgRow(c){
   const link=c.tab?` <a href="#${esc(c.tab)}" data-goto="${esc(c.tab)}">Open tab →</a>`:'';
   return `<li><b>${esc(chT(c.area))}:</b> ${esc(chgPlain(chT(c.action==='ingame'?c.how:c.now)))}${link}</li>`;
 }
+/* drop-down used by What's new and Beyond 45 (same look as collapse_fn.js); open ones stay open across re-draws */
+const XOPEN=new Set();
+function xdet(key,title,sum,inner){return `<details class="box cbox xdet" data-xk="${esc(key)}"${XOPEN.has(key)?' open':''}><summary><b style="font-size:17px">${title}</b> <span class="small muted">${sum} Click to open.</span></summary><div class="cbody">${inner}</div></details>`}
+document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.classList&&d.classList.contains('xdet'))d.open?XOPEN.add(d.dataset.xk):XOPEN.delete(d.dataset.xk)},true);
+function xkeep(host){if(host)host.querySelectorAll('details.xdet').forEach(d=>d.open?XOPEN.add(d.dataset.xk):XOPEN.delete(d.dataset.xk))}
 function renderChanges(){
-  const host=$('changelist'); if(!host||!CHANGES) return;
+  const host=$('changelist'); if(!host||!CHANGES) return; xkeep(host);
   const items=chgFor(), dates=chgDates(items), recent=dates.slice(0,2), cls=C['class'];
   let h='';
-  recent.forEach(d=>{
+  recent.forEach((d,di)=>{
     const day=items.filter(c=>c.date===d);
     const mine=day.filter(c=>c.action==='ingame'&&chgMine(c)), all=day.filter(c=>c.action==='ingame'&&!chgMine(c)), info=day.filter(c=>c.action!=='ingame');
+    const h0=h; h='';
     h+=`<div class="box" style="display:grid;gap:10px"><h3 style="margin:0">${esc(chgLabel(d))}</h3>`;
     if(!mine.length&&!all.length) h+=`<p class="small" style="margin:0">Nothing to change in game: guide fixes only.</p>`;
     if(mine.length) h+=`<div><h4 class="chgh">Change in game: your ${esc(cls)}</h4><ul class="plain small chglist">${mine.map(chgRow).join('')}</ul></div>`;
     if(all.length) h+=`<div><h4 class="chgh">Change in game: every class</h4><ul class="plain small chglist">${all.map(chgRow).join('')}</ul></div>`;
     if(info.length) h+=`<details class="small"><summary>Also fixed in the guide (${info.length}, nothing to do in game)</summary><ul class="plain chglist" style="margin-top:6px">${info.map(chgRow).join('')}</ul></details>`;
     h+=`</div>`;
+    // the newest day stays open; the day before is a drop-down
+    h=h0+(di===0?h:xdet('chg-'+d,esc(chgLabel(d)),`${mine.length+all.length} change${mine.length+all.length===1?'':'s'} to make in game, ${info.length} guide fix${info.length===1?'':'es'}.`,h));
   });
   if(!recent.length) h='<p class="muted">No updates yet.</p>';
   const older=items.length;
@@ -985,7 +993,7 @@ function renderChangeBanner(){
 function b45On(){return true}
 function applyB45(){document.body.hidden=false; document.body.dataset.preview='1'}
 function renderBeyond(){
-  const host=$('beyondbox'); if(!host) return;
+  const host=$('beyondbox'); if(!host) return; xkeep(host);
   if(!BEYOND){host.innerHTML='<p class="muted">No level 46–50 data yet.</p>';return}
   const B=BEYOND, cl=(B.classes||{})[SLUG]||{};
   const noKo=t=>String(t).replace(/\s*\([^()]*[가-힣][^()]*\)/g,'').replace(/[가-힣]+/g,'').replace(/\s{2,}/g,' ').trim();
@@ -999,14 +1007,14 @@ function renderBeyond(){
     <div class="box"><h3>Your ${C['class']} at 50</h3>${list([].concat(cl.newSkills||[]).concat(cl.buildChanges||[]))}</div>
    </div>
    ${(B.levels||[]).length?`<div class="box"><h3>Level by level</h3><div class="tablewrap"><table><thead><tr><th class="num">Lv</th><th>Unlocks</th><th class="num">Skill points</th></tr></thead><tbody>${B.levels.map(l=>`<tr><td class="num">${esc(l.lvl)}</td><td class="small">${esc(noKo([].concat(l.unlocks||[]).join(' ')))}</td><td class="num">${l.skillPoints!=null?esc(l.skillPoints):'—'}</td></tr>`).join('')}</tbody></table></div></div>`:''}
-   ${(B.dungeons||[]).length?`<div class="box"><h3>New dungeons and raids</h3><div class="tablewrap"><table><thead><tr><th>Name</th><th class="num">Level</th><th class="num">Gear Score</th><th>Rewards</th><th>Notes</th></tr></thead><tbody>${B.dungeons.map(d=>`<tr><td><b>${esc(noKo(d.name))}</b></td><td class="num">${esc(d.lvl||'')}</td><td class="num">${esc(d.gs||'')}</td><td class="small">${esc(noKo([].concat(d.rewards||[]).join(', ')))}</td><td class="small muted">${esc(noKo(d.notes||''))}</td></tr>`).join('')}</tbody></table></div></div>`:''}
-   <div class="grid2">
+   ${(B.dungeons||[]).length?xdet('by-dg','New dungeons and raids',`${B.dungeons.length} dungeons and raids Korea added at 46–50: level, Gear Score and rewards.`,`<div class="box"><h3>New dungeons and raids</h3><div class="tablewrap"><table><thead><tr><th>Name</th><th class="num">Level</th><th class="num">Gear Score</th><th>Rewards</th><th>Notes</th></tr></thead><tbody>${B.dungeons.map(d=>`<tr><td><b>${esc(noKo(d.name))}</b></td><td class="num">${esc(d.lvl||'')}</td><td class="num">${esc(d.gs||'')}</td><td class="small">${esc(noKo([].concat(d.rewards||[]).join(', ')))}</td><td class="small muted">${esc(noKo(d.notes||''))}</td></tr>`).join('')}</tbody></table></div></div>`):''}
+   ${xdet('by-zones','Zones, gear, Daevanion and Stigmas','New zones, new gear tiers, board and Stigma changes at 46–50.',`<div class="grid2">
     <div class="box"><h3>Zones</h3>${list(B.zones)}</div>
     <div class="box"><h3>Gear</h3>${list(B.gear)}</div>
     <div class="box small"><h3>Daevanion</h3>${B.daevanion?fmt(B.daevanion):''}</div>
     <div class="box small"><h3>Stigmas</h3>${B.stigmas?fmt(B.stigmas):''}</div>
-   </div>
-   <div class="box"><h3>Other systems</h3>${list(B.systems)}</div>
+   </div>`)}
+   ${xdet('by-sys','Other systems','Everything else Korea changed with the level 50 update.',`<div class="box"><h3>Other systems</h3>${list(B.systems)}</div>`)}
    ${(B.sources||[]).length?`<p class="small muted">Sources: ${B.sources.slice(0,12).map(u=>`<a href="${esc(u)}" target="_blank" rel="${/metabot\.gg/i.test(String(u||''))?'noopener':'noopener noreferrer'}">${esc(String(u).replace(/^https?:\/\/(www\.)?/,'').slice(0,40))}</a>`).join(' · ')}</p>`:''}`;
   decorate(host);
 }
@@ -1881,27 +1889,27 @@ function chAnalyse(M){
     A.gear.push(row);
   });
   const empt=A.gear.filter(r=>r.stone&&r.stone.empty);
-  if(empt.length)T('stone-empty',1,6,'cheap',`Fill empty manastone slots: ${empt.map(r=>`${chH(r.label.toLowerCase())} (${r.stone.empty})`).join(', ')}`,`Any stone beats an empty slot. Ideal stones: ${empt.slice(0,3).map(r=>`${chH(r.label)}: ${chH(r.stone.want.join(', ')||'Attack')}`).join('; ')}. Use cheap stones on pieces you will replace.`,'upgrades',{type:'stones',fill:empt.map(r=>({slot:r.key,n:r.stone.empty}))});
+  if(empt.length)T('stone-empty',1,6,'cheap',`Fill empty manastone slots: ${empt.map(r=>`${chH(r.label.toLowerCase())} (${r.stone.empty})`).join(', ')}`,`Any stone beats an empty slot. Ideal stones: ${empt.slice(0,3).map(r=>`${chH(r.label)}: ${chH(r.stone.want.join(', ')||'Attack')}`).join('; ')}. Use cheap stones on pieces you will replace.`,'stones',{type:'stones',fill:empt.map(r=>({slot:r.key,n:r.stone.empty}))});
   // enhancing: weapon, then guard, then armor, then accessories
   const grp={weapon:[],guard:[],armor:[],acc:[]};
   enhGaps.forEach(r=>{const t=r.gs&&r.gs.t;(r.key==='weapon'?grp.weapon:r.key==='guard'?grp.guard:t==='armor'?grp.armor:grp.acc).push(r)});
   const enhTxt=a=>a.map(r=>`${chH(r.label)} +${r.g.enh} → +${r.tgt}`).join(', ');
-  if(grp.weapon.length)T('enh-weapon',2,1,'kinah',`Enhance your weapon to +${grp.weapon[0].tgt}`,`${enhTxt(grp.weapon)}. The weapon is your biggest single damage upgrade; finish it before anything else you enhance.`,'upgrades',{type:'enhance',slots:grp.weapon.map(r=>({slot:r.key,from:r.g.enh,to:r.tgt}))});
-  if(grp.guard.length)T('enh-guard',2,2,'kinah',`Enhance your guard / off-hand to +${grp.guard[0].tgt}`,enhTxt(grp.guard),'upgrades',{type:'enhance',slots:grp.guard.map(r=>({slot:r.key,from:r.g.enh,to:r.tgt}))});
-  if(grp.armor.length)T('enh-armor',2,3,'kinah',`Enhance armor to +${grp.armor[0].tgt}`,enhTxt(grp.armor)+'. Only on pieces you will keep (item level 86+); enhancement carries over when you upgrade.','upgrades',{type:'enhance',slots:grp.armor.map(r=>({slot:r.key,from:r.g.enh,to:r.tgt}))});
-  if(grp.acc.length)T('enh-acc',2,4,'kinah','Enhance accessories, belt and amulet to their targets',enhTxt(grp.acc),'upgrades',{type:'enhance',slots:grp.acc.map(r=>({slot:r.key,from:r.g.enh,to:r.tgt}))});
+  if(grp.weapon.length)T('enh-weapon',2,1,'kinah',`Enhance your weapon to +${grp.weapon[0].tgt}`,`${enhTxt(grp.weapon)}. The weapon is your biggest single damage upgrade; finish it before anything else you enhance.`,'enhance',{type:'enhance',slots:grp.weapon.map(r=>({slot:r.key,from:r.g.enh,to:r.tgt}))});
+  if(grp.guard.length)T('enh-guard',2,2,'kinah',`Enhance your guard / off-hand to +${grp.guard[0].tgt}`,enhTxt(grp.guard),'enhance',{type:'enhance',slots:grp.guard.map(r=>({slot:r.key,from:r.g.enh,to:r.tgt}))});
+  if(grp.armor.length)T('enh-armor',2,3,'kinah',`Enhance armor to +${grp.armor[0].tgt}`,enhTxt(grp.armor)+'. Only on pieces you will keep (item level 86+); enhancement carries over when you upgrade.','enhance',{type:'enhance',slots:grp.armor.map(r=>({slot:r.key,from:r.g.enh,to:r.tgt}))});
+  if(grp.acc.length)T('enh-acc',2,4,'kinah','Enhance accessories, belt and amulet to their targets',enhTxt(grp.acc),'enhance',{type:'enhance',slots:grp.acc.map(r=>({slot:r.key,from:r.g.enh,to:r.tgt}))});
   const amp=A.gear.filter(r=>r.amp);
-  if(amp.length&&!grp.weapon.length)T('amp',2,5,'kinah','Amplify your '+amp.map(r=>r.label.toLowerCase()).join(' and '),amp.map(r=>`${chH(r.label)} Amplify ${r.g.exceed}/${r.g.maxExceed}`).join(', ')+'. Amplify (the +15 → +20 track) adds Attack and Damage Boost on top of +15.','upgrades',{type:'amplify',slots:amp.map(r=>({slot:r.key,from:r.g.exceed,to:r.g.maxExceed}))});
+  if(amp.length&&!grp.weapon.length)T('amp',2,5,'kinah','Amplify your '+amp.map(r=>r.label.toLowerCase()).join(' and '),amp.map(r=>`${chH(r.label)} Amplify ${r.g.exceed}/${r.g.maxExceed}`).join(', ')+'. Amplify (the +15 → +20 track) adds Attack and Damage Boost on top of +15.','enhance',{type:'amplify',slots:amp.map(r=>({slot:r.key,from:r.g.exceed,to:r.g.maxExceed}))});
   // soul binding rerolls on keeper gear, weapon first
   const sg={weapon:[],guard:[],armor:[],acc:[]};
   A.gear.filter(r=>r.keeper&&r.bad.length).forEach(r=>{const t=r.gs&&r.gs.t;(r.key==='weapon'?sg.weapon:r.key==='guard'?sg.guard:t==='armor'?sg.armor:sg.acc).push(r)});
   const syncTxt=r=>`${chH(r.label)}: ${r.bad.map(l=>`<b>${chH(l.skill?'+'+l.level+' '+l.name:l.name)}</b>`).join(', ')} <span class="muted">(aim for ${chH(((r.R&&r.R.best)||[]).slice(0,2).join(' or '))})</span>`;
   [['weapon','your weapon'],['guard','your guard'],['armor','armor'],['acc','accessories']].forEach(([k,lab],i)=>{
     const a=sg[k];if(!a.length)return;const n=a.reduce((x,r)=>x+r.bad.length,0);
-    T('sync-'+k,3,i,'grind',`Soul Binding: Sync ${n} weak line${n>1?'s':''} on ${lab}`,a.map(syncTxt).join('<br>')+(a.some(r=>r.g.soulRate!=null&&r.g.soulRate<100)?'<br><span class="muted">Fix the lines before you Bind: at 100% Soul Binding Rate they are fixed for good.</span>':''),'upgrades',{type:'sync',slots:a.map(r=>({slot:r.key,lines:r.bad.map(l=>l.name)}))});
+    T('sync-'+k,3,i,'grind',`Soul Binding: Sync ${n} weak line${n>1?'s':''} on ${lab}`,a.map(syncTxt).join('<br>')+(a.some(r=>r.g.soulRate!=null&&r.g.soulRate<100)?'<br><span class="muted">Fix the lines before you Bind: at 100% Soul Binding Rate they are fixed for good.</span>':''),'soulbind',{type:'sync',slots:a.map(r=>({slot:r.key,lines:r.bad.map(l=>l.name)}))});
   });
   A.gear.filter(r=>r.keeper&&r.stone&&r.stone.rated.length>=2&&r.stone.useful<=1&&!r.stone.empty).forEach((r,i)=>{
-    T('stones-'+r.g.slot,3,20+i,'kinah',`Re-engrave the manastones on your ${r.label.toLowerCase()}`,`Only ${r.stone.useful} of ${r.stone.rated.length} lines are useful. Keep a roll once 2 or more lines are ${chH(r.stone.want.join(' / ')||'useful')}. Engraving rerolls all lines at once (no lock).`,'upgrades',{type:'stones',slot:r.key});
+    T('stones-'+r.g.slot,3,20+i,'kinah',`Re-engrave the manastones on your ${r.label.toLowerCase()}`,`Only ${r.stone.useful} of ${r.stone.rated.length} lines are useful. Keep a roll once 2 or more lines are ${chH(r.stone.want.join(' / ')||'useful')}. Engraving rerolls all lines at once (no lock).`,'stones',{type:'stones',slot:r.key});
   });
   // the lowest item-level slot to replace
   const repl=A.gear.filter(r=>r.gs&&r.key!=='amulet'&&r.key!=='belt'&&r.g.il).sort((a,b)=>a.g.il-b.g.il);
@@ -2049,7 +2057,7 @@ function chAnalyse(M){
     })});
     A.genus=rows;
     const bad=rows.filter(r=>r.st==='bad');
-    if(bad.length)T('genus',3,40,'grind',`Genus Insight: reroll ${bad.length} weak line${bad.length>1?'s':''}`,bad.slice(0,6).map(r=>`${chH(r.fam)} slot ${r.slot}: ${chH(r.name)} (${chH(r.gw)})`).join(', ')+(bad.length>6?'…':'')+'. From your AionFlex code; see Pets &amp; Genus Insight for what to aim for.','pets',{type:'genus',lines:bad.map(r=>({family:r.fam,slot:r.slot}))});
+    if(bad.length)T('genus',3,40,'grind',`Genus Insight: reroll ${bad.length} weak line${bad.length>1?'s':''}`,bad.slice(0,6).map(r=>`${chH(r.fam)} slot ${r.slot}: ${chH(r.name)} (${chH(r.gw)})`).join(', ')+(bad.length>6?'…':'')+'. From your AionFlex code; see Pets &amp; Genus Insight for what to aim for.','insight',{type:'genus',lines:bad.map(r=>({family:r.fam,slot:r.slot}))});
   }
 
   /* order: cheapest/fastest first, or by simulated gain per cost when the simulator is loaded */
@@ -2170,7 +2178,7 @@ function chRuleHtml(A){
    <p class="small" style="margin:0">Your Might + Destruction is <b>${R.atk}</b>. ${R.atk>=63?'That is 63 or more (about 6%+ Attack Increase), so <b>Attack Bonus</b> is within 15% of PvE Attack: take Attack Bonus, because it also works in PvP.':'That is under 63, so <b>PvE Attack</b> is clearly stronger against monsters: take PvE Attack on PvE presets (Attack Bonus catches up at about 63).'} Same rule for accuracy: Precision + Freedom is <b>${R.acc}</b> → <b>${chH(R.accPick)}</b>. This matters for Genus Insight attack/utility slots.</p></div>`;
 }
 function chGenusHtml(A,M){
-  if(!A.genus)return `<div class="box small"><h3 style="margin:0 0 6px">Genus Insight</h3>Not in NCSoft's data. If an AionFlex meter user has seen your character, open your page on aionflex.gg, press "Copy build code" and paste the <b>af1.</b> code above; otherwise check it by hand in <a href="#pets" data-goto="pets">Pets &amp; Genus Insight</a>.</div>`;
+  if(!A.genus)return `<div class="box small"><h3 style="margin:0 0 6px">Genus Insight</h3>Not in NCSoft's data. If an AionFlex meter user has seen your character, open your page on aionflex.gg, press "Copy build code" and paste the <b>af1.</b> code above; otherwise check it by hand in <a href="#insight" data-goto="insight">Genus Insight</a>.</div>`;
   const fams={};A.genus.forEach(r=>{(fams[r.fam]=fams[r.fam]||[]).push(r)});
   return `<div class="box" style="display:grid;gap:10px"><h3 style="margin:0">Genus Insight (from AionFlex)</h3>
    <p class="small muted" style="margin:0">From your AionFlex code, last seen ${chH(chWhen(M.af1Seen))}. Some AionFlex stat numbers aren't decoded yet; those show as "stat #".</p>
@@ -3024,18 +3032,24 @@ function onShow(){
       `</div>${simLine(s)}${s.note?`<p class="small muted">${h(s.note)}</p>`:''}</details>`:'';
     const foot=`<footer class="mssim"><p class="small msverdict"><b>Verdict:</b> ${h(verdict)} ${conf}</p>${tested}</footer>`;
     if(isA) return `<article class="box mscard arena${done?' done':''}" data-mscard="${k}">${head}`+
-      `<p class="mssum">${h(M.summary)}</p>`+
+      `<p class="mssum">${h(M.summary)}</p>`+msOpen(k,'perks, Stigmas, burst order, how to play and matchups')+
       `<div class="mscols"><div class="mscol">${chgSec}${stigSec}${burstFlow(M.burst)}</div>`+
       `<div class="mscol">${list('Press by hand',M.manual,manLine)}${list('How to play it',M.tips)}${list('Staying alive',M.survival)}</div></div>`+
-      arenaBits(M)+foot+`</article>`;
+      arenaBits(M)+`</details>`+foot+`</article>`;
     return `<article class="box mscard${done?' done':''}" data-mscard="${k}">${head}`+
-      `<p class="mssum">${h(M.summary)}</p>`+chgSec+stigSec+altSec(M.macroAlt)+
+      `<p class="mssum">${h(M.summary)}</p>`+msOpen(k,'what to change from your raid setup, Stigmas, skill bar, how to play and staying alive')+chgSec+stigSec+altSec(M.macroAlt)+
       list('Press by hand',M.manual,manLine)+list('How to play it',M.tips)+list('Staying alive',M.survival)+
-      foot+`</article>`;
+      `</details>`+foot+`</article>`;
   }
+  // the full setup of each card is a drop-down (like the dungeon cards); open ones stay open across re-draws
+  const msOpenSet=new Set();
+  function msOpen(k,what){return `<details class="msbody" data-msk="${h(k)}"${msOpenSet.has(k)?' open':''}><summary><b>Full setup</b> <span class="small muted">${h(what)}. Click to open.</span></summary>`}
   let drawnMode=null;
   function renderModeSetups(){
     const host=document.getElementById('modesbox'); if(!host) return;
+    host.querySelectorAll('details.msbody').forEach(d=>d.open?msOpenSet.add(d.dataset.msk):msOpenSet.delete(d.dataset.msk));
+    if(!host.dataset.mstoggle){host.dataset.mstoggle=1; host.addEventListener('toggle',e=>{const d=e.target; if(d&&d.classList&&d.classList.contains('msbody')){d.open?msOpenSet.add(d.dataset.msk):msOpenSet.delete(d.dataset.msk)}},true);
+      const st=document.createElement('style'); st.textContent='details.msbody>summary{cursor:pointer;padding:6px 0}details.msbody[open]>summary{margin-bottom:8px}details.msbody{min-width:0}details.msbody>*+*{margin-top:12px}#modesbox{align-items:start}'; document.head.appendChild(st);}
     const M=C.modeSetups||null;
     drawnMode=typeof MODE!=='undefined'?MODE:null;
     host.innerHTML=order().map(k=>card(k,M&&M[k])).join('');
@@ -3687,9 +3701,9 @@ function onShow(){
     const ranks=Object.entries(t.cats||{}).sort((a,b)=>a[1]-b[1]).map(([c,r])=>`<span class="tlrank${r===1?' r1':''}" title="Rank ${r} in ${h(cn[c]||c)}">#${r} ${h(cn[c]||c)}</span>`).join('');
     const inst=INST[t.install]||INST.none;
     let instHtml='';
-    if(t.install==='packet') instHtml=`<div class="tlwarn"><b>⚠ ${h(inst[0])}.</b> ${h(t.program||'')}. NCSoft has banned and blocked third-party programs; see <a href="#economy" data-goto="economy">Ban risks</a>.${t.note?' '+h(t.note):''}</div>`;
-    else if(t.install==='overlay') instHtml=`<div class="tlok"><b>${h(inst[0])}:</b> ${h(t.program||'')}. Still a third-party program: <a href="#economy" data-goto="economy">ban risks</a>. The website needs nothing.</div>`;
-    else instHtml=`<div class="tlok"><b>Website only.</b> ${h(t.program||inst[2])}${t.install==='none'&&/reads network/.test(t.program||'')?' NCSoft has banned and blocked third-party programs; see <a href="#economy" data-goto="economy">Ban risks</a>.':''}</div>`;
+    if(t.install==='packet') instHtml=`<div class="tlwarn"><b>⚠ ${h(inst[0])}.</b> ${h(t.program||'')}. NCSoft has banned and blocked third-party programs; see <a href="#sys-bans" data-goto="sys-bans">Ban risks</a>.${t.note?' '+h(t.note):''}</div>`;
+    else if(t.install==='overlay') instHtml=`<div class="tlok"><b>${h(inst[0])}:</b> ${h(t.program||'')}. Still a third-party program: <a href="#sys-bans" data-goto="sys-bans">ban risks</a>. The website needs nothing.</div>`;
+    else instHtml=`<div class="tlok"><b>Website only.</b> ${h(t.program||inst[2])}${t.install==='none'&&/reads network/.test(t.program||'')?' NCSoft has banned and blocked third-party programs; see <a href="#sys-bans" data-goto="sys-bans">Ban risks</a>.':''}</div>`;
     const why=Object.entries(t.reason||{}).filter(([c])=>st.cat==='all'||c===st.cat).map(([c,r])=>`<li><b>${h(cn[c]||c)}:</b> ${h(r)}</li>`).join('');
     const top=st.cat!=='all'&&(t.cats||{})[st.cat]===1;
     return `<article class="box tlcard${top?' top':''}" data-tl="${h(t.id)}" data-cats="${h(Object.keys(t.cats||{}).join(' '))}" data-inst="${h(t.install)}">${pic}<div class="tlbody">`+
@@ -3719,7 +3733,7 @@ function onShow(){
     const chips=`<div class="tlchips" role="group" aria-label="Filter tools by category"><button type="button" data-tlcat="all" aria-pressed="${st.cat==='all'}">All (${D.tools.length})</button>`+
       cats.map(c=>{const n=D.tools.filter(t=>(t.cats||{})[c.id]).length;return `<button type="button" data-tlcat="${h(c.id)}" aria-pressed="${st.cat===c.id}">${h(c.name)} (${n})</button>`}).join('')+`</div>`;
     box.innerHTML=
-      `<div class="callout"><b>Read this before installing anything.</b> ${h(D.warning)} <a href="#economy" data-goto="economy">Ban risks →</a></div>`+
+      `<div class="callout"><b>Read this before installing anything.</b> ${h(D.warning)} <a href="#sys-bans" data-goto="sys-bans">Ban risks →</a></div>`+
       `<div class="box"><h3 style="margin:0">Best in each category</h3><ul class="tlbest">${best}</ul><p class="small muted" style="margin:10px 0 0">${h(D.scale||'')}</p></div>`+
       `<div class="box" style="display:grid;gap:8px">${chips}<label class="tlweb"><input type="checkbox" id="tlwebonly" ${st.web?'checked':''}> Websites only (hide anything that needs a program)</label><div class="small muted" id="tlstate">${list.length} shown · ${h(D.intro||'')}</div></div>`+
       (st.cat==='logs'&&D.meters&&(D.meters.cols||[]).length?meterTable(D.meters):'')+
@@ -4336,7 +4350,7 @@ function renderPantheon(){
   const rows=pl.all.filter(x=>(filt==='all'||x.d.s===filt)&&(showAll||x.d.av==='now'||x.own))
     .sort((a,b)=>'CSA'.indexOf(a.d.s)-'CSA'.indexOf(b.d.s)||(b.ef>=0)-(a.ef>=0)||b.v-a.v||a.d.n.localeCompare(b.d.n));
   const nNow=P.d.filter(d=>d.av==='now').length, nOwn=pl.all.filter(x=>x.own).length;
-  h+=`<details class="box" open><summary class="pansum"><b>All decorations</b> <span class="small muted">${P.d.length} in the Global client · ${nNow} you can get now · you own ${nOwn}</span></summary>
+  h+=`<details class="box"${window.__panAllOpen?" open":""} data-panall><summary class="pansum"><b>All decorations</b> <span class="small muted">${P.d.length} in the Global client · ${nNow} you can get now · you own ${nOwn}</span></summary>
     <div class="panctl" style="margin:10px 0"><div class="seg" role="group" aria-label="Slot type">${[['all','All'],['C','Colossus'],['S','Statue'],['A','Artwork']].map(([k,t])=>`<button type="button" data-panslot="${k}" aria-pressed="${filt===k}">${t}</button>`).join('')}</div>
       <label class="small panall"><input type="checkbox" data-panall="1" ${showAll?'checked':''}> Also show ones you can't get yet</label></div>
     <div class="tablewrap"><table class="pantable"><thead><tr><th class="num">Own</th><th>Decoration</th><th>Slot</th><th>Stats</th><th class="num">Value</th><th>How to get it</th><th>Effort</th></tr></thead><tbody>
@@ -4369,6 +4383,8 @@ document.addEventListener('click',e=>{
 });
 {const _ap=window.applyStore; if(typeof _ap==='function') window.applyStore=function(){const r=_ap.apply(this,arguments);renderPantheon();return r}}
 renderPantheon();
+
+document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.matches&&d.matches('details[data-panall]'))window.__panAllOpen=d.open},true);
 
 /* ---------- Collections: Closet skins, Monoliths & Kibelisks, Achievements (data: COLLECT = audit/r4/collect_*.json, weapon skins per class: P.COLIC) ---------- */
 const COL_EFFN={1:'Easy',2:'Medium',3:'Hard',9:'Not now'};
@@ -4822,7 +4838,7 @@ function renderPetGuide(){
     <p class="small muted" style="margin:6px 0 0">Value 100 = the best pet for you. It adds three things: the pet’s 500 + 250 + 250 Insight EXP on its family’s board (weighted by how much that board matters to a ${pgE(cn)}), the family’s owned bonus at pet Lv3 (weighted by the guide’s simulator stat values${m==='pvp'?'; PvP values are estimates':''}), and its share of the milestone crystals. HP, Evasion and Crit Resist values are estimates by role.</p></details>`;
   // ---- full table
   let rows=pl.all.filter(x=>(filt==='all'||x.p.f===filt)&&(!miss||!x.own)).sort(pl.rank);
-  h+=`<details class="box" data-pgd="all" ${PG_OPEN.all!==false?"open":""}><summary class="pgsum"><b>All pets</b> <span class="small muted">${P.d.length} in the Global client · you own ${nOwn} · easiest first</span></summary>
+  h+=`<details class="box" data-pgd="all" ${PG_OPEN.all===true?"open":""}><summary class="pgsum"><b>All pets</b> <span class="small muted">${P.d.length} in the Global client · you own ${nOwn} · easiest first</span></summary>
     <div class="pgctl" style="margin:10px 0"><div class="seg" role="group" aria-label="Family">${[['all','All'],...'CFNVS'.split('').map(f=>[f,pgFam(f).n])].map(([k,t])=>`<button type="button" data-pgff="${k}" aria-pressed="${filt===k}">${t}</button>`).join('')}</div>
       <label class="small pgall"><input type="checkbox" data-pgmiss="1" ${miss?'checked':''}> Missing only</label></div>
     <div class="tablewrap"><table class="pgtable"><thead><tr><th class="num">Own</th><th>Pet</th><th>How to get it</th><th class="num">Level</th><th>Effort</th><th class="num">Value</th></tr></thead><tbody>
@@ -5494,7 +5510,7 @@ var A2T=(function(){
     el.innerHTML=`<details class="box rf" id="rfunlockstart"><summary><b>What unlocks when: levels 2 to 45</b></summary>`+
       `<dl class="rf-lv">${lvls.map(l=>`<dt>Lv ${l}</dt><dd class="small">${by[l].map(h).join(' · ')}</dd>`).join('')}</dl>`+
       `<p class="small"><b>Story quests that open systems</b> (Elyos / Asmodian):</p><ul class="small" style="margin:0;padding-left:20px">${quests.map(r=>`<li>${h(r.what)}: ${questTxt(r)}</li>`).join('')}</ul>`+
-      `<p class="small">Item-level gates for every dungeon, Trial difficulty and Abyss layer: <a href="#systems" data-goto="systems">Game mechanics › Unlock requirements</a>.</p>`+
+      `<p class="small">Item-level gates for every dungeon, Trial difficulty and Abyss layer: <a href="#refunlocks" data-goto="refunlocks">Glossary &amp; reference › Unlock requirements</a>.</p>`+
       srcs([{u:'https://metabot.gg/en/aion-2/content-unlocks',l:'MetaBot.GG: Content unlocks'}])+`</details>`;
   }
 
@@ -6258,15 +6274,15 @@ var A2T=(function(){
   function refresh(){
     if(!D())return;
     try{gearButtons()}catch(e){}
-    ['gear','upgrades'].forEach(id=>{const s=document.getElementById(id);if(s)try{linkify(s)}catch(e){}});
+    ['gear','upgrades','enhance','soulbind','stones'].forEach(id=>{const s=document.getElementById(id);if(s)try{linkify(s)}catch(e){}});
   }
   document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button.idl');if(!b||!D())return;e.preventDefault();
     open((b.dataset.idl||'').split(' ').filter(Boolean),b.dataset.ids?SLOTK[b.dataset.ids]:null,b)});
   // re-run after the gear planner, cost planner and optimizer redraw
   {const o=window.renderGear;if(typeof o==='function')window.renderGear=function(){const r=o.apply(this,arguments);setTimeout(refresh,0);return r}}
-  {const o=window.show;if(typeof o==='function')window.show=function(id){const r=o.apply(this,arguments);if(id==='gear'||id==='upgrades')setTimeout(refresh,0);return r}}
+  {const o=window.show;if(typeof o==='function')window.show=function(id){const r=o.apply(this,arguments);if(['gear','upgrades','enhance','soulbind','stones'].includes(id))setTimeout(refresh,0);return r}}
   try{if(typeof MutationObserver==='function'){let tm=null;const mo=new MutationObserver(()=>{clearTimeout(tm);tm=setTimeout(refresh,60)});
-    ['gear','upgrades'].forEach(id=>{const s=document.getElementById(id);if(s)mo.observe(s,{childList:true,subtree:true})})}}catch(e){}
+    ['gear','upgrades','enhance','soulbind','stones'].forEach(id=>{const s=document.getElementById(id);if(s)mo.observe(s,{childList:true,subtree:true})})}}catch(e){}
   window.openItemDetail=(slug,slot)=>open([].concat(slug),slot||null,null);
   setTimeout(refresh,0);
 })();
@@ -6890,8 +6906,148 @@ var QUESTLOG_LINKS={
   brawler:     {raid:'', modes:{arena:''}, pvp:'', extra:[]}
 };
 
+/* ---------- Drop-downs (Oct 2026): long reference boxes start closed ----------
+   Each entry wraps one box (or the element a script renders into) in
+   <details class="box cbox"><summary><b>Title</b> <span>one line. Click to open.</span></summary><div class="cbody">…</div></details>
+   - the box itself is moved inside, untouched: every id, render host and listener keeps working, and a re-render
+     inside it can't close the drop-down (the <details> sits outside what scripts redraw)
+   - the box's own first <h3> is hidden (the summary shows its text, kept in sync when a script redraws it)
+   - open/closed is remembered for this visit (sessionStorage), so a reload doesn't snap it shut
+   - links into a closed drop-down open it: show('<any element id>') switches to that element's tab, opens every closed
+     <details> around it and scrolls to it; scrollIntoView() on anything inside a closed <details> opens it first
+   Keys: '#id' = that element; 'h:Text' = the .box whose <h3> starts with Text; 'g:Text' = the .grid2 holding that box. */
+(function(){
+  const CFG=[
+    ['h:Skill ranks at each level','Skill ranks at each level','Every skill\'s rank for each level band, as one big table.'],
+    ['#sys-ascension','Ascension gauge','Why the story stops at 22, 32 and 45, and how to fill the gauge.'],
+    ['#skillnums','Skill numbers at every rank','Damage, MP, cooldown, range and open perks for any skill at any rank.'],
+    ['#classvideos','Recommended videos','Creator guides we checked against this build (YouTube).'],
+    ['#sys-combat-analysis','Combat Analysis','Test your macro with the built-in DPS meter (Ctrl+X).'],
+    ['#dmgcheckbox','Check your damage','Hit a dummy for 60 s, type the total and see how your damage compares.'],
+    ['h:Soul Binding by slot','Soul Binding by slot','The lines to aim for on each slot, best first.'],
+    ['#rollbox','Reroll targets','Best, good-enough and reroll lines for every slot, for Soul Binding and stone engraving.'],
+    ['#refsets','Gear set bonuses','Which sets have bonuses on Global (only the Arcana card sets) and what they give.'],
+    ['#sys-cp','Item level vs Combat Power','What dungeons check at the door and what Combat Power counts.'],
+    ['#sys-costplan','Upgrade cost planner','Kina and stones for enhancing, Amplify, crafting and Soul Binding, at your server\'s prices.'],
+    ['#sys-optimizer','Upgrade optimizer','Finds the upgrade that adds the most damage per Kina from your gear.'],
+    ['#sys-transfer','Transfer and Sync Stones','Why you never extract a spare Unique and what to make from it instead.'],
+    ['#sys-soulbind-odds','Soul Binding odds','How likely each line is, and when to stop resetting.'],
+    ['g:How to get cards','How to get and enhance cards','Where each card drops and how enhancing works.'],
+    ['#timersbox','Timers','Live countdowns for resets, events, field bosses and the Rift, for your server.'],
+    ['#shoplistbox','Weekly shopping list','Every currency shop in buying order, with weekly and monthly ticks.'],
+    ['#sys-boss-mechanics','Expedition bosses: what kills you','One line per mechanic that wipes groups, boss by boss.'],
+    ['#sys-not-live','Not open on Global yet','Things in the game files and database sites that you can\'t do yet.'],
+    ['#sys-ascension-trial','Ascension Trial','The solo weekly score run: entries, rooms and rewards.'],
+    ['#sys-field-bosses','Field bosses','Where the 56 field bosses are and how their respawns work.'],
+    ['#ev-halloween','Halloween event','Pumpkin Coins: how to earn them and what to buy, until the 3/4 Nov maintenance.'],
+    ['#ev-1014','14 Oct update','Conquerors of the Abyss and the other changes from that patch.'],
+    ['#ev-invasion','Dimensional Invasion','The hourly wave-defence event at :30: how to join and what it pays.'],
+    ['#ev-season-end','Season 1 ends 16 Dec','What to finish and spend before the season resets.'],
+    ['#sys-rift','Spacetime Rift, arena caps, Abyss duty','Rift times, weekly arena caps and the Abyss duty commands.'],
+    ['#sys-season-rank','In-game rankings (Season 1)','The seven ranking boards and what they pay at the end of the season.'],
+    ['#kinaplanbox','Weekly Kina planner','Add up the Kina your week of farming and dailies makes, with your own minutes.'],
+    ['#sys-sellcraft','Market fees and crafting for profit','The listing fee and tax, the daily Kina cap, and which crafts sell.'],
+    ['#sys-shards','Power Shards','The damage consumable most players ignore, and when to switch it on.'],
+    ['#sys-death','Dying, reviving and Kisks','What death costs and every way back.'],
+    ['#alt-shared','Shared vs per character','Which counters every character on your server shares; spend those on your main.'],
+    ['#sys-flight','Flying: Flight Power','What Flight Power and Flight Speed actually do.'],
+    ['h:Pet ladder','Pet ladder: easiest to hardest','Every pet in the order that\'s quickest to collect.'],
+    ['#genus','Genus Insight guide (Global)','How the five boards, slots, locks and rerolls work.'],
+    ['#sys-pantheon','Pantheon and god stats','What each of the ten deity stats does.'],
+    ['#sys-closet','Closet collection bonus','How skins add points to each category, up to +50%.'],
+    ['#sys-monoliths','Monoliths: what each level is worth','The stats, titles and items each Monolith level gives.'],
+    ['#sys-achievements','Achievements: the hidden reward pile','Why achievements are worth it and where the checklist is.'],
+    ['#refgloss','Status effects and combat words','Plain-English meanings of every status, crowd-control and hit word.'],
+    ['#refunlocks','Unlock requirements','What opens at which level and item level, for every dungeon and system.'],
+    ['#reftables','Reference tables','EXP per level, Legion levels, ranking tiers, crafting and gathering mastery.'],
+    ['#sys-krtips','Korean tips that work on Global','Tips from a year of Korean servers that apply on Global.'],
+    ['#sys-storage','Bags, storage and presets','Cube expansions, character and account storage, presets.'],
+    ['#sys-settings','Settings worth changing','Control mode, targeting and other options to change first.'],
+    ['g:Where sources disagree','Where sources disagree and main sources','Each disagreement, the choice this guide made and why, plus the main sources.'],
+  ];
+  const h=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const SK='aion2fm-cbox';
+  let OPEN={}; try{OPEN=JSON.parse(sessionStorage.getItem(SK)||'{}')||{}}catch(e){OPEN={}}
+  const saveOpen=()=>{try{sessionStorage.setItem(SK,JSON.stringify(OPEN))}catch(e){}};
+  (function css(){
+    if(document.getElementById('cboxcss')) return;
+    const st=document.createElement('style'); st.id='cboxcss';
+    st.textContent=['details.cbox>summary{cursor:pointer}',
+      'details.cbox[open]>summary{margin-bottom:10px}',
+      '.cbox>.cbody{display:grid;gap:12px;min-width:0}',
+      '.cbox>.cbody>.box,.cbox>.cbody>div:not(.box):not(.grid2)>.box:only-child{border:0;background:none;padding:0;box-shadow:none;margin:0}',
+      '.cbox>.cbody>.box>h3:first-child,.cbox>.cbody>div:not(.box):not(.grid2)>.box:only-child>h3:first-child{display:none}',
+      '.grid2>details.cbox,.grid3>details.cbox{align-self:start}',
+      'section.tab [id],section.tab details{scroll-margin-top:var(--cbox-smt,150px)}'].join('\n');
+    document.head.appendChild(st);
+  })();
+  // jumps land below the sticky class bar + tab bar (their height changes with the screen width)
+  function stickyGap(){try{const tb=document.querySelector('.tabbar');if(tb)document.documentElement.style.setProperty('--cbox-smt',Math.max(0,Math.round(tb.getBoundingClientRect().bottom))+10+'px')}catch(e){}}
+  function sectionOf(el){return el&&el.closest?el.closest('section.tab'):null}
+  function find(key){
+    if(key[0]==='#') return document.getElementById(key.slice(1));
+    const t=key.slice(2), kind=key[0];
+    const hh=[...document.querySelectorAll('section.tab .box h3')].find(x=>x.textContent.trim().startsWith(t)&&!x.closest('details.cbox'));
+    if(!hh) return null;
+    const box=hh.closest('.box');
+    return kind==='g'?(box.parentElement&&box.parentElement.classList.contains('grid2')?box.parentElement:box):box;
+  }
+  function titleEl(body){
+    return body.querySelector(':scope>.box>h3:first-child, :scope>div:not(.box):not(.grid2)>.box:only-child>h3:first-child');
+  }
+  function sync(d){
+    const b=d.querySelector(':scope>summary>b'); if(!b) return;
+    const t=titleEl(d.querySelector(':scope>.cbody'));
+    const txt=t&&t.textContent.trim()?t.textContent.trim().replace(/\s+/g,' '):d.dataset.ctitle;
+    if(b.textContent!==txt) b.textContent=txt;
+    const el=d.querySelector(':scope>.cbody>*'); const empty=!el||el.hidden||(!el.children.length&&!el.textContent.trim());
+    if(d.hidden!==empty) d.hidden=empty;
+  }
+  function wrap(el,key,title,sum){
+    if(!el||!el.parentNode||el.closest('details.cbox')||el.tagName==='DETAILS'||el.tagName==='SECTION') return;
+    const d=document.createElement('details');
+    d.className='box cbox'; d.dataset.ckey=key; d.dataset.ctitle=title;
+    if(OPEN[key]) d.open=true;
+    d.innerHTML=`<summary><b style="font-size:17px">${h(title)}</b> <span class="small muted">${h(sum)} Click to open.</span></summary><div class="cbody"></div>`;
+    el.parentNode.insertBefore(d,el);
+    d.querySelector('.cbody').appendChild(el);
+    d.addEventListener('toggle',()=>{if(d.open)OPEN[key]=1;else delete OPEN[key];saveOpen()});
+    sync(d);
+    try{let q=0;new MutationObserver(()=>{if(q)return;q=1;setTimeout(()=>{q=0;sync(d)},0)}).observe(d.querySelector('.cbody'),{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['hidden']})}catch(e){}
+  }
+  function apply(){CFG.forEach(([k,t,s])=>{try{const el=find(k);if(el)wrap(el,k,t,s)}catch(e){console.error(e)}})}
+  window.applyCollapse=apply;
+  // open every closed <details> around an element
+  function openAround(el){let n=el&&el.parentElement;while(n){if(n.tagName==='DETAILS'&&!n.open)n.open=true;n=n.parentElement}}
+  window.openAround=openAround;
+  {const siv=Element.prototype.scrollIntoView;
+    if(siv&&!siv._cbox){const f=function(){try{openAround(this);stickyGap()}catch(e){}return siv.apply(this,arguments)};f._cbox=1;Element.prototype.scrollIntoView=f}}
+  // show(id): a tab id as before; any other element id opens its tab, its drop-downs, then scrolls to it
+  {const orig=window.show;
+    window.show=function(id,push){
+      const el=id&&document.getElementById(id);
+      if(el&&el.tagName!=='SECTION'){
+        const sec=sectionOf(el);
+        if(sec){
+          const r=orig.call(this,sec.id,false);
+          if(push){try{history.replaceState(null,'','#'+id)}catch(e){}}
+          try{apply()}catch(e){}
+          openAround(el); if(el.tagName==='DETAILS') el.open=true;
+          setTimeout(()=>{try{el.scrollIntoView({block:'start'})}catch(e){}},30);
+          return r;
+        }
+      }
+      const r=orig.apply(this,arguments);
+      try{apply()}catch(e){}
+      return r;
+    };}
+  // a #box-id link pasted or clicked as a plain href (no data-goto)
+  window.addEventListener('hashchange',()=>{const k=String(location.hash||'').slice(1); if(!k||(typeof ALL!=='undefined'&&ALL[k])) return; const el=document.getElementById(k); if(el&&el.tagName!=='SECTION'&&sectionOf(el)) try{show(k,false)}catch(e){}});
+  try{apply()}catch(e){console.error(e)}
+})();
+
 /* ---------- Release polish (Oct 2026) ----------
-   - merged tabs: old tab ids (arcana, modes, closet, achievements, notes, progress) open the tab that now holds them
+   - merged tabs: old tab ids (modes, closet, achievements, notes, progress) open the tab that now holds them
    - first visit: "Pick your class" grid on Start here
    - Recommended videos (VIDEOS = audit/r7/class_videos.json, recommended:true only; links, never embeds)
    - "Our builds on questlog.gg" (QUESTLOG_LINKS in questlog_links.js; empty links hidden)
@@ -6902,7 +7058,7 @@ var QUESTLOG_LINKS={
   const okUrl=u=>/^https:\/\/[^\s"'<>]+$/i.test(String(u||'').trim());
 
   /* ---- merged tabs ---- */
-  const ALIAS={arcana:'gear',modes:'builds',closet:'pantheon',achievements:'monoliths',notes:'credits',progress:'start'};
+  const ALIAS={modes:'builds',closet:'pantheon',achievements:'monoliths',notes:'credits',progress:'start'};
   const orig=window.show;
   window.show=function(id,push){
     const to=ALIAS[id];
