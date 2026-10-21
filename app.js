@@ -1,4 +1,4 @@
-var SIMSRC="data/sim.js?v=1792554728";
+var SIMSRC="data/sim.js?v=1792587798";
 const P=ALL[SLUG];
 document.getElementById('app').innerHTML=P.body;
 document.title=P.cls+' Guide · AION 2 Global Field Manual (Unofficial Fan Guide)';
@@ -534,6 +534,7 @@ const DWTASKS=[
  {k:'fissure',t:'w',srv:1,n:'Daily Dungeon ×14',d:'Daeva Bio-Research Base (Unknown Fissure tab): a 90-second run paying 3,000–10,000 Enhance Stones by score, 14 entries a week shared by the server.'},
  {k:'conquest',t:'w',n:'Conquest runs',d:'1 reward count per 8h (cap 21). Always take the reward cube.'},
  {k:'trans',t:'w',n:'Transcendence runs',d:'1 per 12h (cap 14). Arcana.'},
+ {k:'hardexp',t:'w',n:'Expedition Hard (Krao Cave, Draupnir)',d:'New 21 Oct, item level 2,600: 4-minute boss Frenzy timer, 3 revives each. Ariel Fragments, Philosopher\'s Stone: Revelation (chance, or pick it as the guaranteed reward), all Wrathful materials, more Kina. Morph 100 fragments into 1 Ariel crystal (up to 30 per character). Whether Hard uses the Conquest reward count is not stated.'},
  {k:'explore',t:'w',n:'Exploration',d:'7 reward counts per Expedition dungeon.'},
  {k:'trial',t:'w',n:'Ascension Trial ×3',d:'Solo; Enhance Stones, Amplify fragments.'},
  {k:'subj',t:'w',off:1,n:'Subjugation ×3',d:'4-player. Not open on Global yet (probably Season 2), so hidden.'},
@@ -552,13 +553,13 @@ const DWTASKS=[
  {k:"planet",t:"w",n:"Planet's Call pass",d:"Event pass: 51 levels, 40,000 EXP in total, 15,000 weekly cap. Ends at the 27 Oct PDT / 28 Oct CET maintenance. From the 21 Oct reset one weekly cap is left, so under 25,000 pass EXP you can no longer finish it: claim what you have before then."},
  {k:"passmis",t:"w",n:"Daeva Pass weekly missions",d:"Challenge Season Missions > Weekly Missions, for pass EXP."},
  {k:"wingmorph",t:"w",srv:1,n:"Sealed Wing → Enhance Stone morph",d:"Up to 20 Substance Morphs per server per week (since 7 Oct). Pick which character gets the stones."},
- {k:"spiritstone",t:"w",srv:1,n:"Resurrection Spiritstones (optional)",d:"Wind Breeze Merchants > Special (membership): 25,000 Kina each, 10 per server per week, until 15 Dec."},
+ {k:"spiritstone",t:"w",srv:1,n:"Resurrection Spiritstones (optional)",d:"Rise to the Challenge (from 21 Oct): Shop > Wind Breeze Merchants, per server per week: Step 1, 30 at 25,000 Kina; Step 2, 30 more at 50,000. Until the 15 Dec PST / 16 Dec CET maintenance. Before 21 Oct: 10 a week at 25,000."},
  {k:"halattend",t:"d",srv:1,n:"Trick or Treat attendance (Halloween)",d:"Menu > Attendance: 35 Pumpkin Coins a day, 100 on days 7 and 14. Once per server, until the 3 Nov PST / 4 Nov CET maintenance."},
  {k:"halmis",t:"w",srv:1,n:"Halloween event missions + coin shop",d:"Season Mission > Event tab: weekly missions, once per server (about 235 Pumpkin Coins). Then buy the weekly coin-shop items (Odyle Energy, Nightmare tickets, Shugo keys, Rift Stones). Until 3/4 Nov."},
- {k:"halcandy",t:"w",srv:1,n:"Halloween Candy Keys",d:"60 Candy Key Fragments (from Expedition and Transcendence clears) make a Red, Yellow or Blue Candy Key in Substance Morph, each once a week per server. Red: 20 Growth Pet Chests; Yellow: 10,000 AP; Blue: 4 Odyle Energy. Until 3/4 Nov."},
+ {k:"halcandy",t:"w",srv:1,n:"Halloween Candy Keys",d:"60 Candy Key Fragments (from Conquest and Transcendence clears; Exploration runs give none) make a Red, Yellow or Blue Candy Key in Substance Morph, each once a week per server. Red: 20 Growth Pet Chests; Yellow: 10,000 AP; Blue: 4 Odyle Energy. Until 3/4 Nov."},
  {k:"riftstone",t:"w",n:"Lower Abyss Rift Stones (Conquerors of the Abyss)",d:"Wind Breeze Merchants > Special (membership): 50,000 Kina each, up to 7 per character a week (level 45+), +1 h Lower Abyss time each. Deleted 7 days after you get them. Until 27/28 Oct."},
  {k:"odylebuy",t:"w",n:"Odyle Energy (Bound) (optional)",d:"Wind Breeze Merchants > Special (membership): 25 Odyle + 5 Fine Odyle + 1 Pure Odyle + 50,000 Kina each, up to 20 per character a week with no server limit until the 27/28 Oct maintenance (server-transfer period only). After that the old 4 per character + 16 per server limit is expected back (Unconfirmed)."},
- {k:"supplyd",t:"d",n:"Supply Requests (Emergency)",d:"ESC > Supply Request (from level 25). Hand in the requested items for Abyss Points (about 380-6,000 a delivery) and often Enhance Stones. Emergency requests change daily. Check the list before you extract or vendor gear and crafts: some low items are requested."},
+ {k:"supplyd",t:"d",n:"Supply Requests (Emergency)",d:"ESC > Supply Request (from level 25). Hand in the requested items for Abyss Points (from about 380 for low items to about 21,000 for field-boss items; rare requests reportedly 50,000-100,000) and often Enhance Stones. Emergency requests change daily. Check the list before you extract or vendor gear and crafts: some low items are requested."},
  {k:"kinahcap",t:"d",n:"Open-world Kina (optional)",d:"Monsters stop paying Kina after about 1,000,000 per character a day. Worth it on alts once their dailies are done; stop when kills pay nothing."},
  {k:"supplyw",t:"w",n:"Supply Requests (Weekly, Crafting, Boss)",d:"ESC > Supply Request. Weekly requests pay the most Abyss Points; Crafting and Boss requests take crafted items and boss drops. Resets Wednesday."},
  {k:"morphshop",t:"w",n:"Substance Morph > Special > Wind Breeze Merchants (membership)",d:"Soul Crystals and Daily Dungeon Instant Clear Tickets are sold here instead of Shop > Wind Breeze Merchants > Special during the server-transfer period (14 Oct to the 27/28 Oct maintenance); after that they should move back. Buy the weekly limit shown in game."}
@@ -3238,8 +3239,13 @@ function onShow(){
     return `<figure class="dghead"><img src="${h(p.src)}" alt="${h(p.alt||D.name||'')}" loading="lazy" decoding="async">${credit(p)}</figure>`}
 
   // ---- modes (Exploration / Conquest) and Transcendence stages ----
-  const MODES={exploration:'Exploration',conquest:'Conquest',both:'Exploration + Conquest'};
+  const MODES={exploration:'Exploration',conquest:'Conquest',hard:'Hard',both:'Exploration + Conquest'};
   const hasModes=D=>arr(D.modes).includes('conquest')&&arr(D.modes).includes('exploration');
+  // modes this dungeon offers, in picker order (Hard added 21 Oct for Krao Cave and Draupnir)
+  const modeList=D=>['exploration','conquest','hard'].filter(m=>arr(D.modes).includes(m));
+  const okMode=(D,m)=>modeList(D).includes(m)?m:'conquest';
+  // Hard view: also shows the Conquest blocks (Hard is built on Conquest)
+  const dgmShow=(dgm,p)=>dgm===p||(p==='hard'&&dgm==='conquest');
   const stageList=D=>arr(D.stages).filter(s=>s&&Number(s.n)>=1&&Number(s.n)<=9).sort((a,b)=>a.n-b.n);
   const stN=x=>{const n=parseInt(x,10);return n>=1&&n<=9?n:1};
   // a stage-tagged item (cumulative): shown from its first stage on; "New in Stage n" on that stage
@@ -3313,14 +3319,25 @@ function onShow(){
   // remembered pick per dungeon: mode (exploration|conquest) or stage (1-4)
   function getPick(D){
     const id=String(D.id||'');
-    if(hasModes(D)){let m='conquest';try{m=S.get('dgmode-'+id,'conquest')}catch(e){} return m==='exploration'?'exploration':'conquest'}
+    if(hasModes(D)){let m='conquest';try{m=S.get('dgmode-'+id,'conquest')}catch(e){} return okMode(D,m)}
     const sl=stageList(D); if(sl.length){let n=sl[0].n;try{n=S.get('dgstage-'+id,n)}catch(e){} n=stN(n); return sl.some(s=>s.n===n)?n:sl[0].n}
     return null;
   }
   function modePicker(D){
     return `<div class="dgpick"><div class="seg" role="group" aria-label="Difficulty mode">`+
-      ['exploration','conquest'].map(m=>`<button type="button" data-dgpick="${m}" aria-pressed="false">${MODES[m]}</button>`).join('')+`</div>`+
-      `<p class="small muted">Conquest has every Exploration mechanic plus the gold “Conquest adds” blocks.</p></div>`;
+      modeList(D).map(m=>`<button type="button" data-dgpick="${m}" aria-pressed="false">${MODES[m]}</button>`).join('')+`</div>`+
+      `<p class="small muted">Conquest has every Exploration mechanic plus the gold “Conquest adds” blocks.${modeList(D).includes('hard')?' Hard shows the Conquest blocks plus the “Hard mode” facts.':''}</p></div>`;
+  }
+  // Hard mode facts (whole dungeon); shown in the Hard view only
+  function hardFacts(D){
+    const c=D.hard; if(!c||typeof c!=='object'||!modeList(D).includes('hard')) return '';
+    const F=[['Level',c.level],['Item level',c.itemLevel],['Boss Frenzy timer',c.enrage],['Revives',c.revives],['Entries',c.entries]].filter(f=>f[1]);
+    const rw=arr(c.rewards), notes=arr(c.notes);
+    return `<div class="dgcq" data-dgm="hard"><h4><span class="tag gold">Hard mode</span>${c.added?` <span class="tag">${h(c.added)}</span>`:''}</h4>`+
+      (F.length?`<ul class="plain small">${F.map(([k,v])=>`<li><b class="dgk">${k}:</b> ${h(v)}</li>`).join('')}</ul>`:'')+
+      (rw.length?`<div><b class="small">Hard rewards</b><ul class="plain small">${rw.map(x=>`<li>${h(x)}</li>`).join('')}</ul></div>`:'')+
+      (c.documented===false?`<p class="small" style="margin:0"><b class="dgk">Boss mechanics:</b> ${h(c.note||'not documented yet.')}</p>`:'')+
+      (notes.length?`<ul class="plain small">${notes.map(x=>`<li>${h(x)}</li>`).join('')}</ul>`:'')+`</div>`;
   }
   function conquestFacts(D){
     const c=D.conquest; if(!c||typeof c!=='object') return '';
@@ -3350,7 +3367,7 @@ function onShow(){
   function applyView(c,D){
     if(!c||!D) return; const p=getPick(D); if(p==null) return;
     c.querySelectorAll('[data-dgpick]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.dgpick===String(p))));
-    if(hasModes(D)){c.dataset.mode=p; c.querySelectorAll('[data-dgm]').forEach(e=>{e.hidden=e.dataset.dgm!==p}); return}
+    if(hasModes(D)){c.dataset.mode=p; c.querySelectorAll('[data-dgm]').forEach(e=>{e.hidden=!dgmShow(e.dataset.dgm,p)}); return}
     c.dataset.stage=p;
     c.querySelectorAll('[data-st]').forEach(e=>{const n=stN(e.dataset.st); e.hidden=n>p; e.classList.toggle('isnew',p>1&&n===p); e.classList.toggle('wasnew',n>1&&n<p)});
     c.querySelectorAll('[data-sp]').forEach(e=>{e.hidden=Number(e.dataset.sp)!==p});
@@ -3376,7 +3393,7 @@ function onShow(){
       `<div class="dgbody">`+header(D)+
       (D.summary?`<p class="mssum" style="margin:0">${h(D.summary)}</p>`:'')+
       (F.length?`<details class="dgmore"><summary>Entry, resets and unlock</summary><dl class="dgfacts">${F.map(([k,v])=>`<div><dt>${k}</dt><dd>${h(v)}</dd></div>`).join('')}</dl></details>`:'')+
-      (ctx.modes?modePicker(D)+conquestFacts(D):'')+
+      (ctx.modes?modePicker(D)+conquestFacts(D)+hardFacts(D):'')+
       list('Rewards',D.rewards)+
       (ctx.stages?stagePanel(D):'')+
       bosses.map(b=>bossHtml(b,ctx)).join('')+
@@ -3390,7 +3407,7 @@ function onShow(){
   function hay(D){
     const b=arr(D.bosses).map(x=>[x.name,arr(x.phases).join(' '),arr(x.mechanics).map(m=>m&&(m.see+' '+m.do)).join(' '),arr(x.wipe).join(' '),
       arr((x.conquest||{}).notes).join(' '),arr(x.stageNotes).map(s=>s&&s.text).join(' ')].join(' ')).join(' ');
-    const c=D.conquest&&typeof D.conquest==='object'?arr(D.conquest.notes).join(' '):'';
+    const c=(D.conquest&&typeof D.conquest==='object'?arr(D.conquest.notes).join(' '):'')+(D.hard&&typeof D.hard==='object'?' hard '+[arr(D.hard.rewards).join(' '),arr(D.hard.notes).join(' ')].join(' '):'');
     const s=arr(D.stages).map(x=>x&&[arr(x.changes).join(' '),arr(x.rewards).join(' ')].join(' ')).join(' ');
     return [D.name,D.type,D.summary,arr(D.rewards).join(' '),b,arr(D.tips).join(' '),c,s].join(' ').toLowerCase();
   }
@@ -3446,7 +3463,7 @@ function onShow(){
       const pk=e.target.closest&&e.target.closest('[data-dgpick]');
       if(pk){const c=pk.closest('details.dgcard'); const id=c&&c.dataset.dg; const all=arr((data()||{}).groups).flatMap(g=>arr(g.dungeons)); const D=all.find(x=>String(x.id)===id); if(!D) return;
         const v=pk.dataset.dgpick;
-        try{hasModes(D)?S.set('dgmode-'+id,v==='exploration'?'exploration':'conquest'):S.set('dgstage-'+id,stN(v))}catch(x){console.error(x)}
+        try{hasModes(D)?S.set('dgmode-'+id,okMode(D,v)):S.set('dgstage-'+id,stN(v))}catch(x){console.error(x)}
         applyView(c,D); return}
       // ticking Cleared must not open/close the card
       if(e.target.closest&&e.target.closest('label.msdone')&&e.target.closest('summary')&&!(e.target.matches&&e.target.matches('input'))){
@@ -4496,7 +4513,7 @@ function renderCloset(){
   SL.push(steps); steps='';
   if(rsMiss.length) steps+=`<li><b>Check the Black Cloud Merchant every hour, on every character.</b> ${colEff(1)} <b class="panval">up to ${colPct(sumv(rsMiss))}</b><div class="small">Shop menu (<span class="kbd">H</span>) › Black Cloud Merchants. Free new stock every hour, different on each character, and the Closet is shared on your server, so alts give you extra rolls. A paid refresh starts at 500 Kina (the 10th costs 15,000). Buy any of these ${rsMiss.length} when they show up, best first: ${rsMiss.slice(0,10).map(x=>`<span style="color:${colGC(x.r.g)}">${esc(x.r.n)}</span> <span class="muted">(${esc(x.ct.short)})</span>`).join(', ')}${rsMiss.length>10?`, and ${rsMiss.length-10} more in the table below`:''}.</div></li>`;
   if(steps) SL.push(steps); steps='';
-  steps+=`<li><b>Extract the gear you replace instead of selling it.</b> ${colEff(1)}<div class="small">Item Extraction can give a random skin (one guide: about 25% from Common to Epic gear, 10% from Unique and Heroic; Korean players say guards and rings never give skins). Every new skin counts toward the titles even when it is not for your slots.</div></li>`;
+  steps+=`<li><b>Extract the gear you replace instead of selling it.</b> ${colEff(1)}<div class="small">Item Extraction can give a random skin (the in-game preview on Global shows 10% for an Epic item; an older guide said about 25% from Common to Epic gear and 10% from Unique and Heroic; Korean players say guards and rings never give skins). Every new skin counts toward the titles even when it is not for your slots.</div></li>`;
   SL.push(steps); steps='';
   cheap.slice(0,10).forEach(x=>SL.push(stepItem(x)));
   if(noneMiss.length) SL.push(`<li><b>Combine spare skins.</b> ${colEff(2)}<div class="small">Skin Combine turns spare skins into a random skin of the same grade, or one grade higher: Common 25% (600 Kina), Rare 20% (1,000), Epic 15% to Unique (6,000). ${noneMiss.length} of your ${esc(wcat.short)}/Earring/Necklace Uniques have no shop or drop, so Combine is the way to them. Save Lucky Auras (+10% upgrade chance; achievements give 18 Lucky Aura, 14 Rare and 1 Epic) for Epic combines. Results are random across all slots, so combine for the skin count, not for one look.</div></li>`);
@@ -4520,7 +4537,7 @@ function renderCloset(){
       <li><b>Necklace and Earrings</b> raise that piece's Attack and Defense by 0.1% a point (about 120 Attack on a level-45 necklace, about 100 on each of your two earrings). The 7 armor slots raise that piece's Defense only.</li>
       <li><b>Centurion and Decanus</b> are the only skins with stats while worn: +1% PvP Damage Tolerance per armor piece, +2% PvP Damage Boost for the earrings and the necklace. Decanus gives the same for under a third of the Abyss Points.</li></ul>
     <div class="tablewrap" style="margin-top:8px"><table><thead><tr><th>Skin Combine</th><th>Kina</th><th>Result</th><th>Designs (same / next grade)</th></tr></thead><tbody>${K.combine.map(r=>`<tr><td class="small">${r[0]}</td><td class="small">${r[1]}</td><td class="small">${r[2]}</td><td class="small">${r[3]}</td></tr>`).join('')}</tbody></table></div>
-    <p class="small muted" style="margin:8px 0 0"><b>Not sure yet:</b> points per grade (Common 1 to Heroic 5) come from one fan guide, not the client; Special skins are assumed to be worth 5. The extraction skin chance is from one guide. Damage values use the guide's DPS simulator (Attack value of a typical level-45 ${esc(cls)}), are the same in PvP${m==='pvp'?' (estimate)':''}, and assume the earring bonus applies to both earrings. Sources: metabot.gg (Global client: skins, sources, prices, collection bonus, Combine odds), dtgre.com (points by grade), gamerblurb.com (Black Cloud Merchant), Korean community tests (inven.co.kr). Checked 18 Oct 2026.</p></details></div>`;
+    <p class="small muted" style="margin:8px 0 0"><b>Not sure yet:</b> points per grade (Common 1 to Heroic 5) come from one fan guide, not the client; Special skins are assumed to be worth 5. The extraction skin chance is 10% for Epic gear per the in-game preview; the other grades come from one guide. Damage values use the guide's DPS simulator (Attack value of a typical level-45 ${esc(cls)}), are the same in PvP${m==='pvp'?' (estimate)':''}, and assume the earring bonus applies to both earrings. Sources: metabot.gg (Global client: skins, sources, prices, collection bonus, Combine odds), dtgre.com (points by grade), gamerblurb.com (Black Cloud Merchant), Korean community tests (inven.co.kr). Checked 18 Oct 2026.</p></details></div>`;
   host.innerHTML=h;
 }
 
@@ -4591,6 +4608,7 @@ function renderMono(){
     <li><b>Why bother:</b> level 30 adds ${main?esc(monoStatTxt(monoSum(main,0,main.max).st)):''}, the only Revelation Amulet Enhance Scrolls in the game (30), 12 Hidden Cube keys, 18 Soul Codex: Reset and 18 Unique Amplify Stone Fragments. The level-20 title (+3% PvE Damage Boost) is one of the best PvE attack titles. Ereshkigal is the PvP stone (and pays Azphel crystals for the PvP board).</li>
     <li><b>Not on Global yet:</b> the Eltnen and Morheim Monoliths (level 46-80 regions, Korea only for now; 30 more god-stat points and Stamina +70 when they open).</li>
     <li><b>Ereshkigal levels 17-20</b> (and the Saint of Ereshkigal PvP title) need the 100 traces in Chaotic Middle Reshanta; Lower Reshanta only holds enough for level 16.</li>
+    <li><span class="tag">Unconfirmed</span> One creator (Madsin) says the Abyss (Reshanta) Monolith gives no PvE stats but about <b>36 item level</b> on every character, so Abyss feathers are worth picking up. Check your item level before and after a hand-in.</li>
     <li><b>Not sure yet:</b> Global seems to count 1 trace per pickup (one guide says traces were reduced on Global); the zone counts match exactly what each stone needs. God-stat values come from the guide's DPS simulator${m==='pvp'?'; PvP values are estimates':''}.</li></ul>
     <p class="muted" style="margin:6px 0 0">Sources: metabot.gg (Global client 0.0.4387.0: Monolith levels, rewards, traces per zone, Kibelisks), daevaguides.com, aion2hub.com, official server transfer Q&amp;A. Checked 18 Oct 2026.</p></div>`;
   host.innerHTML=h;
@@ -6924,8 +6942,8 @@ var A2T=(function(){
   const h=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const D=()=>(typeof ACHFARM!=='undefined'&&ACHFARM)||null;
   const num=n=>Number(n).toLocaleString('en-US');
-  const CATS=['fast','easy','cheese'];
-  const FILT=[['all','All'],['fast','Super fast'],['easy','Easy'],['cheese','Cheese'],['alt','Alt-friendly']];
+  const CATS=['fast','easy','cheese','endgame'];
+  const FILT=[['all','All'],['fast','Super fast'],['easy','Easy'],['cheese','Cheese'],['endgame','Endgame'],['alt','Alt-friendly']];
   const BIG=/Superior|Abyssal|Soul Codex|Key: Hidden Cube|Lucky Aura|Ultimate Refining|Battle Enhance|Amplify Stone/;
   let MAP=null;
   function achMap(){
@@ -6981,7 +6999,7 @@ var A2T=(function(){
     let o=`<div class="box" style="display:grid;gap:8px"><p class="small" style="margin:0">Achievements ranked by how fast they are, with the tricks that make them faster. Rewards are the total for all tiers (from the <a href="#achievements" data-goto="achievements">Achievements</a> list). Almost all are <b>per character</b>, so alts can farm them again; see the Alts sections below.</p>
       <div class="seg" role="group" aria-label="Show">${FILT.map(([k,t])=>`<button type="button" data-affilt="${k}" aria-pressed="${f===k}">${t}</button>`).join('')}</div>
       <p class="small muted" style="margin:0">Ticked <b>${dd}</b> of ${nn}. Ticks are shared with the Achievements list.</p></div>`;
-    CATS.forEach(c=>{
+    CATS.filter(c=>D().cats[c]).forEach(c=>{
       let list=items.filter(it=>it.cat===c); if(f==='alt') list=list.filter(it=>it.alt);
       const hide=(f!=='all'&&f!=='alt'&&f!==c)||!list.length;
       const [d,n]=counts(list), cat=D().cats[c], isOpen=open.has('achfarm-'+c)||f===c;
@@ -7059,6 +7077,7 @@ var QUESTLOG_LINKS={
     ['#sys-ascension-trial','Ascension Trial','The solo weekly score run: entries, rooms and rewards.'],
     ['#sys-field-bosses','Field bosses','Where the 56 field bosses are and how their respawns work.'],
     ['#ev-halloween','Halloween event','Pumpkin Coins: how to earn them and what to buy, until the 3/4 Nov maintenance.'],
+    ['#ev-1021','21 Oct update','Expedition Hard, the Ariel board, Rise to the Challenge and the other changes from that patch.'],
     ['#ev-1014','14 Oct update','Conquerors of the Abyss and the other changes from that patch.'],
     ['#ev-invasion','Dimensional Invasion','The hourly wave-defence event at :30: how to join and what it pays.'],
     ['#ev-season-end','Season 1 ends 16 Dec','What to finish and spend before the season resets.'],
