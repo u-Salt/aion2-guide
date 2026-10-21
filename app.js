@@ -1,4 +1,4 @@
-var SIMSRC="data/sim.js?v=1792548029";
+var SIMSRC="data/sim.js?v=1792553824";
 const P=ALL[SLUG];
 document.getElementById('app').innerHTML=P.body;
 document.title=P.cls+' Guide · AION 2 Global Field Manual (Unofficial Fan Guide)';
@@ -4259,6 +4259,14 @@ document.querySelectorAll('.tgroups [data-grp]').forEach(b=>b.addEventListener('
 const PAN_SLOTN={C:'Colossus',S:'Statue',A:'Artwork'}, PAN_SLOTP={C:'Colossus',S:'Statues',A:'Artworks'};
 const PAN_COST=[1,2,4,8]; // effort cost used to rank "easiest wins": Free, Easy, Medium, Hard
 const PAN_FACN={E:'Elyos',A:'Asmodian',B:'Both factions'};
+const PAN_FIRST=3; // easiest wins shown before the "more steps" drop-down
+/* drop-downs inside #panbox: open/closed survives the re-render after every tick or filter (and a reload, this visit) */
+let PAN_OPEN={}; try{PAN_OPEN=JSON.parse(sessionStorage.getItem('aion2fm-pandet')||'{}')||{}}catch(e){PAN_OPEN={}}
+function panDet(k,title,sum,body,nested){return `<details class="${nested?'coldet':'box'}" data-pandet="${k}"${PAN_OPEN[k]?' open':''}><summary class="pansum"><b>${title}</b> <span class="small muted">${sum} Click to open.</span></summary>${body}</details>`}
+{const st=document.getElementById('pandetcss')||document.createElement('style'); if(!st.id){st.id='pandetcss';
+  /* closed secondary drop-downs sit side by side on wide screens; an open one takes the full row */
+  st.textContent='.pandets{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:14px;min-width:0}.panmain{display:grid;gap:14px;min-width:0}.panmain>*{min-width:0}@media (min-width:1000px){.panmain{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto 1fr;grid-template-areas:"best top" "best wins";align-items:start}.panmain>.pantop{grid-area:top}.panmain>.panbest{grid-area:best}.panmain>.panwins{grid-area:wins}}.pandets>details[open]{grid-column:1/-1}.pandets>details{min-width:0}.pandets>details>summary.pansum::before,details.coldet[data-pandet]>summary::before,details.coldet[data-clodet]>summary::before{content:"▸";color:var(--gold)}.pandets>details[open]>summary.pansum::before,details.coldet[data-pandet][open]>summary::before,details.coldet[data-clodet][open]>summary::before{content:"▾"}';
+  document.head.appendChild(st)}}
 function panOK(){return typeof PANTHEON!=='undefined'&&PANTHEON&&PANTHEON.d}
 function panMode(){return (typeof MODE!=='undefined'&&MODE==='pvp')?'pvp':'pve'}
 function panW(){const w=PANTHEON.w;return (w[SLUG]||w.ranger)[panMode()]}
@@ -4324,7 +4332,7 @@ function renderPantheon(){
   const statOrder=Object.keys(P.stats).sort((a,b)=>(w[b]||0)-(w[a]||0));
   const top3=statOrder.slice(0,3).map(k=>`${P.stats[k][0]} (${P.stats[k][2].split(' + ')[0]})`);
   // ---- controls
-  let h=`<div class="box pantop"><div class="panctl"><span class="small muted">Your faction</span><div class="seg" role="group" aria-label="Faction">${['E','A','B'].map(f=>`<button type="button" data-panfac="${f}" aria-pressed="${fac===f}">${f==='B'?'Show both':PAN_FACN[f]}</button>`).join('')}</div>
+  let h=`<div class="panmain"><div class="box pantop"><div class="panctl"><span class="small muted">Your faction</span><div class="seg" role="group" aria-label="Faction">${['E','A','B'].map(f=>`<button type="button" data-panfac="${f}" aria-pressed="${fac===f}">${f==='B'?'Show both':PAN_FACN[f]}</button>`).join('')}</div>
     <span class="small muted">Ranked for <b>${esc(cls)}</b> in <b>${m==='pvp'?'PvP':'PvE'}</b> (switch PvE/PvP in the top bar).</span></div>
     ${fac==='B'?`<p class="small" style="margin:0"><b>Pick your faction</b> so the plan only uses decorations you can get (half of the field-boss and shop ones are Elyos-only or Asmodian-only). Until you pick, the plan and "Best possible" use the Elyos ones.</p>`:''}
     <p class="small" style="margin:0">For a ${esc(cls)}${m==='pvp'?' in PvP':''} the god stats that matter most are <b>${top3.join(', ')}</b>. ${m==='pve'?'Wisdom is worth about twice any other stat for damage, so an Epic artwork with Wisdom beats a Unique one without it.':'PvP values are an estimate (the simulator only covers PvE damage).'}</p></div>`;
@@ -4335,42 +4343,45 @@ function renderPantheon(){
       const g=need[j++];
       t+=`<div class="panslot">${g?panIco(g.d).replace('class="panico','class="panico panghost'):`<span class="panico panempty">${s}</span>`}<span><b class="muted">Empty</b><small>${g?'Goal: '+esc(g.d.n):''}</small></span></div>`}
     return t};
-  h+=`<div class="box" style="display:grid;gap:12px"><h3 style="margin:0">Your best setup</h3>
-    <p class="small muted" style="margin:0">Tick what you own (in the steps or the table below). Each slot shows the best decoration you have for a ${esc(cls)}; the value is about how much damage it adds${m==='pvp'?' (PvP: estimate)':''}.</p>
+  h+=`<div class="box panbest" style="display:grid;gap:12px"><h3 style="margin:0">Your best setup</h3>
+    <p class="small muted" style="margin:0">Tick what you own (in the All decorations table below). Each slot shows the best decoration you have for a ${esc(cls)}; the value is about how much damage it adds${m==='pvp'?' (PvP: estimate)':''}.</p>
     <div class="panbar"><span>Now <b>${panPct(pl.now)}</b></span><span>After the steps below <b>${panPct(pl.end)}</b></span><span>Best you can get <b>${panPct(pl.max)}</b></span></div>
     ${['C','S','A'].map(s=>`<div><div class="eyebrow" style="margin-bottom:6px">${PAN_SLOTP[s]} · ${pl.best[s].length} of ${P.slots[s]} filled</div><div class="pangrid ${s==='A'?'wide':''}">${tiles(s)}</div>
       <p class="small muted" style="margin:6px 0 0">Best possible: ${pl.target[s].map(x=>`<span class="${x.own?'panown':''}">${esc(x.d.n)}${x.own?' ✓':''}</span>`).join(', ')||'—'}</p></div>`).join('')}</div>`;
   // ---- easiest wins first
-  h+=`<div class="box" style="display:grid;gap:10px"><h3 style="margin:0">Easiest wins first</h3>
+  h+=`<div class="box panwins" style="display:grid;gap:10px"><h3 style="margin:0">Easiest wins first</h3>
     <p class="small muted" style="margin:0">Do these in order: each one is the biggest gain for the least effort from where you are now. Tick it when you have it and the list moves on.</p>
-    ${pl.steps.length?`<ol class="pansteps">${pl.steps.map(st=>{const x=st.x;return `<li><label class="panstephead">${panIco(x.d)}<span>${panName(x.d)} <span class="small muted">${PAN_SLOTN[x.d.s]}</span> ${panEffTag(x.ef)} <b class="panval">${panPct(st.gain)}</b></span></label>
-      <div class="small">${st.rep?`Replaces ${esc(st.rep.d.n)}. `:`Fills an empty ${PAN_SLOTN[x.d.s]} slot. `}${panHow(x,fac)}</div></li>`}).join('')}</ol>`
+    ${pl.steps.length?(()=>{const li=st=>{const x=st.x;return `<li><label class="panstephead">${panIco(x.d)}<span>${panName(x.d)} <span class="small muted">${PAN_SLOTN[x.d.s]}</span> ${panEffTag(x.ef)} <b class="panval">${panPct(st.gain)}</b></span></label>
+      <div class="small">${st.rep?`Replaces ${esc(st.rep.d.n)}. `:`Fills an empty ${PAN_SLOTN[x.d.s]} slot. `}${panHow(x,fac)}</div></li>`};
+      const first=pl.steps.slice(0,PAN_FIRST), rest=pl.steps.slice(PAN_FIRST);
+      return `<ol class="pansteps">${first.map(li).join('')}</ol>`+(rest.length?panDet('moresteps',`Steps ${PAN_FIRST+1} to ${pl.steps.length}`,`the next ${rest.length} wins, in the same order (${panPct(rest.reduce((t,s)=>t+s.gain,0))} more).`,`<ol class="pansteps" start="${PAN_FIRST+1}" style="margin-top:10px">${rest.map(li).join('')}</ol>`,1):'')})()
       :`<p class="callout ok small" style="margin:0">Nothing left to gain: your Pantheon is the best you can build right now.</p>`}</div>`;
+  h+=`</div>`; // end .panmain
   // ---- full table
   const rows=pl.all.filter(x=>(filt==='all'||x.d.s===filt)&&(showAll||x.d.av==='now'||x.own))
     .sort((a,b)=>'CSA'.indexOf(a.d.s)-'CSA'.indexOf(b.d.s)||(b.ef>=0)-(a.ef>=0)||b.v-a.v||a.d.n.localeCompare(b.d.n));
   const nNow=P.d.filter(d=>d.av==='now').length, nOwn=pl.all.filter(x=>x.own).length;
-  h+=`<details class="box"${window.__panAllOpen?" open":""} data-panall><summary class="pansum"><b>All decorations</b> <span class="small muted">${P.d.length} in the Global client · ${nNow} you can get now · you own ${nOwn}</span></summary>
+  h+=`<div class="pandets"><details class="box"${window.__panAllOpen?" open":""} data-panall><summary class="pansum"><b>All decorations</b> <span class="small muted">${P.d.length} in the Global client · ${nNow} you can get now · you own ${nOwn}. Click to open.</span></summary>
     <div class="panctl" style="margin:10px 0"><div class="seg" role="group" aria-label="Slot type">${[['all','All'],['C','Colossus'],['S','Statue'],['A','Artwork']].map(([k,t])=>`<button type="button" data-panslot="${k}" aria-pressed="${filt===k}">${t}</button>`).join('')}</div>
       <label class="small panall"><input type="checkbox" data-panall="1" ${showAll?'checked':''}> Also show ones you can't get yet</label></div>
     <div class="tablewrap"><table class="pantable"><thead><tr><th class="num">Own</th><th>Decoration</th><th>Slot</th><th>Stats</th><th class="num">Value</th><th>How to get it</th><th>Effort</th></tr></thead><tbody>
     ${rows.map(x=>`<tr class="${x.own?'panrowown':''}"><td class="num">${chk(x)}</td><td><span class="panname">${panIco(x.d)}<span>${panName(x.d)}<small class="muted">${esc(x.d.g)} · ${PAN_FACN[x.d.f]}${x.d.tr?' · tradable':''}</small></span></span></td><td class="small">${PAN_SLOTN[x.d.s]}</td><td class="small">${panStats(x.d,w)}</td><td class="num small">${x.v>0?panPct(x.v):'—'}</td><td class="small">${panHow(x,fac)}</td><td>${panEffTag(x.ef,x,fac)}</td></tr>`).join('')}
     </tbody></table></div></details>`;
   // ---- stat legend
-  h+=`<details class="box"><summary class="pansum"><b>What the god stats do</b> <span class="small muted">and what 10 points are worth to a ${esc(cls)} (${m==='pvp'?'PvP':'PvE'})</span></summary>
+  h+=`<details class="box" data-pandet="stats"${PAN_OPEN.stats?' open':''}><summary class="pansum"><b>What the god stats do</b> <span class="small muted">and what 10 points are worth to a ${esc(cls)} (${m==='pvp'?'PvP':'PvE'}). Click to open.</span></summary>
     <div class="tablewrap" style="margin-top:10px"><table><thead><tr><th>Stat [god]</th><th>Each point gives +0.1% to</th><th class="num">10 points ≈</th></tr></thead><tbody>
     ${statOrder.map(k=>`<tr><td class="small"><b>${P.stats[k][0]}</b> [${P.stats[k][1]}]</td><td class="small">${P.stats[k][2]}</td><td class="num small">${panPct(10*(w[k]||0))}</td></tr>`).join('')}</tbody></table></div>
     <p class="small muted" style="margin:8px 0 0">Damage stats (Wisdom = Double, Destruction = Attack, Time = Combat Speed, Illusion = Cooldown, Death = Crit) use the guide's DPS simulator. HP, Defense, Block, Accuracy and MP stats can't be simulated: they use the guide's role priorities (${SLUG==='templar'?'tank: Justice, Space and Life count a lot':SLUG==='cleric'?'healer: Life, Destiny and Wisdom count more':SLUG==='chanter'?'support: Life and Destiny count a bit':'damage dealer: they count very little'}), and PvP values are estimates.${SLUG==='brawler'?' Brawler has no simulator data: these are the Gladiator/Assassin averages.':''}</p></details>`;
   // ---- Korea-only + notes
-  if((P.kr||[]).length) h+=`<details class="box"><summary class="pansum"><b>Korea only, not on Global yet</b> <span class="small muted">${P.kr.length} Season 2/3 decorations</span></summary>
+  if((P.kr||[]).length) h+=`<details class="box" data-pandet="kr"${PAN_OPEN.kr?' open':''}><summary class="pansum"><b>Korea only, not on Global yet</b> <span class="small muted">${P.kr.length} Season 2/3 decorations. Click to open.</span></summary>
     <p class="small muted">Korean client data (gamers4life), listed so you know what is coming. They are not in the Global game.</p>
     <div class="tablewrap"><table><thead><tr><th>Decoration</th><th>Slot</th><th>Stats</th><th class="num">Value</th></tr></thead><tbody>${P.kr.map(d=>`<tr><td class="small">${panName(d)}</td><td class="small">${PAN_SLOTN[d.s]}</td><td class="small">${panStats(d,w)}</td><td class="num small">${panPct(panVal(d,w))}</td></tr>`).join('')}</tbody></table></div></details>`;
-  h+=`<div class="box small"><h3 style="font-size:18px">Good to know</h3><ul class="plain">
+  h+=`<details class="box" data-pandet="know"${PAN_OPEN.know?' open':''}><summary class="pansum"><b>Good to know</b> <span class="small muted">opening it, upgrading, per-character rules, sources. Click to open.</span></summary><div class="small" style="margin-top:10px"><ul class="plain">
     <li><b>Opening it:</b> the level-22 Ascension quest <i>The One Who Hears the Voice</i> adds the Pantheon to your menu. Put a decoration in from your bag, then place it in a slot of its own type.</li>
     <li><b>Upgrading:</b> there is no enhancing; you swap in a better decoration. Each decoration counts once, so you need 12 different Artworks.</li>
     <li><b>Per character:</b> the decorations you get are bound to that character, and shop limits are 1 per character. Tradable ones (field-boss, dungeon and Abyss drops) can go through the Market. One guide says you can save 3 layouts, handy for a PvE and a PvP set.</li>
     <li><b>Not sure yet:</b> one database lists these decorations under a rented Legion Hall instead; the item text says "Placing it in the Pantheon grants the effect". Sources for Dream Fragment, Artifact of Eternity and Asahr's Mirror come from one guide, not the client data. Wisdom's value assumes bosses don't resist Double (Global boss Double Resist is unknown).</li></ul>
-    <p class="muted" style="margin:6px 0 0">Sources: metabot.gg (Global client: decorations, stats, drops, shops, Substance Morph, achievements, quests, icons), sportskeeda.com and gamesfuze.com (Pantheon guides), gamers4life (Korean client data), the guide's DPS simulator (stat values). Checked 18 Oct 2026.</p></div>`;
+    <p class="muted" style="margin:6px 0 0">Sources: metabot.gg (Global client: decorations, stats, drops, shops, Substance Morph, achievements, quests, icons), sportskeeda.com and gamesfuze.com (Pantheon guides), gamers4life (Korean client data), the guide's DPS simulator (stat values). Checked 18 Oct 2026.</p></div></details></div>`;
   host.innerHTML=h;
 }
 document.addEventListener('change',e=>{const t=e.target,k=t&&t.dataset&&t.dataset.sv;
@@ -4384,7 +4395,8 @@ document.addEventListener('click',e=>{
 {const _ap=window.applyStore; if(typeof _ap==='function') window.applyStore=function(){const r=_ap.apply(this,arguments);renderPantheon();return r}}
 renderPantheon();
 
-document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.matches&&d.matches('details[data-panall]'))window.__panAllOpen=d.open},true);
+document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.matches&&d.matches('details[data-panall]'))window.__panAllOpen=d.open;
+  const k=d&&d.dataset&&d.dataset.pandet; if(k){if(d.open)PAN_OPEN[k]=1;else delete PAN_OPEN[k];try{sessionStorage.setItem('aion2fm-pandet',JSON.stringify(PAN_OPEN))}catch(e){}}},true);
 
 /* ---------- Collections: Closet skins, Monoliths & Kibelisks, Achievements (data: COLLECT = audit/r4/collect_*.json, weapon skins per class: P.COLIC) ---------- */
 const COL_EFFN={1:'Easy',2:'Medium',3:'Hard',9:'Not now'};
@@ -4444,6 +4456,16 @@ function cloState(){
   }
   return out;
 }
+/* drop-downs inside #closetbox: open/closed survives the re-render after every tick, input or filter (and a reload, this visit) */
+const CLO_FIRST=3; // easiest wins shown before the "more steps" drop-down
+let CLO_OPEN={}; try{CLO_OPEN=JSON.parse(sessionStorage.getItem('aion2fm-clodet')||'{}')||{}}catch(e){CLO_OPEN={}}
+function cloDet(k,title,sum,body,nested){return `<details class="${nested?'coldet':'box'}" data-clodet="${k}"${CLO_OPEN[k]?' open':''}><summary class="pansum"><b>${title}</b> <span class="small muted">${sum} Click to open.</span></summary>${body}</details>`}
+document.addEventListener('toggle',e=>{const d=e.target,k=d&&d.dataset&&d.dataset.clodet; if(!k) return;
+  if(d.open)CLO_OPEN[k]=1;else delete CLO_OPEN[k]; try{sessionStorage.setItem('aion2fm-clodet',JSON.stringify(CLO_OPEN))}catch(e){}},true);
+{const st=document.getElementById('pandetcss')||document.createElement('style'); if(!st.id){st.id='pandetcss';
+  /* closed secondary drop-downs sit side by side on wide screens; an open one takes the full row */
+  st.textContent='.pandets{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:14px;min-width:0}.panmain{display:grid;gap:14px;min-width:0}.panmain>*{min-width:0}@media (min-width:1000px){.panmain{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto 1fr;grid-template-areas:"best top" "best wins";align-items:start}.panmain>.pantop{grid-area:top}.panmain>.panbest{grid-area:best}.panmain>.panwins{grid-area:wins}}.pandets>details[open]{grid-column:1/-1}.pandets>details{min-width:0}.pandets>details>summary.pansum::before,details.coldet[data-pandet]>summary::before,details.coldet[data-clodet]>summary::before{content:"▸";color:var(--gold)}.pandets>details[open]>summary.pansum::before,details.coldet[data-pandet][open]>summary::before,details.coldet[data-clodet][open]>summary::before{content:"▾"}';
+  document.head.appendChild(st)}}
 function renderCloset(){
   const host=$('closetbox'); if(!host||!colOK('closet')) return;
   const K=COLLECT.closet, st=cloState(), cls=colCls(), m=colMode(), g=S.gget('gsv',{});
@@ -4453,13 +4475,14 @@ function renderCloset(){
   const per10=ct=>colPct(10*ct.v,2);
   let h=`<div class="box coltop"><p class="small" style="margin:0">For a <b>${esc(cls)}</b>, 10 Closet points are worth about <b>${per10(st.cats[0])}</b> damage in <b>${esc(wcat.short)}</b> skins, <b>${per10(st.cats[1])}</b> in Earring skins and <b>${per10(st.cats[2])}</b> in Necklace skins. Armor skins (helm to cloak) only add Defense to that piece, and skins for other weapons do nothing for you except count toward the skin titles.</p>
     ${SLUG==='brawler'?'<p class="small" style="margin:0"><b>Brawler is Korea only:</b> the Global client has 1 Fist skin, so only the accessory tracks apply.</p>':''}
-    <div class="colpts">${st.cats.map(ct=>`<label class="colpt"><span class="small muted">${esc(ct.short)} points in game</span><input type="number" min="0" max="500" inputmode="numeric" data-clopt="${ct.c}" value="${ct.man==null?'':ct.man}" placeholder="${ct.est}"><small class="muted">${ct.man==null?`estimate from ticks: ${ct.est}`:`your ticks add up to about ${ct.est}`}</small></label>`).join('')}
-      <label class="colpt"><span class="small muted">Skins owned (all slots)</span><input type="number" min="0" max="2000" inputmode="numeric" data-clocnt="1" value="${cnt}" placeholder="0"><small class="muted">for the skin titles</small></label></div>
     <div class="panbar"><span>Now <b>${colPct(st.now)}</b> damage</span><span>With every skin you can buy or farm now <b>${colPct(st.reach)}</b></span><span>Whole collection <b>${colPct(st.all)}</b></span></div>
-    <p class="small muted" style="margin:0">Where to read your points: Closet (character window) › Collection tab, one bar per slot. Leave a box empty and the guide estimates from the skins you tick below (Common 1, Rare 2, Epic 3, Unique 4, Heroic and Special 5 points: one source, not in the game files). The Closet is shared by every character on your server, so ticks here count for all your classes.</p></div>`;
+</div>`;
+  const ptsH=cloDet('pts','Your Closet points',`${st.cats.slice(0,3).map(ct=>esc(ct.short)+' '+(ct.man==null?'est. '+ct.est:ct.man)).join(' · ')}. Type yours from the game.`,`<div style="display:grid;gap:10px;margin-top:10px"><div class="colpts">${st.cats.map(ct=>`<label class="colpt"><span class="small muted">${esc(ct.short)} points in game</span><input type="number" min="0" max="500" inputmode="numeric" data-clopt="${ct.c}" value="${ct.man==null?'':ct.man}" placeholder="${ct.est}"><small class="muted">${ct.man==null?`estimate from ticks: ${ct.est}`:`your ticks add up to about ${ct.est}`}</small></label>`).join('')}
+      <label class="colpt"><span class="small muted">Skins owned (all slots)</span><input type="number" min="0" max="2000" inputmode="numeric" data-clocnt="1" value="${cnt}" placeholder="0"><small class="muted">for the skin titles</small></label></div>
+    <p class="small muted" style="margin:0">Where to read your points: Closet (character window) › Collection tab, one bar per slot. Leave a box empty and the guide estimates from the skins you tick below (Common 1, Rare 2, Epic 3, Unique 4, Heroic and Special 5 points: one source, not in the game files). The Closet is shared by every character on your server, so ticks here count for all your classes.</p></div>`);
   // ---- titles for skin count
   const n=+cnt||0;
-  h+=`<div class="box"><h3 style="margin:0 0 6px">Skin-count titles</h3><p class="small muted" style="margin:0 0 8px">Every skin counts here, including other classes' weapons and armor, so cheap skins of any kind push you toward these.</p><div class="coltitles">${K.titles.map(t=>{const done=n>=t.need;return `<div class="coltitle ${done?'on':''}"><b>${esc(t.n)}</b> <span class="small muted">${t.need===701?'over 700':t.need} skins</span><div class="small">${esc(t.eq)}</div>${colTitleRank(t)}<div class="colbar"><i style="width:${Math.min(100,100*n/t.need).toFixed(0)}%"></i></div><small class="muted">${done?'Unlocked':`${colNum(Math.max(0,t.need-n))} to go`}</small></div>`}).join('')}</div></div>`;
+  const titlesH=cloDet('titles','Skin-count titles',`${K.titles.filter(t=>n>=t.need).length} of ${K.titles.length} unlocked (${colNum(n)} skins).`,`<p class="small muted" style="margin:10px 0 8px">Every skin counts here, including other classes' weapons and armor, so cheap skins of any kind push you toward these.</p><div class="coltitles">${K.titles.map(t=>{const done=n>=t.need;return `<div class="coltitle ${done?'on':''}"><b>${esc(t.n)}</b> <span class="small muted">${t.need===701?'over 700':t.need} skins</span><div class="small">${esc(t.eq)}</div>${colTitleRank(t)}<div class="colbar"><i style="width:${Math.min(100,100*n/t.need).toFixed(0)}%"></i></div><small class="muted">${done?'Unlocked':`${colNum(Math.max(0,t.need-n))} to go`}</small></div>`}).join('')}</div>`);
   // ---- easiest wins first
   const miss=[]; st.cats.forEach(ct=>ct.rows.forEach(x=>{if(!x.own) miss.push(Object.assign({ct},x))}));
   const rsMiss=miss.filter(x=>x.r.s==='rs').sort((a,b)=>b.val-a.val);
@@ -4468,31 +4491,36 @@ function renderCloset(){
   const noneMiss=miss.filter(x=>x.r.s==='none');
   const stepItem=x=>`<li><label class="panstephead">${cloIco(x.r)}<span>${nm(x.r)} <span class="small muted">${esc(x.ct.short)} · ${esc(x.r.g)}</span> ${colEff(cloEffOf(x.r))} <b class="panval">${colPct(x.val)}</b></span></label><div class="small">${cloHow(x.r)}</div></li>`;
   const sumv=a=>a.reduce((t,x)=>t+x.val,0);
+  const SL=[];
   let steps=`<li><b>Use the skin items you already have.</b> <div class="small">Open your bag (<span class="kbd">I</span>) and use every item named "(Skin: …)": it unlocks the look in the Closet and adds its points. If the Closet says you already own it, keep the item for Skin Combine instead.</div></li>`;
+  SL.push(steps); steps='';
   if(rsMiss.length) steps+=`<li><b>Check the Black Cloud Merchant every hour, on every character.</b> ${colEff(1)} <b class="panval">up to ${colPct(sumv(rsMiss))}</b><div class="small">Shop menu (<span class="kbd">H</span>) › Black Cloud Merchants. Free new stock every hour, different on each character, and the Closet is shared on your server, so alts give you extra rolls. A paid refresh starts at 500 Kina (the 10th costs 15,000). Buy any of these ${rsMiss.length} when they show up, best first: ${rsMiss.slice(0,10).map(x=>`<span style="color:${colGC(x.r.g)}">${esc(x.r.n)}</span> <span class="muted">(${esc(x.ct.short)})</span>`).join(', ')}${rsMiss.length>10?`, and ${rsMiss.length-10} more in the table below`:''}.</div></li>`;
+  if(steps) SL.push(steps); steps='';
   steps+=`<li><b>Extract the gear you replace instead of selling it.</b> ${colEff(1)}<div class="small">Item Extraction can give a random skin (one guide: about 25% from Common to Epic gear, 10% from Unique and Heroic; Korean players say guards and rings never give skins). Every new skin counts toward the titles even when it is not for your slots.</div></li>`;
-  steps+=cheap.slice(0,10).map(stepItem).join('');
-  if(noneMiss.length) steps+=`<li><b>Combine spare skins.</b> ${colEff(2)}<div class="small">Skin Combine turns spare skins into a random skin of the same grade, or one grade higher: Common 25% (600 Kina), Rare 20% (1,000), Epic 15% to Unique (6,000). ${noneMiss.length} of your ${esc(wcat.short)}/Earring/Necklace Uniques have no shop or drop, so Combine is the way to them. Save Lucky Auras (+10% upgrade chance; achievements give 18 Lucky Aura, 14 Rare and 1 Epic) for Epic combines. Results are random across all slots, so combine for the skin count, not for one look.</div></li>`;
-  steps+=dear.slice(0,6).map(stepItem).join('');
-  h+=`<div class="box" style="display:grid;gap:10px"><h3 style="margin:0">Easiest wins first</h3><p class="small muted" style="margin:0">Work down the list. Values are damage for a ${esc(cls)} from that skin's points (estimated points by grade). Tick the skins you own in the table below and this list moves on.</p><ol class="pansteps">${steps}</ol></div>`;
+  SL.push(steps); steps='';
+  cheap.slice(0,10).forEach(x=>SL.push(stepItem(x)));
+  if(noneMiss.length) SL.push(`<li><b>Combine spare skins.</b> ${colEff(2)}<div class="small">Skin Combine turns spare skins into a random skin of the same grade, or one grade higher: Common 25% (600 Kina), Rare 20% (1,000), Epic 15% to Unique (6,000). ${noneMiss.length} of your ${esc(wcat.short)}/Earring/Necklace Uniques have no shop or drop, so Combine is the way to them. Save Lucky Auras (+10% upgrade chance; achievements give 18 Lucky Aura, 14 Rare and 1 Epic) for Epic combines. Results are random across all slots, so combine for the skin count, not for one look.</div></li>`);
+  dear.slice(0,6).forEach(x=>SL.push(stepItem(x)));
+  const restS=SL.slice(CLO_FIRST);
+  h+=`<div class="box" style="display:grid;gap:10px"><h3 style="margin:0">Easiest wins first</h3><p class="small muted" style="margin:0">Work down the list. Values are damage for a ${esc(cls)} from that skin's points (estimated points by grade). Tick the skins you own in the table below and this list moves on.</p><ol class="pansteps">${SL.slice(0,CLO_FIRST).join('')}</ol>${restS.length?cloDet('moresteps',`Steps ${CLO_FIRST+1} to ${SL.length}`,`the next ${restS.length} skins and tips, cheapest damage first.`,`<ol class="pansteps" start="${CLO_FIRST+1}" style="margin-top:10px">${restS.join('')}</ol>`,1):''}</div>`;
   // ---- full table
   const ct=st.cats.find(x=>x.c===view)||wcat;
   const rows=ct.rows.filter(x=>!missOnly||!x.own).sort((a,b)=>(a.own-b.own)||(cloEffOf(a.r)-cloEffOf(b.r))||b.val-a.val||a.r.n.localeCompare(b.r.n));
-  h+=`<details class="box" open><summary class="pansum"><b>Your Closet slots</b> <span class="small muted">${st.cats.map(c=>`${esc(c.short)} ${c.rows.filter(x=>x.own).length}/${c.rows.length}`).join(' · ')}</span></summary>
+  h+=`<div class="pandets">${ptsH}${titlesH}<details class="box" data-clodet="slots"${CLO_OPEN.slots?' open':''}><summary class="pansum"><b>Your Closet slots</b> <span class="small muted">tick yours: ${st.cats.map(c=>`${esc(c.short)} ${c.rows.filter(x=>x.own).length}/${c.rows.length}`).join(' · ')}. Click to open.</span></summary>
     <div class="panctl" style="margin:10px 0"><div class="seg" role="group" aria-label="Closet slot">${st.cats.map(c=>`<button type="button" data-clocat="${c.c}" aria-pressed="${c.c===ct.c}">${esc(c.short)} (${c.rows.length})</button>`).join('')}</div>
     <label class="small panall"><input type="checkbox" data-clomiss="1" ${missOnly?'checked':''}> Missing only</label></div>
     ${rows.length?`<div class="tablewrap"><table class="pantable coltable"><thead><tr><th class="num">Own</th><th>Skin</th><th class="num">Points</th><th class="num">Damage</th><th>How to get it</th><th>Effort</th></tr></thead><tbody>
     ${rows.map(x=>`<tr class="${x.own?'panrowown':''}"><td class="num">${chk(x.r)}</td><td><span class="panname">${cloIco(x.r)}<span>${nm(x.r)}<small class="muted">${esc(x.r.g)}</small></span></span></td><td class="num small">${x.r.p}${x.r.g==='Special'?'?':''}</td><td class="num small">${colPct(x.val)}</td><td class="small">${cloHow(x.r)}</td><td>${colEff(cloEffOf(x.r))}</td></tr>`).join('')}</tbody></table></div>`:'<p class="small muted">Nothing to show.</p>'}</details>`;
   // ---- how it works
   const W=K.wv[SLUG]||K.wv.ranger;
-  h+=`<details class="box"><summary class="pansum"><b>How the Closet bonus works</b> <span class="small muted">18 slots, 500 points each, Skin Combine odds</span></summary>
+  h+=`<details class="box" data-clodet="how"${CLO_OPEN.how?' open':''}><summary class="pansum"><b>How the Closet bonus works</b> <span class="small muted">18 slots, 500 points each, Skin Combine odds. Click to open.</span></summary>
     <ul class="plain small" style="margin-top:10px">
       <li><b>Each point = +0.1%, up to 500 points (+50%) per slot.</b> Only the first copy of a skin counts. Shoulder, eye and face accessories give nothing; launch Atelier (cash-shop) skins give no points.</li>
       <li><b>Weapon slots</b> raise that weapon type's Attack ("${esc(wcat.short)} Attack increase"), so only your own weapon's skins help. Korean testing puts it on your weapon's Attack, before Weapon Damage Boost and Attack Increase. With a typical level-45 ${esc(cls)} weapon (about ${colNum(W.wav)} average Attack) each point is about ${colPct(W.w,3)} damage.</li>
       <li><b>Necklace and Earrings</b> raise that piece's Attack and Defense by 0.1% a point (about 120 Attack on a level-45 necklace, about 100 on each of your two earrings). The 7 armor slots raise that piece's Defense only.</li>
       <li><b>Centurion and Decanus</b> are the only skins with stats while worn: +1% PvP Damage Tolerance per armor piece, +2% PvP Damage Boost for the earrings and the necklace. Decanus gives the same for under a third of the Abyss Points.</li></ul>
     <div class="tablewrap" style="margin-top:8px"><table><thead><tr><th>Skin Combine</th><th>Kina</th><th>Result</th><th>Designs (same / next grade)</th></tr></thead><tbody>${K.combine.map(r=>`<tr><td class="small">${r[0]}</td><td class="small">${r[1]}</td><td class="small">${r[2]}</td><td class="small">${r[3]}</td></tr>`).join('')}</tbody></table></div>
-    <p class="small muted" style="margin:8px 0 0"><b>Not sure yet:</b> points per grade (Common 1 to Heroic 5) come from one fan guide, not the client; Special skins are assumed to be worth 5. The extraction skin chance is from one guide. Damage values use the guide's DPS simulator (Attack value of a typical level-45 ${esc(cls)}), are the same in PvP${m==='pvp'?' (estimate)':''}, and assume the earring bonus applies to both earrings. Sources: metabot.gg (Global client: skins, sources, prices, collection bonus, Combine odds), dtgre.com (points by grade), gamerblurb.com (Black Cloud Merchant), Korean community tests (inven.co.kr). Checked 18 Oct 2026.</p></details>`;
+    <p class="small muted" style="margin:8px 0 0"><b>Not sure yet:</b> points per grade (Common 1 to Heroic 5) come from one fan guide, not the client; Special skins are assumed to be worth 5. The extraction skin chance is from one guide. Damage values use the guide's DPS simulator (Attack value of a typical level-45 ${esc(cls)}), are the same in PvP${m==='pvp'?' (estimate)':''}, and assume the earring bonus applies to both earrings. Sources: metabot.gg (Global client: skins, sources, prices, collection bonus, Combine odds), dtgre.com (points by grade), gamerblurb.com (Black Cloud Merchant), Korean community tests (inven.co.kr). Checked 18 Oct 2026.</p></details></div>`;
   host.innerHTML=h;
 }
 
@@ -5362,7 +5390,7 @@ var A2T=(function(){
     '.tmralt{color:var(--muted)}'+
     '.tmrstrip{display:grid;gap:8px;padding:12px 14px;border-color:var(--wind)}.tmrstriphead{display:flex;justify-content:space-between;gap:8px;align-items:center}'+
     '.tmrchips{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:8px}'+
-    '.tmrchip{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 10px;display:grid;gap:2px;min-width:0}.tmrchip b{font-size:13px;overflow-wrap:anywhere}'+
+    '.tmrchip{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 10px;display:grid;gap:2px;min-width:0}.tmrchip .tmrcd{white-space:normal;overflow-wrap:anywhere}.tmrchip b{font-size:13px;overflow-wrap:anywhere}'+
     '.tmrchip[data-state="open"]{border-color:var(--wind)}.tmrchip[data-state="soon"]{border-color:var(--gold)}'+
     '@media (max-width:520px){.tmrchips{grid-template-columns:repeat(2,minmax(0,1fr))}.tmrwhen{white-space:normal}}';
     document.head.appendChild(c)}
@@ -6885,6 +6913,97 @@ var A2T=(function(){
   /* a #build= link pasted into an already-open tab: same handling as on load */
   window.addEventListener('hashchange',()=>{if(!/^#build=/.test(String(location.hash||'')))return; try{incoming(); render()}catch(e){console.error(e)}});
   {const o=window.applyStore;if(typeof o==='function')window.applyStore=function(){const r=o.apply(this,arguments);try{LC=null;render()}catch(e){}return r}}
+})();
+
+/* ---------- Achievement farming (data: global ACHFARM = audit/r8/achfarm.json; achievement names, goals and rewards
+   come from COLLECT.ach = audit/r4/collect_ach.json, never duplicated) ----------
+   Mount: <div id="achfarmbox"></div> on the 'achfarm' tab. Ticks use data-sv="<achievement id>", the same keys the
+   Achievements list reads, so a tick here shows as done there too (saved by the global data-sv handler in gear_fn.js).
+   Filter (All / Super fast / Easy / Cheese / Alt-friendly) is saved per class in S ('affilt'). */
+(function(){
+  const h=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const D=()=>(typeof ACHFARM!=='undefined'&&ACHFARM)||null;
+  const num=n=>Number(n).toLocaleString('en-US');
+  const CATS=['fast','easy','cheese'];
+  const FILT=[['all','All'],['fast','Super fast'],['easy','Easy'],['cheese','Cheese'],['alt','Alt-friendly']];
+  const BIG=/Superior|Abyssal|Soul Codex|Key: Hidden Cube|Lucky Aura|Ultimate Refining|Battle Enhance|Amplify Stone/;
+  let MAP=null;
+  function achMap(){
+    if(MAP) return MAP; MAP={};
+    const A=(typeof COLLECT!=='undefined'&&COLLECT&&COLLECT.ach)||null; if(!A) return MAP;
+    A.groups.forEach(g=>g.rows.forEach(r=>{MAP[r.id]={r,g}}));
+    return MAP;
+  }
+  const sv=()=>S.get('sv',{})||{};
+  const src=k=>{const s=(D().src||{})[k]; if(!s) return ''; return s.u?`<a href="${h(s.u)}" target="_blank" rel="noopener">${h(s.n)}</a>`:h(s.n)};
+  function rew(r){
+    const it=r.rew.filter(x=>!/^Title: /.test(x[1])).map(x=>{const t=`${x[0]>1?num(x[0])+'× ':''}${h(x[1])}`;return BIG.test(x[1])?`<b>${t}</b>`:t});
+    const ti=r.ti?`<b>Title: ${h(r.ti.n)}</b>${r.ti.eq&&r.ti.eq!=='—'?` <span class="muted">(${h(r.ti.eq)})</span>`:''}`:'';
+    return (ti?ti+(it.length?', ':''):'')+it.join(', ');
+  }
+  function itemName(it){const M=achMap();return it.n||it.ids.map(i=>(M[i]?M[i].r.n:i)).join(' + ')}
+  function itemHTML(it){
+    const M=achMap(), s=sv(), rows=it.ids.map(i=>M[i]).filter(Boolean);
+    const done=rows.filter(x=>s[x.r.id]).length;
+    const ticks=rows.map(x=>`<label class="check afchk"><input type="checkbox" data-sv="${h(x.r.id)}"${s[x.r.id]?' checked':''}><span class="what"><b>${h(x.r.n)}</b> <span class="small muted">${h(x.r.goal)}${x.r.t&&x.r.t!=='—'?' · tiers '+h(x.r.t):''}</span><br><span class="small">All tiers pay: ${rew(x.r)} <a class="muted" href="https://metabot.gg/en/aion-2/achievements/${h(x.g.id)}" target="_blank" rel="noopener">MetaBot ↗</a></span></span></label>`).join('');
+    return `<li class="afitem" data-afcat="${it.cat}" data-afalt="${it.alt?1:0}"${done===rows.length&&rows.length?' data-afdone="1"':''}>
+      <div class="panstephead"><span><b>${h(itemName(it))}</b> <span class="tag">${h(it.t)}</span> <span class="tag">${h(it.lv)}</span>${it.alt?' <span class="tag wind">Alt-friendly</span>':''} <span class="small muted">Per character</span>${done===rows.length&&rows.length?' <span class="tag gold">Done</span>':''}</span></div>
+      <ol class="small afsteps">${it.steps.map(x=>`<li>${h(x)}</li>`).join('')}</ol>
+      <div class="afticks">${ticks}</div>
+      ${it.patch?`<p class="small muted" style="margin:4px 0 0"><b>Could be patched:</b> ${h(it.patch)}</p>`:''}
+      ${it.conf?`<p class="small muted" style="margin:4px 0 0"><span class="tag">Not sure yet</span> ${h(it.conf)}</p>`:''}
+      <p class="small muted" style="margin:4px 0 0">Source: ${it.src.map(src).filter(Boolean).join(' · ')}</p></li>`;
+  }
+  function counts(list){const s=sv();let n=0,d=0;list.forEach(it=>it.ids.forEach(i=>{n++;if(s[i])d++}));return [d,n]}
+  function altHTML(){
+    const A=D().alts, V={yes:['Yes','wind'],no:['No',''],check:['Check tooltip','gold']};
+    let o=`<details class="box" id="achfarm-alts"><summary><b>Alts: what can reach your main</b> <span class="small muted">server storage yes/no for each reward</span></summary>
+      <p class="small">${h(A.intro)}</p>
+      <div class="tablewrap"><table><thead><tr><th>Reward</th><th>Moves?</th><th>How / note</th></tr></thead><tbody>${A.moves.map(m=>`<tr><td class="small">${h(m[0])}</td><td class="small"><span class="tag ${V[m[1]][1]}">${V[m[1]][0]}</span></td><td class="small">${h(m[2])} <span class="muted">(${src(m[3])})</span></td></tr>`).join('')}</tbody></table></div>
+      <p class="small muted" style="margin:6px 0 0">${h(A.storage)}</p></details>`;
+    const C=A.cube;
+    o+=`<details class="box" id="achfarm-cube"><summary><b>${h(C.title)}</b> <span class="small muted">12 keys per alt from a Monolith sync</span></summary>
+      <ol class="steps small">${C.steps.map(x=>`<li>${h(x)}</li>`).join('')}</ol>
+      <div class="tablewrap"><table><tbody>${C.facts.map(f=>`<tr><th class="small" style="text-align:left">${h(f[0])}</th><td class="small">${h(f[1])}</td></tr>`).join('')}</tbody></table></div>
+      <p class="small muted" style="margin:6px 0 0">Sources: ${C.src.map(src).filter(Boolean).join(' · ')}. Monolith levels and traces are on <a href="#monoliths" data-goto="monoliths">Monoliths &amp; achievements</a>.</p></details>`;
+    o+=`<details class="box" id="achfarm-route"><summary><b>Alts: fastest route for a fresh character</b> <span class="small muted">what to do at each level, and the total haul</span></summary>
+      <div class="tablewrap"><table><thead><tr><th>When</th><th>Do</th><th>Time</th></tr></thead><tbody>${A.route.map(r=>`<tr><td class="small"><b>${h(r[0])}</b></td><td class="small">${h(r[1])}</td><td class="small">${h(r[2])}</td></tr>`).join('')}</tbody></table></div>
+      <h4 style="margin:10px 0 4px">What one alt brings in</h4><ul class="plain small">${A.haul.map(x=>`<li>${h(x)}</li>`).join('')}</ul>
+      <p class="small muted" style="margin:6px 0 0">Leveling itself: <a href="#alts" data-goto="alts">Leveling alts</a>. Times are estimates.</p></details>`;
+    o+=`<details class="box" id="achfarm-skip"><summary><b>Not worth it on alts</b> <span class="small muted">shared pools and very long tiers</span></summary><ul class="plain small">${A.skip.map(x=>`<li>${h(x)}</li>`).join('')}</ul></details>`;
+    return o;
+  }
+  function render(){
+    const host=document.getElementById('achfarmbox'); if(!host||!D()) return;
+    if(!achMap()||!Object.keys(achMap()).length){host.innerHTML='<p class="small muted">Achievement data is missing.</p>';return}
+    const open=new Set([...host.querySelectorAll('details[open]')].map(d=>d.id));
+    const f=S.get('affilt','all'), items=D().items, [dd,nn]=counts(items);
+    let o=`<div class="box" style="display:grid;gap:8px"><p class="small" style="margin:0">Achievements ranked by how fast they are, with the tricks that make them faster. Rewards are the total for all tiers (from the <a href="#achievements" data-goto="achievements">Achievements</a> list). Almost all are <b>per character</b>, so alts can farm them again; see the Alts sections below.</p>
+      <div class="seg" role="group" aria-label="Show">${FILT.map(([k,t])=>`<button type="button" data-affilt="${k}" aria-pressed="${f===k}">${t}</button>`).join('')}</div>
+      <p class="small muted" style="margin:0">Ticked <b>${dd}</b> of ${nn}. Ticks are shared with the Achievements list.</p></div>`;
+    CATS.forEach(c=>{
+      let list=items.filter(it=>it.cat===c); if(f==='alt') list=list.filter(it=>it.alt);
+      const hide=(f!=='all'&&f!=='alt'&&f!==c)||!list.length;
+      const [d,n]=counts(list), cat=D().cats[c], isOpen=open.has('achfarm-'+c)||f===c;
+      o+=`<details class="box" id="achfarm-${c}"${isOpen?' open':''}${hide?' hidden':''}><summary><b>${h(cat[0])}</b> <span class="small muted">${h(cat[1])} ${list.length} entries · ${n-d} achievements left</span></summary><ol class="pansteps afsteps-list">${list.map(itemHTML).join('')}</ol></details>`;
+    });
+    const altOn=f==='all'||f==='alt';
+    o+=`<div id="achfarm-altwrap" style="display:grid;gap:14px"${altOn?'':' hidden'}>${altHTML()}</div>`;
+    o+=`<details class="box small" id="achfarm-src"><summary><b>Sources and credits</b> <span class="small muted">who found what</span></summary><ul class="plain">
+      <li>${src('lf')}: alt achievement farming, the Daevanion board cheese, and which achievement stones can go into server storage. Thanks to LittleFattyGG.</li>
+      <li>${src('mb')}: every achievement, goal and reward. ${src('mbmono')}, ${src('mbdaev')}, ${src('mbkey')}.</li>
+      <li>${src('maps')} and ${src('data')}: what is bound, server storage rules, cube contents. ${src('game8')}: Monolith sync.</li>
+      <li>${src('owner')}: Hidden Cube keys from a Monolith sync on alts, and the Daevanion reset at level 40.</li></ul>
+      <p class="muted" style="margin:6px 0 0">Checked ${h(D().v)}. Tricks can stop working after a patch; check the game's achievement window.</p></details>`;
+    host.innerHTML=o;
+    if(f==='alt') ['achfarm-alts','achfarm-cube','achfarm-route'].forEach(id=>{const e=document.getElementById(id);if(e&&!open.size)e.open=true});
+    open.forEach(id=>{const e=document.getElementById(id);if(e&&e.tagName==='DETAILS')e.open=true});
+  }
+  window.renderAchFarm=render;
+  document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-affilt]');if(!b)return;S.set('affilt',b.dataset.affilt);render()});
+  document.addEventListener('change',e=>{const k=e.target&&e.target.dataset&&e.target.dataset.sv;if(k&&k.startsWith('ach-')&&document.getElementById('achfarmbox'))setTimeout(render,0)});
+  {const _ap=window.applyStore; if(typeof _ap==='function') window.applyStore=function(){const r=_ap.apply(this,arguments);try{render()}catch(err){}return r}}
+  try{render()}catch(err){console.error(err);const d=document.getElementById('achfarmbox');if(d)d.innerHTML='<p class="callout small">This section could not load. Please report it with the feedback link.</p>'}
 })();
 
 /* ---------- "Our builds on questlog.gg": the ONE place to paste the guide's questlog.gg build links ----------
