@@ -531,5 +531,5 @@ const ALL={};const _CL={"ranger":"Ranger","gladiator":"Gladiator","templar":"Tem
 const _h=location.hash.slice(1);
 const SLUG=ALL[_h]?_h:(ALL[S.gget('cls','ranger')]?S.gget('cls','ranger'):'ranger');
 document.getElementById('app').innerHTML='<p class="muted" style="padding:24px">Loading the '+ALL[SLUG].cls+' guide…</p>';
-['data/common.js','data/'+SLUG+'.js','app.js'].forEach(function(src){var s=document.createElement('script');s.src=src+'?v=1792587798';s.async=false;s.onerror=function(){var d=document.getElementById('app');d.innerHTML='<p style="padding:24px">Could not load '+src+'. Please tell Claude.</p>'};document.body.appendChild(s)});
+['data/common.js','data/'+SLUG+'.js','app.js'].forEach(function(src){var s=document.createElement('script');s.src=src+'?v=1792610886';s.async=false;s.onerror=function(){var d=document.getElementById('app');d.innerHTML='<p style="padding:24px">Could not load '+src+'. Please tell Claude.</p>'};document.body.appendChild(s)});
 </script>

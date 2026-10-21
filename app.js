@@ -1,4 +1,4 @@
-var SIMSRC="data/sim.js?v=1792587798";
+var SIMSRC="data/sim.js?v=1792610886";
 const P=ALL[SLUG];
 document.getElementById('app').innerHTML=P.body;
 document.title=P.cls+' Guide · AION 2 Global Field Manual (Unofficial Fan Guide)';
@@ -128,6 +128,8 @@ function findImg(n,loose){
   if(FAM[n]&&I[FAM[n]]) return I[FAM[n]];
   if(ICONS[n]) return ICONS[n]; if(I[n]) return I[n];
   const first=n.split(/\s*\/\s*|,\s*/)[0]; if(ICONS[first]) return ICONS[first]; if(I[first]) return I[first];
+  /* skill name with a suffix/prefix the guide adds ("Bolt +1", "Debilitating Mark:", "Light of Regeneration perk:", "Hold Judgment Thunder"): own-class skill icon only */
+  const sk=first.replace(/:$/,'').replace(/\s+perk$/i,'').replace(/\s+\+\d+$/,'').replace(/^(then\s+)?hold\s+/i,'').trim(); if(sk!==first&&ICONS[sk]) return ICONS[sk];
   const low=n.toLowerCase();
   const k=Object.keys(I).find(x=>x.toLowerCase()===low)||Object.keys(I).find(x=>x.toLowerCase()===first.toLowerCase());
   if(k) return I[k];
@@ -356,7 +358,7 @@ function renderMacro(){
   const mi=steps.findIndex(k=>k==='LMB'||k==='RMB'), fillersLast=mi<0||steps.slice(mi).every(k=>k==='LMB'||k==='RMB');
   // how steps loop and the 10 ms delay are already in the setup text and step 3 above, so they are not repeated here
   const gen=['Charged skills, toggles and heals are pressed by hand, never in the macro'+(/brawler/i.test(C['class']||'')?' (Brawler is the exception inside Rampage, see below).':'.'),...(fillersLast?['No-cooldown fillers go last so they never block a cooldown skill.']:[])];
-  if(hasStack) gen.push('Expected behaviour, test it: a stacked slot fires its bottom skill first when it is ready, otherwise the next one up (how creator guides describe it; not confirmed on Global, see step 6).');
+  if(hasStack) gen.push('A step fires its whole stack: the bottom skill first when it is ready, otherwise the next one up.');
   $('macrorules').innerHTML=gen.concat((macroChoice()==='alt'?C.macroAlt.rules:C.macro.rules)||[]).map(s=>`<li>${esc(s)}</li>`).join('');
   $('macrofallback').innerHTML=['Skip any skill you have not unlocked yet; add its step when you do.'].concat(C.macro.fallback||[]).map(s=>`<li>${esc(s)}</li>`).join('');
 }
@@ -440,7 +442,7 @@ function renderGear(){
     return `<tr><td><b>${s.n}</b></td><td class="small">${s.item}</td><td>${box(`${P2}${s.k}-got`,'Got it')}</td><td>${box(`${P2}${s.k}-enh`,s.enh)}</td><td>${third?box(`${P2}${s.k}-x`,third):'<span class="muted small">—</span>'}</td><td><div class="gstones">${stoneHtml}</div></td></tr>`;
   }).join('');
   const third=mode==='pvp'?'Potential':'Soul Binding';
-  const pvpNote=mode==='pvp'?' Potential always succeeds: each step costs 100k Abyss Points plus Potential Stones (full +4 is 400k AP and 10 stones per item). Potential only works on Soul Bound Unique gear. The upgrade window lists enhancement, manastones, Theostones and Soul Binding as carried over but doesn\'t mention Potential, so assume it may not carry and put it on your IL86/102 keepers. Global has no separate PvP armor: PvP power comes from Potential, the Fierce Battle Amulet, Decanus skins (about 500k AP for the set) and Abyssal manastones. Swap only the amulet between PvE and PvP.':' Keep any Damage Boost stone you roll (there is no lock, so stop engraving that item); odds and top rolls are under Upgrades &amp; stones › Manastones. Don\'t put Superior stones on gear you\'ll replace: use cheap stones until the IL86+ piece is your keeper. Upgrade recipes keep your stones; a different item starts empty.';
+  const pvpNote=mode==='pvp'?' Potential always succeeds: each step costs 100k Abyss Points plus Potential Stones (full +4 is 400k AP and 10 stones per item). Potential only works on Soul Bound Unique gear. The upgrade window lists enhancement, manastones, Theostones and Soul Binding as carried over but doesn\'t mention Potential, so assume it may not carry and put it on your IL86/102 keepers. Global has no separate PvP armor: PvP power comes from Potential, the Fierce Battle Amulet, Decanus skins (about 500k AP for the set) and Abyssal manastones. Swap only the amulet between PvE and PvP.':' Keep any Damage Boost stone you roll (there is no lock, so stop engraving that item); odds and top rolls are under Upgrades &amp; stones › Manastones. Don\'t put Superior stones on gear you\'ll replace: use cheap stones until the IL86+ piece is your keeper. Upgrade recipes remove your stones, and a different item starts empty too.';
   host.innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px">
       <div class="seg" role="group" aria-label="Gear set"><button type="button" data-gm="pve" aria-pressed="${mode==='pve'}">PvE gear</button><button type="button" data-gm="pvp" aria-pressed="${mode==='pvp'}">PvP gear</button></div>
       <div class="progress" style="flex:1 1 260px"><div class="bar"><i style="width:${total?100*done/total:0}%"></i></div><span class="readout">${done} / ${total} done</span><button class="btn" type="button" id="gearreset">Clear ${mode==='pvp'?'PvP':'PvE'} gear checkmarks</button></div></div>
@@ -636,7 +638,7 @@ function phaseItemsFor(ph){
   const out=[];
   const pvpMax=ph===99&&typeof MODE!=='undefined'&&MODE==='pvp';
   const P=PHASES.find(p=>p.lvl===(ph===45?40:ph)&&(pvpMax?p.mode==='pvp':!p.mode)); let running=0;
-  const normal=P.seq.map(s=>{running+=s.cost;const base=s.target.split(' ×')[0];const isPct=!ICONS[base];return {id:`${pvpMax?'pv':'p'}-${s.board}-${s.to}`,rmode:pvpMax?'pvp':'pve',board:s.board,pts:s.pts,target:s.target,icon:base,isPct:(s.extra||pvpMax)?(isPct&&/%$/.test(s.amt||'')):isPct,stat:(s.extra||pvpMax)&&isPct&&!/%$/.test(s.amt||''),amt:(s.extra||pvpMax)?(s.amt||''):null,from:s.from,to:s.to,cost:s.cost,total:running,cur:'crystals'}});
+  const normal=P.seq.map(s=>{running+=s.cost;const b0=s.target.split(' ×')[0];const base=(!ICONS[b0]&&ICONS[b0.replace(/ \+\d+$/,'')])?b0.replace(/ \+\d+$/,''):b0;/* skill-level nodes ("Bolt +1") show the skill icon */const isPct=!ICONS[base];return {id:`${pvpMax?'pv':'p'}-${s.board}-${s.to}`,rmode:pvpMax?'pvp':'pve',board:s.board,pts:s.pts,target:s.target,icon:base,isPct:(s.extra||pvpMax)?(isPct&&/%$/.test(s.amt||'')):isPct,stat:(s.extra||pvpMax)&&isPct&&!/%$/.test(s.amt||''),amt:(s.extra||pvpMax)?(s.amt||''):null,from:s.from,to:s.to,cost:s.cost,total:running,cur:'crystals'}});
   let az=[];
   if(ph===45&&(typeof MODE==='undefined'||MODE==='pvp')){
     const AZ=DATA.boards.find(b=>b.name==='Azphel'); let prev=0,prevPts=0,tot=0;
@@ -1086,7 +1088,7 @@ function cpOK(){return typeof COSTPLAN!=='undefined'&&COSTPLAN&&COSTPLAN.craft&&
 function cpE(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function cpN(n){return Math.round(+n||0).toLocaleString('en-US')}
 function cpM(n){n=+n||0;const a=Math.abs(n);return a>=1e6?(n/1e6).toFixed(a>=1e8?0:1)+'M':a>=1e4?Math.round(n/1e3)+'k':cpN(n)}
-const CP_DEF={sec:'reach',recipe:'earrings',prices:{},succ:{},failUses:false,tax:true,g:'Unique',il:102,from:0,to:15,a0:0,a1:0,spl:false,sbg:'Unique',sbFrom:0,resets:0,syncs:0,fuse:false,eg:'Unique',engr:20,stoneP:0,stoneN:null};
+const CP_DEF={sec:'reach',recipe:'earrings',prices:{},succ:{},failUses:true,tax:true,g:'Unique',il:102,from:0,to:15,a0:0,a1:0,spl:false,sbg:'Unique',sbFrom:0,resets:0,syncs:0,fuse:false,eg:'Unique',engr:20,stoneP:0,stoneN:null};
 function cpState(){let o={};try{o=S.gget('costplan',{})||{}}catch(e){}const s=Object.assign({},CP_DEF,o);s.prices=Object.assign({},o.prices||{});s.succ=Object.assign({},o.succ||{});return s}
 let CP=null;
 function cpSave(){try{S.gset('costplan',CP)}catch(e){}}
@@ -1179,7 +1181,7 @@ function cpCraftHTML(){
   ${cpSeg('cprec',CP.recipe,Object.keys(C.recipes).map(k=>[k,k==='earrings'?'Earrings (sheet)':'Weapon']))}
   <p class="small muted" style="margin-top:6px">${cpE(R.n)}. ${cpE(R.src)}</p>
   <label class="cpchk"><input type="checkbox" data-cptax="1"${CP.tax?' checked':''}> Add ${C.tax}% Marketplace tax (the sheet does)</label>
-  <label class="cpchk"><input type="checkbox" data-cpfail="1"${CP.failUses?' checked':''}> Failed crafts also use up the Splendent input <span class="tag">Unconfirmed</span></label>
+  <label class="cpchk"><input type="checkbox" data-cpfail="1"${CP.failUses?' checked':''}> Failed crafts also use up the Splendent input</label>
   <div class="tablewrap"><table><thead><tr><th>Material</th><th>Qty / craft</th><th>Unit price (Kina)</th><th>Cost / craft</th><th>Expected total</th></tr></thead><tbody>
   ${R.tiers.map(t=>`<tr class="cptier"><td colspan="2"><b>${cpE(t.n)}</b><br><span class="small muted">Mastery ${t.mastery}; great success: ${cpE(t.out)}</span></td><td class="cpsr small">Success % <input type="number" inputmode="decimal" min="1" max="100" step="0.1" data-cpsucc="${cpE(CP.recipe+'.'+t.k)}" value="${cpSucc(CP.recipe,t)}" aria-label="${cpE(t.n)} success rate"></td><td class="num small" colspan="2">Expected crafts <b id="cp-att-${t.k}"></b></td></tr>
    ${t.mats.map(([id,q])=>{const M=C.mats[id];return `<tr><td class="small">${cpE(M.n)}${M.sheet&&M.sheet!==M.n?` <span class="muted">(sheet: ${cpE(M.sheet)})</span>`:''}${M.ps==='analog'?' <span class="tag">no sheet price</span>':''}${M.note?`<br><span class="muted">${cpE(M.note)}</span>`:''}</td><td class="num">${q}</td><td><input type="number" inputmode="numeric" min="0" step="1" data-cpprice="${cpE(id)}" value="${cpPrice(id)}" aria-label="${cpE(M.n)} unit price"></td><td class="num" id="cp-pc-${cpE(t.k)}-${cpE(id)}"></td><td class="num" id="cp-et-${cpE(t.k)}-${cpE(id)}"></td></tr>`}).join('')}
@@ -1214,7 +1216,7 @@ function cpSoulHTML(){
   <ul class="plain small"><li>${cpE(So.bindNote)}</li><li>Reset (Rebind) on ${cpE(g)}: ${cpN(So.rebind[g][0])} Kina + ${So.rebind[g][1]} Soul Codex: Reset. ${cpE(So.rebindNote)}</li><li>${cpE(So.sync)}</li><li>${cpE(So.fuse.shop)} ${cpE(So.fuse.note)}</li><li>${cpE(So.potential.note)}</li></ul>
   <h4>Manastone / Soulstone engraving</h4>${cpSeg('cpeg',eg,Object.keys(En.fee).map(k=>[k,k]))}
   <div class="cpgrid"><label class="cpf">Engraves <input type="number" inputmode="numeric" min="0" step="1" data-cpn="engr" value="${+CP.engr||0}"></label>
-   <label class="cpf">Stones per engrave <input type="number" inputmode="numeric" min="0" step="1" data-cpn="stoneN" value="${CP.stoneN==null?En.slots[eg]:+CP.stoneN}"></label>
+   <label class="cpf">Stones per engrave <input type="number" inputmode="numeric" min="0" step="1" data-cpn="stoneN" value="${CP.stoneN==null?1:+CP.stoneN}"></label>
    <label class="cpf">Price per stone <input type="number" inputmode="numeric" min="0" step="1" data-cpn="stoneP" value="${+CP.stoneP||0}"></label></div>
   <div id="cp-eng-out"></div>
   <ul class="plain small"><li><b>${cpE(En.note)}</b></li><li>${cpE(En.stoneNote)}</li><li>${cpE(En.odds)}</li></ul>`;
@@ -1224,7 +1226,7 @@ function cpSoulOut(){
   const rest=So.bind[g].slice(CP.sbFrom),bk=rest.reduce((a,x)=>a+x[0],0),bc=rest.reduce((a,x)=>a+x[1],0),rs=Math.max(0,+CP.resets||0),sy=Math.max(0,+CP.syncs||0),fu=g==='Unique'&&CP.fuse;
   const k=bk+rs*So.rebind[g][0]+(fu?So.fuse.k:0);
   const a=document.getElementById('cp-soul-out');if(a)a.innerHTML=`<div class="callout ok"><b>${cpN(k)} Kina</b> + ${cpN(bc)} Soul Codex${rs?` + ${cpN(rs*So.rebind[g][1])} Soul Codex: Reset`:''}${sy?` + ${cpN(sy)} Sync Stones (${cpN(sy)} spare Unique pieces)`:''}${fu?` + ${So.fuse.stones} Philosopher's Stone: Revelation`:''}.<br><span class="small">Bind to 100% from step ${CP.sbFrom}: ${cpN(bk)} Kina + ${cpN(bc)} Codex${rs?`; resets: ${cpN(rs*So.rebind[g][0])} Kina`:''}${fu?`; Soul Fuse: ${cpN(So.fuse.k)} Kina`:''}.</span></div>`;
-  const n=Math.max(0,+CP.engr||0),sn=CP.stoneN==null?En.slots[eg]:Math.max(0,+CP.stoneN||0),sp=Math.max(0,+CP.stoneP||0);
+  const n=Math.max(0,+CP.engr||0),sn=CP.stoneN==null?1:Math.max(0,+CP.stoneN||0),sp=Math.max(0,+CP.stoneP||0);
   const b=document.getElementById('cp-eng-out');if(b)b.innerHTML=`<div class="callout ok"><b>${cpN(n*(En.fee[eg]+sn*sp))} Kina</b> for ${cpN(n)} engraves on ${cpE(eg)} gear (${cpN(En.fee[eg])} fee + ${sn} × ${cpN(sp)} stones each)${sp?'':'. Add your stone price to include the stones'}: ${cpN(n*sn)} stones used.</div>`;
 }
 
