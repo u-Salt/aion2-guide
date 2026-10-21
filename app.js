@@ -1,4 +1,4 @@
-var SIMSRC="data/sim.js?v=1792539376";
+var SIMSRC="data/sim.js?v=1792543965";
 const P=ALL[SLUG];
 document.getElementById('app').innerHTML=P.body;
 document.title=P.cls+' Guide · AION 2 Global Field Manual (Unofficial Fan Guide)';
@@ -4005,12 +4005,13 @@ function onShow(){
     const box=el('readybox'); if(!box) return; const P=D();
     if(!P||!P.ready){box.innerHTML='<p class="box muted">The readiness table could not load.</p>';return}
     addStyle(); const R=P.ready, y=rYou();
-    box.innerHTML=`<div class="pl"><div class="box" style="display:grid;gap:10px"><h3 style="margin:0">Am I ready?</h3>
+    const wasOpen=!!box.querySelector('details.rdwrap[open]');
+    box.innerHTML=`<details class="box rdwrap"${wasOpen?' open':''}><summary><b style="font-size:17px">Am I ready?</b> <span class="small muted">Item level and Combat Power you need for every dungeon, plus Nightmare tiers. Click to open.</span></summary><div class="pl" style="margin-top:10px"><div class="box" style="display:grid;gap:10px">
       <p class="small muted" style="margin:0">${h(R.note)}</p>
       ${y.me?`<p style="margin:0">Using <b>${h(y.me.name||'My character')}</b>: item level <b>${fmt(y.il)}</b>, Combat Power <b>${fmt(y.cp)}</b> (from <a href="#mychar" data-goto="mychar">My character</a>).</p>`
         :`<div class="row"><label>Your item level (Gear Score) <input type="number" min="0" id="rdil" value="${h(y.st.il==null?'':y.st.il)}"></label><label>Combat Power <input type="number" min="0" id="rdcp" value="${h(y.st.cp==null?'':y.st.cp)}"></label><span class="small muted">Or load your character on <a href="#mychar" data-goto="mychar">My character</a>.</span></div>`}</div>
       <div id="rdtab"></div>
-      <p class="small muted" style="margin:0">Sources: our Dungeon guides; dungeon pages on ${(R.src||[]).map(credit).join(', ')}.</p></div>`;
+      <p class="small muted" style="margin:0">Sources: our Dungeon guides; dungeon pages on ${(R.src||[]).map(credit).join(', ')}.</p></div></details>`;
     rTable();
   }
   function rTable(){
