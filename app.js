@@ -1,4 +1,4 @@
-var SIMSRC="data/sim.js?v=1792610886";
+var SIMSRC="data/sim.js?v=1792615681";
 const P=ALL[SLUG];
 document.getElementById('app').innerHTML=P.body;
 document.title=P.cls+' Guide · AION 2 Global Field Manual (Unofficial Fan Guide)';
