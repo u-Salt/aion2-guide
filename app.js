@@ -1,4 +1,4 @@
-var SIMSRC="data/sim.js?v=1792615681";
+var SIMSRC="data/sim.js?v=1792642224";
 const P=ALL[SLUG];
 document.getElementById('app').innerHTML=P.body;
 document.title=P.cls+' Guide · AION 2 Global Field Manual (Unofficial Fan Guide)';
@@ -344,7 +344,7 @@ function renderMacro(){
   }).join('');
   $('stepkeys').textContent=steps.map(k=>KEYN[k]||k).join(', ');
   const stack=rows=>`<div class="stack">${rows.map((s,i)=>`<div class="sl">${ic(s)}<span>${s}</span>${rows.length>1?`<span class="ord">row ${i}${i===0?' · first':''}</span>`:''}</div>`).join('')}</div>`;
-  let html=`<div class="mwin"><div class="mhead"><b>Skill Macro 1</b><span class="keychip">Hold: side button / R</span></div><div class="mbody">`+
+  let html=`<div class="mwin"><div class="mhead"><b>Skill Macro 1</b><span style="display:flex;gap:6px;flex-wrap:wrap"><span class="keychip" title="In-game macros can have at most 20 steps">${steps.length} / 20 steps</span><span class="keychip">Hold: side button / R</span></span></div><div class="mbody">`+
     steps.map((k,i)=>{const s=bar.find(x=>x.k===k);return `<div class="mstep"><div><div class="no">Step ${i+1}</div><div class="small">Slot ${KEYN[k]||k}</div></div>${stack(s.rows)}<div class="delay">Delay <span class="v">10</span> ms</div></div>`}).join('')+
     `<div class="addrow">+ Add Macro</div></div></div>`;
   const manual=bar.filter(b=>b.man).flatMap(b=>b.rows.map(n=>({n,k:b.k})));
@@ -357,7 +357,7 @@ function renderMacro(){
   const hasStack=bar.some(b=>b.rows.length>1&&!b.man);
   const mi=steps.findIndex(k=>k==='LMB'||k==='RMB'), fillersLast=mi<0||steps.slice(mi).every(k=>k==='LMB'||k==='RMB');
   // how steps loop and the 10 ms delay are already in the setup text and step 3 above, so they are not repeated here
-  const gen=['Charged skills, toggles and heals are pressed by hand, never in the macro'+(/brawler/i.test(C['class']||'')?' (Brawler is the exception inside Rampage, see below).':'.'),...(fillersLast?['No-cooldown fillers go last so they never block a cooldown skill.']:[])];
+  const gen=['Macros can have at most 20 steps (this one has '+steps.length+').','Charged skills, toggles and heals are pressed by hand, never in the macro'+(/brawler/i.test(C['class']||'')?' (Brawler is the exception inside Rampage, see below).':'.'),...(fillersLast?['No-cooldown fillers go last so they never block a cooldown skill.']:[])];
   if(hasStack) gen.push('A step fires its whole stack: the bottom skill first when it is ready, otherwise the next one up.');
   $('macrorules').innerHTML=gen.concat((macroChoice()==='alt'?C.macroAlt.rules:C.macro.rules)||[]).map(s=>`<li>${esc(s)}</li>`).join('');
   $('macrofallback').innerHTML=['Skip any skill you have not unlocked yet; add its step when you do.'].concat(C.macro.fallback||[]).map(s=>`<li>${esc(s)}</li>`).join('');
@@ -3525,7 +3525,7 @@ function onShow(){
       (perks?`<div class="mssec"><h4>Perks</h4><ul class="mschg">${perks}</ul></div>`:'')+
       list('Stat priority',B.stats)+sb+
       `<div class="mssec"><h4>Skill bar</h4><p class="small muted">Row 0 is the bottom row and fires first. Gold-outlined slots are pressed by hand.</p>${bar(B.bar)}</div>`+
-      (steps?`<div class="mssec"><h4>Macro</h4><p class="small">Add Macro steps in this order: <b>${h(steps)}</b> (10 ms delay each).</p></div>`:'')+
+      (steps?`<div class="mssec"><h4>Macro</h4><p class="small">Add Macro steps in this order: <b>${h(steps)}</b> (${(B.barSteps||[]).length} steps, 10 ms delay each; macros can have at most 20 steps).</p></div>`:'')+
       list('Macro rules',B.rules)+(man?`<div class="mssec"><h4>Press by hand</h4><ul class="plain small">${man}</ul></div>`:'')+
       list('Rotation',B.rotation)+
       (B.switch?`<div class="mssec"><h4>Set it up</h4><p class="small">${h(B.switch)}</p></div>`:'')+
