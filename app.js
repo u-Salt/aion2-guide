@@ -1,4 +1,4 @@
-var SIMSRC="data/sim.js?v=1792814439";
+var SIMSRC="data/sim.js?v=1792816650";
 const P=ALL[SLUG];
 document.getElementById('app').innerHTML=P.body;
 document.title=P.cls+' Guide · AION 2 Global Field Manual (Unofficial Fan Guide)';
@@ -1082,6 +1082,218 @@ function renderRolls(){
 }
 {const o=window.renderGear;if(typeof o==='function')window.renderGear=function(){const r=o.apply(this,arguments);try{renderRolls();const t=$('soultable');if(t&&rollsFor('pve')){const R=rollsFor('pve');t.innerHTML=GEARSLOTS.pve.filter(s=>R[s.k]).map(s=>`<tr><td><b>${esc(s.n)}</b></td><td class="small">${esc((R[s.k].best||[]).join(' › '))}</td></tr>`).join('')}}catch(e){}return r}}
 
+/* ---------- Your Market prices: ONE price store for every calculator (crafting guide, money makers, cost planner) ----------
+   Loaded before costplan_fn.js and craftguide_fn.js (build_hub.py). Nothing is fetched: prices are typed or pasted by the player.
+   Storage (account-wide, S.gset): 'prices' = {v:1, w:'<server id>'|'', rg:'nae'|..., fac:'e'|'a'|'',
+     by:{'<server id>'|'any':{'<item name>':{p:<Kina>, t:<ms since 1970>|null, src:'manual'|'paste'|...}}},
+     imp:{'<server id>':{at:<ms>, src, n}}}   ('any' = saved before a server was picked)
+   The old crafting-guide store 'cgprice' ({name: price}) is read once into 'any' (date unknown) and then left alone.
+   Server ids are NCSOFT's world ids (1104 = Kaisinel, NA East, Elyos; first digit 1 = Elyos, 2 = Asmodian), the same ids the
+   official character pages and the price sites use.
+   API: window.A2P (bottom of this file). Every change fires window event 'a2prices' with detail {from}: 'input' while a
+   price box is being typed in (callers only recalculate), anything else means "re-render". */
+(function(){
+  const WORLDS={"nae":[[1101,"Siel"],[1102,"Nezekan"],[1103,"Vaizel"],[1104,"Kaisinel"],[1105,"Yustiel"],[1106,"Ariel"],[1107,"Fregion"],[1108,"Meslamtaeda"],[1109,"Hithanya"],[2101,"Israphel"],[2102,"Zikel"],[2103,"Triniel"],[2104,"Lumiel"],[2105,"Marchutan"],[2106,"Azphel"],[2107,"Ereshkigal"],[2108,"Beritra"],[2109,"Nemon"]],"naw":[[1201,"Siel"],[1202,"Nezekan"],[1203,"Vaizel"],[1204,"Kaisinel"],[1205,"Yustiel"],[2201,"Israphel"],[2202,"Zikel"],[2203,"Triniel"],[2204,"Lumiel"],[2205,"Marchutan"]],"eu":[[1301,"Siel"],[1302,"Nezekan"],[1303,"Vaizel"],[1304,"Kaisinel"],[1305,"Yustiel"],[1306,"Ariel"],[1307,"Fregion"],[1308,"Meslamtaeda"],[1309,"Hithanya"],[1310,"Nania"],[1311,"Tahavatha"],[1312,"Luteros"],[1313,"Phernos"],[1314,"Daminu"],[1315,"Kasaka"],[1316,"Bakarma"],[1317,"Tsenka"],[1318,"Kochi"],[1319,"Ishtar"],[1320,"Tiamat"],[1321,"Gauss"],[1322,"Lamuatan"],[1323,"Nathara"],[2301,"Israphel"],[2302,"Zikel"],[2303,"Triniel"],[2304,"Lumiel"],[2305,"Marchutan"],[2306,"Azphel"],[2307,"Ereshkigal"],[2308,"Beritra"],[2309,"Nemon"],[2310,"Hadala"],[2311,"Ludra"],[2312,"Ulgorn"],[2313,"Munin"],[2314,"Odar"],[2315,"Zemurru"],[2316,"Kromede"],[2317,"Quai"],[2318,"Baba"],[2319,"Fafnir"],[2320,"Indnath"],[2321,"Agnita"],[2322,"Atiel"],[2323,"Tassin"]],"la":[[1401,"Siel"],[1402,"Nezekan"],[1403,"Vaizel"],[1404,"Kaisinel"],[1405,"Yustiel"],[1406,"Ariel"],[2401,"Israphel"],[2402,"Zikel"],[2403,"Triniel"],[2404,"Lumiel"],[2405,"Marchutan"],[2406,"Azphel"]],"as":[[1501,"Siel"],[1502,"Nezekan"],[1503,"Vaizel"],[1504,"Kaisinel"],[1505,"Yustiel"],[1506,"Ariel"],[1507,"Fregion"],[1508,"Meslamtaeda"],[1509,"Hithanya"],[1510,"Nania"],[2501,"Israphel"],[2502,"Zikel"],[2503,"Triniel"],[2504,"Lumiel"],[2505,"Marchutan"],[2506,"Azphel"],[2507,"Ereshkigal"],[2508,"Beritra"],[2509,"Nemon"],[2510,"Hadala"]]};
+  const RG={nae:'NA East',naw:'NA West',eu:'Europe',la:'Latin America',as:'Asia'};
+  const DAY=864e5;
+  const h=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const WL={};
+  Object.entries(WORLDS).forEach(([r,l])=>l.forEach(([id,n])=>{WL[id]={id,n,r,f:Math.floor(id/1000)===2?'a':'e'}}));
+  const facName=f=>f==='a'?'Asmodian':'Elyos';
+  const worldName=id=>{const w=WL[id];return w?`${w.n} (${RG[w.r]}, ${facName(w.f)})`:'no server picked'};
+  const LINKS='<a href="https://a2-tracker.com/" target="_blank" rel="noopener noreferrer">A2-Tracker</a> · <a href="https://aion2.exchange/" target="_blank" rel="noopener noreferrer">aion2.exchange</a> · <a href="https://questlog.gg/aion-2/en/auction-house" target="_blank" rel="noopener noreferrer">questlog.gg Market</a>';
+
+  /* ---------- store ---------- */
+  function load(){
+    let o=null;try{o=S.gget('prices',null)}catch(e){}
+    if(!o||typeof o!=='object'||!o.by||typeof o.by!=='object'){
+      o={v:1,w:'',rg:'',fac:'',by:{},imp:{}};
+      let old=null;try{old=S.gget('cgprice',null)}catch(e){}
+      if(old&&typeof old==='object'){const a={};for(const k in old){const v=+old[k];if(old[k]!==''&&old[k]!=null&&isFinite(v)&&v>=0)a[k]={p:v,t:null,src:'manual'}}if(Object.keys(a).length)o.by.any=a}
+    }
+    if(!o.imp||typeof o.imp!=='object')o.imp={};
+    return o;
+  }
+  function save(o,from){
+    try{S.gset('prices',o)}catch(e){}
+    try{window.dispatchEvent(new CustomEvent('a2prices',{detail:{from:from||''}}))}catch(e){}
+  }
+  const keyOf=o=>(o.w&&WL[o.w])?String(o.w):'any';
+  function setWorld(id,from){
+    const o=load();id=id&&WL[id]?String(id):'';
+    o.w=id;
+    if(id){o.rg=WL[id].r;
+      // first server picked: prices typed before that move to it
+      if(o.by.any&&Object.keys(o.by.any).length&&!(o.by[id]&&Object.keys(o.by[id]).length)){o.by[id]=o.by.any;delete o.by.any}}
+    save(o,from||'world');
+  }
+
+  /* ---------- item names (canonical = the crafting guide's Elyos names) ---------- */
+  let NM=null;
+  const norm=s=>String(s==null?'':s).replace(/[‘’`´]/g,"'").replace(/^["']+|["']+$/g,'').replace(/\s+/g,' ').trim().toLowerCase();
+  function names(){
+    if(NM)return NM;
+    const D=(typeof CRAFTGUIDE!=='undefined'&&CRAFTGUIDE)||null; const m=new Map();
+    if(!D||!Array.isArray(D.R))return m;   // not cached: CRAFTGUIDE may not be there yet
+    const add=(k,v)=>{k=norm(k);if(k&&!m.has(k))m.set(k,v)};
+    D.R.forEach(a=>{add(a[0],a[0]);(a[7]||[]).forEach(p=>add(p[0],p[0]))});
+    Object.keys(D.vendor||{}).forEach(n=>add(n,n));
+    Object.entries(D.asmo||{}).forEach(([e,a])=>add(a,e));
+    [...m.entries()].forEach(([k,v])=>{const b=k.replace(/\s*\(bound\)$/,'');if(b!==k)add(b,v)});
+    NM=m;return m;
+  }
+  const canon=n=>names().get(norm(n))||null;
+
+  /* ---------- parsing typed / pasted prices ---------- */
+  function parsePrice(s){
+    s=String(s==null?'':s).trim().toLowerCase().replace(/kina|kinah/g,'').replace(/\s+/g,'');
+    const m=s.match(/^(\d[\d,.']*)([km]?)$/); if(!m)return null;
+    let t=m[1]; const mult=m[2]==='k'?1e3:m[2]==='m'?1e6:1; let v;
+    if(mult===1&&/^\d{1,3}([,.']\d{3})+$/.test(t)) v=+t.replace(/[,.']/g,'');
+    else if(/^\d{1,3}(,\d{3})+\.\d+$/.test(t)) v=+t.replace(/,/g,'');
+    else if(/^\d+([.,]\d+)?$/.test(t)) v=+t.replace(',','.');
+    else return null;
+    v=v*mult; return isFinite(v)&&v>=0?Math.round(v*100)/100:null;
+  }
+  // one item per line: "name<TAB>price" (spreadsheet copy, extra columns ignored) or "name,price" ("12,500" style prices are fine)
+  function parseLines(text){
+    const items=[],bad=[],unknown=[];
+    String(text==null?'':text).split(/\r?\n/).forEach((raw,i)=>{
+      const line=raw.trim(); if(!line||line[0]==='#')return;
+      let name,price=null;
+      if(line.indexOf('\t')>=0){const parts=line.split('\t').map(x=>x.trim()).filter(x=>x!=='');name=parts[0];for(let j=1;j<parts.length&&price==null;j++)price=parsePrice(parts[j])}
+      else{const c=line.indexOf(',');if(c<0){bad.push(line);return}name=line.slice(0,c);price=parsePrice(line.slice(c+1).trim().replace(/^"|"$/g,''))}
+      if(price==null){if(i===0&&/price|kina/i.test(line))return;bad.push(line);return}
+      const n=canon(name); if(!n){unknown.push(String(name).trim());return}
+      items.push({n,p:price});
+    });
+    return {items,bad,unknown};
+  }
+
+  /* ---------- read / write ---------- */
+  function all(w){const o=load();const k=w?String(w):keyOf(o);return Object.assign({},o.by[k]||{})}
+  function flat(){const a=all(),r={};for(const n in a){const v=a[n]&&a[n].p;if(v!=null&&isFinite(v))r[n]=+v}return r}
+  function get(n){const a=all();return a[n]||null}
+  function price(n){const e=get(n);return e&&e.p!=null&&isFinite(e.p)?+e.p:null}
+  function set(n,v,src,from){
+    const o=load(),k=keyOf(o);const L=o.by[k]=o.by[k]||{};
+    const p=(v===''||v==null)?null:(typeof v==='number'?v:parsePrice(v));
+    if(p==null||!isFinite(p)||p<0)delete L[n];else L[n]={p,t:Date.now(),src:src||'manual'};
+    if(!Object.keys(L).length)delete o.by[k];
+    save(o,from);
+  }
+  function remove(names0,from){const o=load(),k=keyOf(o),L=o.by[k];if(!L)return;(names0||[]).forEach(n=>delete L[n]);if(!Object.keys(L).length)delete o.by[k];save(o,from)}
+  // items: [{n, p, t?}] with canonical names; opts: {w (server id, default current), src, from}
+  function setMany(items,opts){
+    opts=opts||{};const o=load();const k=opts.w&&WL[opts.w]?String(opts.w):keyOf(o);const L=o.by[k]=o.by[k]||{};const now=Date.now();let n=0;
+    (items||[]).forEach(x=>{if(!x||!x.n||x.p==null||!isFinite(x.p)||x.p<0)return;L[x.n]={p:+x.p,t:(x.t&&isFinite(x.t))?+x.t:now,src:opts.src||'paste'};n++});
+    if(!Object.keys(L).length)delete o.by[k];
+    if(n)o.imp[k]={at:now,src:opts.src||'paste',n};
+    save(o,opts.from||'import');return n;
+  }
+  function age(t){
+    if(!t||!isFinite(t))return 'date unknown';
+    const m=Math.round((Date.now()-t)/6e4); if(m<1)return 'just now'; if(m<60)return m+' min ago';
+    const hh=Math.round(m/60); return hh<48?hh+' h ago':Math.round(hh/24)+' days ago';
+  }
+  const stale=t=>!t||!isFinite(t)||Date.now()-t>DAY;
+  const srcName=s=>s==='manual'?'typed':s==='paste'?'pasted':String(s||'');
+  function badge(n){
+    const e=get(n); if(!e)return '';
+    const old=stale(e.t), when=e.t?new Date(e.t).toLocaleString():'';
+    return `<span class="a2age${old?' old':''}" title="${h((when?'Saved '+when:'Saved before dates were kept')+' · '+srcName(e.src)+(old?' · over 24 h old: check it again':''))}">${h(age(e.t))}${old?' · old':''}</span>`;
+  }
+
+  /* ---------- panel: server picker, paste box, saved prices (mounted by the crafting guide) ---------- */
+  const LASTMSG={};  // last paste message of each panel (survives re-renders)
+  const OPENST={};   // which drop-downs of each panel are open, so re-renders keep them
+  const hooks=[];    // extra HTML for the panel (fn(ctx, state) -> string)
+  const pasteHooks=[];   // fn(text) -> null (not mine) or {msg, bad?}
+  function worldPicker(o){
+    const w=WL[o.w]; const rg=o.rg||(w&&w.r)||''; const fac=o.fac||'';
+    const opts=rg?(WORLDS[rg]||[]).filter(([id])=>!fac||WL[id].f===fac||String(id)===String(o.w)).map(([id,n])=>`<option value="${id}"${String(id)===String(o.w)?' selected':''}>${h(n)} · ${facName(WL[id].f)}</option>`).join(''):'';
+    return `<label>Region <select data-a2p-rg aria-label="Region"><option value="">Pick…</option>${Object.entries(RG).map(([k,v])=>`<option value="${k}"${k===rg?' selected':''}>${v}</option>`).join('')}</select></label>
+      <label>Faction <select data-a2p-fac aria-label="Faction"><option value=""${!fac?' selected':''}>Both</option><option value="e"${fac==='e'?' selected':''}>Elyos</option><option value="a"${fac==='a'?' selected':''}>Asmodian</option></select></label>
+      <label>Server <select data-a2p-w aria-label="Server"><option value="">${rg?'Pick your server':'Pick a region first'}</option>${opts}</select></label>`;
+  }
+  function listHTML(L){
+    const rows=Object.keys(L).sort((a,b)=>a.localeCompare(b)).map(n=>{const e=L[n];const old=stale(e.t);
+      return `<tr><td class="small">${h(n)}</td><td class="small"><input class="a2pnum" type="number" min="0" step="100" data-a2p-item="${h(n)}" value="${h(e.p)}" aria-label="Your price for ${h(n)}"></td><td class="small"><span class="a2age${old?' old':''}">${h(age(e.t))}${old?' · over 24 h':''}</span></td><td class="small muted">${h(srcName(e.src))}</td><td><button type="button" class="btn a2pmini" data-a2p-del="${h(n)}" aria-label="Remove ${h(n)}">✕</button></td></tr>`}).join('');
+    return rows?`<div class="tablewrap"><table class="a2ptab"><thead><tr><th>Item</th><th>Your price</th><th>Age</th><th>From</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+      <p><button type="button" class="btn a2pmini" data-a2p-act="clear">Remove all prices for this server</button></p>`:'<p class="small muted">Nothing saved yet. Type a price in any "Your price" box in the crafting tables, or paste a list above.</p>';
+  }
+  function panel(ctx){
+    css();
+    const o=load(),k=keyOf(o),L=o.by[k]||{},vals=Object.values(L),n=vals.length;
+    const newest=n?Math.max(...vals.map(x=>x.t||0)):0, nOld=vals.filter(x=>stale(x.t)).length, op=OPENST[ctx]||[];
+    let extra='';hooks.forEach(f=>{try{extra+=f(ctx,o)||''}catch(e){console.error(e)}});
+    return `<div class="a2p" data-a2p="${h(ctx)}">
+      <div class="a2prow small"><b>Your Market prices</b>${worldPicker(o)}</div>
+      <p class="small a2psum" style="margin:0">${n?`<b>${n}</b> saved price${n>1?'s':''} for ${h(worldName(o.w))} · newest ${h(age(newest||null))}${nOld?` · <span class="a2old">${nOld} over 24 h old (check them again)</span>`:''}`:`No prices saved for ${h(worldName(o.w))} yet.`}${!o.w&&n?' Pick your server so the prices stay with it.':''}</p>
+      ${extra}
+      <details class="a2pd"${op[0]?' open':''}><summary><b>Paste prices</b> <span class="small muted">one item per line: the name, then a tab or a comma, then the price (a copy from a spreadsheet works)</span></summary>
+        <textarea class="a2ppaste" data-a2p-paste rows="5" spellcheck="false" aria-label="Paste prices" placeholder="Orichalcum Ingot&#9;1800&#10;Fine Odyle, 2,500"></textarea>
+        <div class="a2prow small"><button type="button" class="btn" data-a2p-act="apply">Save these prices</button><span class="muted" data-a2p-msg role="status">${h(LASTMSG[ctx]||'')}</span></div></details>
+      <details class="a2pd"${op[1]?' open':''}><summary><b>Your saved prices</b> <span class="small muted">(${n}) each with its age; older than 24 h is flagged</span></summary>${listHTML(L)}</details>
+      <p class="small muted a2plinks" style="margin:0">Look prices up: ${LINKS}. These are third-party sites showing players' asking prices, not completed sales and not official NCSOFT data. The in-game Market (28-day price) is the final word. Your prices are saved per server, in this browser only.</p></div>`;
+  }
+  function css(){
+    if(document.getElementById('a2pstyle'))return;
+    const st=document.createElement('style');st.id='a2pstyle';
+    st.textContent=['.a2p{display:grid;gap:8px;border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:10px;padding:10px 12px;margin:8px 0 12px;min-width:0}',
+      '.a2prow{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}',
+      '.a2p label{display:inline-flex;gap:6px;align-items:center}',
+      '.a2p select,.a2p .a2pnum,.a2p textarea{background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:600 14px var(--f-body);max-width:100%;min-width:0}',
+      '.a2p textarea{width:100%;box-sizing:border-box;font:13px var(--f-mono);margin-top:6px}',
+      '.a2p .a2pnum{width:110px}',
+      '.a2pmini{padding:4px 8px;font-size:12px}',
+      '.a2age{font-size:12px;color:var(--muted);white-space:nowrap}',
+      '.a2age.old,.a2old{color:var(--warn,#ef8c6a)}',
+      '.a2pd>summary{cursor:pointer}'].join('\n');
+    document.head.appendChild(st);
+  }
+  function say(el,t){const p=el&&el.closest('.a2p');const m=p&&p.querySelector('[data-a2p-msg]');if(m)m.textContent=t}
+  function applyText(text){
+    for(const f of pasteHooks){let r=null;try{r=f(text)}catch(e){r={msg:'Could not read that: '+e.message}}if(r)return r.msg}
+    const t=String(text||'').trim(); if(!t)return 'The box is empty.';
+    if(t[0]==='{'||t[0]==='[')return "That looks like data from a bookmark. This copy of the guide reads typed lists only: one item per line, name, then a tab or comma, then the price.";
+    const r=parseLines(t), o=load();
+    const n=r.items.length?setMany(r.items,{src:'paste'}):0;
+    let msg=n?`Saved ${n} price${n>1?'s':''} for ${worldName(o.w)}.`:'No prices saved.';
+    if(r.unknown.length)msg+=` Not in the crafting guide (check the spelling): ${r.unknown.slice(0,6).join(', ')}${r.unknown.length>6?` and ${r.unknown.length-6} more`:''}.`;
+    if(r.bad.length)msg+=` ${r.bad.length} line${r.bad.length>1?'s':''} without a price.`;
+    return msg;
+  }
+  document.addEventListener('toggle',e=>{const d=e.target;if(!d||!d.classList||!d.classList.contains('a2pd'))return;const p=d.closest('.a2p');if(!p)return;OPENST[p.dataset.a2p]=[...p.querySelectorAll(':scope>details.a2pd')].map(x=>x.open)},true);
+  document.addEventListener('change',e=>{
+    const t=e.target;if(!t||!t.closest||!t.closest('.a2p'))return;
+    if(t.hasAttribute('data-a2p-rg')){const o=load();o.rg=t.value;if(o.w&&WL[o.w]&&WL[o.w].r!==t.value)o.w='';save(o,'world');return}
+    if(t.hasAttribute('data-a2p-fac')){const o=load();o.fac=t.value;save(o,'world');return}
+    if(t.hasAttribute('data-a2p-w')){setWorld(t.value);return}
+    if(t.dataset.a2pItem!=null){save(load(),'panel');return}   // re-render once the box is left
+  });
+  document.addEventListener('input',e=>{
+    const t=e.target;if(!t||!t.closest||!t.closest('.a2p'))return;
+    if(t.dataset.a2pItem!=null)set(t.dataset.a2pItem,t.value,'manual','input');
+  });
+  document.addEventListener('click',e=>{
+    const b=e.target&&e.target.closest&&e.target.closest('.a2p [data-a2p-act],.a2p [data-a2p-del]');if(!b)return;
+    if(b.dataset.a2pDel!=null){remove([b.dataset.a2pDel],'panel');return}
+    const act=b.dataset.a2pAct;
+    if(act==='apply'){const p=b.closest('.a2p');const ta=p&&p.querySelector('[data-a2p-paste]');const msg=applyText(ta?ta.value:'');
+      const ctx=p&&p.dataset.a2p;OPENST[ctx]=OPENST[ctx]||[];OPENST[ctx][0]=true;LASTMSG[ctx]=msg;
+      if(ta&&/^Saved/.test(msg))ta.value='';
+      say(b,msg);return}
+    if(act==='clear'){
+      // two clicks instead of confirm(): dialogs are blocked inside the claude.ai viewer
+      if(b.dataset.armed!=='1'){b.dataset.armed='1';const old=b.textContent;b.textContent='Click again to remove them all';setTimeout(()=>{if(b.isConnected){b.dataset.armed='';b.textContent=old}},4000);return}
+      const o=load();delete o.by[keyOf(o)];delete o.imp[keyOf(o)];save(o,'panel');return}
+  });
+
+  window.A2P={WORLDS,RG,worlds:WL,worldName,facName,world:()=>{const o=load();return o.w&&WL[o.w]?String(o.w):''},setWorld,state:load,
+    names,canon,parsePrice,parseLines,applyText,all,flat,get,price,set,remove,setMany,age,stale,badge,panel,hooks,pasteHooks,LINKS,DAY};
+})();
+
 /* ---------- Upgrade cost planner (Upgrades & stones tab, box #sys-costplan; data: COSTPLAN from audit/r5/costplan.json) ---------- */
 /* Saved per viewer (all classes share it) with S.gset('costplan', {...}): section, crafting prices/success rates, calculator picks. */
 function cpOK(){return typeof COSTPLAN!=='undefined'&&COSTPLAN&&COSTPLAN.craft&&COSTPLAN.enh}
@@ -1094,7 +1306,9 @@ let CP=null;
 function cpSave(){try{S.gset('costplan',CP)}catch(e){}}
 
 /* ----- crafting maths ----- */
-function cpPrice(id){const v=CP.prices[id];return (v!=null&&v!==''&&isFinite(+v))?+v:COSTPLAN.craft.mats[id].price}
+// crafting prices: your number typed here, else your saved Market price for that item (shared store, prices_fn.js), else the sheet default
+function cpShared(id){try{const M=COSTPLAN.craft.mats[id];return (typeof A2P!=='undefined'&&M)?A2P.price(M.n):null}catch(e){return null}}
+function cpPrice(id){const v=CP.prices[id];if(v!=null&&v!==''&&isFinite(+v))return +v;const s=cpShared(id);return s!=null?s:COSTPLAN.craft.mats[id].price}
 function cpSucc(rk,t){const v=CP.succ[rk+'.'+t.k];return (v!=null&&v!==''&&isFinite(+v)&&+v>0)?Math.min(100,+v):t.success}
 function cpCraft(rk){
   const R=COSTPLAN.craft.recipes[rk], comb=COSTPLAN.craft.combo/100, tiers=R.tiers.map(t=>({t,s:cpSucc(rk,t)/100}));
@@ -1271,10 +1485,10 @@ function cpRefresh(){if(CP.sec==='reach')cpReachOut();else if(CP.sec==='craft')c
 function cpIn(t){return t&&t.closest&&t.closest('#costplan')}
 document.addEventListener('click',e=>{const t=e.target;if(!cpIn(t)||!CP)return;const b=t.closest('button');if(!b)return;const d=b.dataset;
   if(d.cpsec){CP.sec=d.cpsec}else if(d.cpg){CP.g=d.cpg;CP.from=0;CP.to=(COSTPLAN.enh.grades[d.cpg]||{}).max||15;CP.a0=CP.a1=0}else if(d.cprec){CP.recipe=d.cprec}
-  else if(d.cpsbg){CP.sbg=d.cpsbg}else if(d.cpeg){CP.eg=d.cpeg;CP.stoneN=null}else if(d.cpreset){CP.prices={};CP.succ={}}else return;
+  else if(d.cpsbg){CP.sbg=d.cpsbg}else if(d.cpeg){CP.eg=d.cpeg;CP.stoneN=null}else if(d.cpreset){try{if(typeof A2P!=='undefined')A2P.remove(Object.keys(CP.prices).map(id=>(COSTPLAN.craft.mats[id]||{}).n).filter(Boolean),'costplan')}catch(e){}CP.prices={};CP.succ={}}else return;
   cpSave();renderCostPlan()});
 document.addEventListener('input',e=>{const t=e.target;if(!cpIn(t)||!CP)return;const d=t.dataset;
-  if(d.cpprice){if(t.value==='')delete CP.prices[d.cpprice];else CP.prices[d.cpprice]=Math.max(0,+t.value)}
+  if(d.cpprice){if(t.value==='')delete CP.prices[d.cpprice];else CP.prices[d.cpprice]=Math.max(0,+t.value);try{const M=COSTPLAN.craft.mats[d.cpprice];if(typeof A2P!=='undefined'&&M)A2P.set(M.n,t.value===''?'':Math.max(0,+t.value),'manual','costplan')}catch(e){}}
   else if(d.cpsucc){if(t.value==='')delete CP.succ[d.cpsucc];else CP.succ[d.cpsucc]=+t.value}
   else if(d.cpn){CP[d.cpn]=t.value===''?(d.cpn==='stoneN'?null:0):Math.max(0,+t.value)}else return;
   cpRefresh()});
@@ -1284,6 +1498,8 @@ document.addEventListener('change',e=>{const t=e.target;if(!cpIn(t)||!CP)return;
   else if(d.cpprice||d.cpsucc||d.cpn){rr=false}else return;
   cpSave();if(rr)renderCostPlan();else cpRefresh()});
 window.renderCostPlan=renderCostPlan;
+// your saved Market prices changed elsewhere (crafting guide, paste box): redraw the crafting section
+window.addEventListener('a2prices',e=>{const f=(e.detail||{}).from;if(f==='costplan'||!CP||CP.sec!=='craft')return;const a=document.activeElement;if(a&&cpIn(a)&&a.tagName==='INPUT'){cpRefresh();return}try{renderCostPlan()}catch(err){}});
 {const _ap=window.applyStore;if(typeof _ap==='function')window.applyStore=function(){const r=_ap.apply(this,arguments);try{renderCostPlan()}catch(e){}return r}}
 try{renderCostPlan()}catch(e){console.error('costplan',e)}
 
@@ -7031,7 +7247,8 @@ var A2T=(function(){
    Mount: <div id="craftguidebox"></div> at the top of the 'crafting' tab (placed by reorg.py). Renders closed drop-downs:
    (1) fastest leveling route per profession (ticks: data-sv="cg-<prof>-<n>", saved by the global data-sv handler in gear_fn.js),
    (2) what to craft for your gear (full chains + material trees), (3) money makers, (4) rules that cost people materials,
-   (5) calculators, (6) gathering skill tree + point planner (saved in S 'cg'.gp). Settings (faction names, proficiency, your prices) are saved account-wide in S ('cg', 'cgprice').
+   (5) calculators, (6) gathering skill tree + point planner (saved in S 'cg'.gp). Settings (faction names, proficiency) are saved account-wide in S ('cg'); your prices live in the shared price store
+   (prices_fn.js, window.A2P: per server, with dates; the old 'cgprice' key is only read once by it).
    Also adds a one-line link to this guide on Gear & stats, Upgrade planner, Item finder and Farming. */
 (function(){
   const h=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -7039,13 +7256,16 @@ var A2T=(function(){
   const num=n=>(n==null||!isFinite(n))?'—':Math.round(n).toLocaleString('en-US');
   const n1=n=>(n==null||!isFinite(n))?'—':(n<10?(Math.round(n*10)/10).toLocaleString('en-US'):num(n));
   const pc=x=>(x==null||!isFinite(x))?'—':(Math.round(x*1000)/10)+'%';
-  const PRICE_LINKS='<a href="https://questlog.gg/aion-2/en/auction-house" target="_blank" rel="noopener noreferrer">questlog.gg Market</a> · <a href="https://a2-tracker.com/" target="_blank" rel="noopener noreferrer">A2-Tracker</a> · <a href="https://aion2.exchange/" target="_blank" rel="noopener noreferrer">aion2.exchange</a>';
+  const PRICE_LINKS='<a href="https://questlog.gg/aion-2/en/auction-house" target="_blank" rel="noopener noreferrer">questlog.gg Market</a> · <a href="https://a2-tracker.com/" target="_blank" rel="noopener noreferrer">A2-Tracker</a> · <a href="https://aion2.exchange/" target="_blank" rel="noopener noreferrer">aion2.exchange</a> <span class="muted">(third-party sites: players&#39; asking prices, not sales)</span>';
   const GSTORE=(k,d)=>{try{return (S.gget?S.gget(k,d):S.get(k,d))||d}catch(e){return d}};
   const PSTORE=(k,v)=>{try{S.gset?S.gset(k,v):S.set(k,v)}catch(e){}};
   const st=()=>Object.assign({fac:'e',prof:90,route:'hand',slot:'',c1:{},c2:{}},GSTORE('cg',{}));
   const save=o=>PSTORE('cg',Object.assign(st(),o));
-  const prices=()=>GSTORE('cgprice',{});
-  const setPrice=(n,v)=>{const p=prices();if(v===''||v==null||isNaN(+v))delete p[n];else p[n]=+v;PSTORE('cgprice',p)};
+  const AP=()=>(typeof window!=='undefined'&&window.A2P)||null;
+  const prices=()=>AP()?AP().flat():GSTORE('cgprice',{});
+  const setPrice=(n,v)=>{if(AP()){AP().set(n,v,'manual','input');return}const p=prices();if(v===''||v==null||isNaN(+v))delete p[n];else p[n]=+v;PSTORE('cgprice',p)};
+  const ageTag=n=>AP()?' '+AP().badge(n):'';
+  const pricePanel=ctx=>AP()?AP().panel(ctx):'';
 
   /* ---------- recipe data ---------- */
   let IDX=null, ALLR=null;
@@ -7215,7 +7435,7 @@ var A2T=(function(){
   function matsTable(raw,id){
     const rows=Object.entries(raw).sort((a,b)=>{const o={dungeon:0,mob:1,shop:2,other:3,gather:4,vendor:5,ladder:6};return (o[srcOf(a[0]).t]-o[srcOf(b[0]).t])||b[1]-a[1]});
     return `<div class="tablewrap"><table class="cgtab"><thead><tr><th>Material</th><th>Need</th><th>Where from</th><th>Your price</th></tr></thead><tbody>${rows.map(([n,q])=>{const s=srcOf(n);const p=prices()[n];
-      return `<tr><td class="small">${item(n)}</td><td class="small">${num(Math.ceil(q))}</td><td class="small"><span class="tag">${h(s.tag)}</span> ${h(s.d)}${s.src?` <span class="muted">(${srcLinks(s.src)})</span>`:''}</td><td class="small"><input class="cgnum" type="number" min="0" step="100" data-cgprice="${h(n)}" value="${p!=null?h(p):''}" placeholder="${D().vendor[n]!=null?num(D().vendor[n]):'Kina'}" aria-label="Your price for ${h(dn(n))}"></td></tr>`}).join('')}</tbody></table></div>`;
+      return `<tr><td class="small">${item(n)}</td><td class="small">${num(Math.ceil(q))}</td><td class="small"><span class="tag">${h(s.tag)}</span> ${h(s.d)}${s.src?` <span class="muted">(${srcLinks(s.src)})</span>`:''}</td><td class="small"><input class="cgnum" type="number" min="0" step="100" data-cgprice="${h(n)}" value="${p!=null?h(p):''}" placeholder="${D().vendor[n]!=null?num(D().vendor[n]):'Kina'}" aria-label="Your price for ${h(dn(n))}">${ageTag(n)}</td></tr>`}).join('')}</tbody></table></div>`;
   }
   function slotHTML(sl,P,sv){
     const L=line(sl.k); if(!L) return '';
@@ -7261,7 +7481,7 @@ var A2T=(function(){
       <div class="tablewrap"><table class="cgtab"><thead><tr><th>Craft</th><th>Odds at Professional 50 (100)</th><th>His cost</th><th>Price he saw</th><th>Video</th></tr></thead><tbody>${rows}</tbody></table></div>
       <p class="small muted">From GAC Film Room's "Idle Crafting for Profit" series (9–12 Oct). Prices move every day and differ by server: redo the math with today's prices in the calculator. His free recipe sheets: ${srcLinks(['gacbook'])}.</p>
       <ul class="plain small">${M.tips.map(t=>`<li>${h(t.d)} <span class="muted">(${srcLinks(t.src)})</span></li>`).join('')}</ul>
-      <p class="small pricecheck"><b>Check prices:</b> ${PRICE_LINKS}. Market fees and the daily Kina cap: <a href="#sys-sellcraft" data-goto="sys-sellcraft">Market fees and crafting for profit</a>.</p>`;
+      <p class="small pricecheck"><b>Check prices:</b> ${PRICE_LINKS}. Market fees and the daily Kina cap: <a href="#sys-sellcraft" data-goto="sys-sellcraft">Market fees and crafting for profit</a>.</p>${pricePanel('cg-money')}`;
   }
 
   /* ---------- (4) rules ---------- */
@@ -7334,7 +7554,7 @@ var A2T=(function(){
       ${matsTable(acc.raw,'cg2')}${Object.keys(acc._sub).length?`<p class="small muted">Includes ${Object.entries(acc._sub).map(([n,k])=>`${num(Math.ceil(k))} ${h(dn(n))} crafts`).join(', ')}.</p>`:''}
       <p class="small muted">Odds from the Global client's success curves (MetaBot.GG). A failed craft or a failed combo gives nothing and uses the materials. Break-even = cost per item ÷ 0.88.</p>`;
   }
-  function calcHTML(){return calc1HTML()+'<hr class="cghr">'+calc2HTML()+`<p class="small pricecheck"><b>Prices:</b> type your server's prices into any "Your price" box; they're saved in this browser and used everywhere in this guide. Check: ${PRICE_LINKS}.</p>`}
+  function calcHTML(){return pricePanel('cg-calc')+calc1HTML()+'<hr class="cghr">'+calc2HTML()+`<p class="small pricecheck"><b>Prices:</b> type your server's prices into any "Your price" box, or paste a list in "Your Market prices" above; they're saved per server in this browser, with the date, and used everywhere in this guide (crafting calculator, money makers, upgrade cost planner). Check: ${PRICE_LINKS}.</p>`}
 
   /* ---------- (1c) gathering skill tree + point planner (data: CRAFTGUIDE.gtree, gicons, gfamw; numbers: MetaBot.GG gathering = Global client) ---------- */
   const GT=()=>D().gtree;
@@ -7588,6 +7808,13 @@ var A2T=(function(){
     const k=t.dataset&&t.dataset.sv; if(k&&k.startsWith('cg-')&&document.getElementById('craftguidebox')) setTimeout(()=>{const R=document.getElementById('cg-route');if(R){const b=R.querySelector('.cbody');if(b){b.innerHTML=routeHTML()}}},0);
   });
   {const _ap=window.applyStore; if(typeof _ap==='function') window.applyStore=function(){const r=_ap.apply(this,arguments);try{render()}catch(err){}return r}}
+  // shared price store changed (prices_fn.js): recalculate while a box is being typed in, otherwise re-render
+  window.addEventListener('a2prices',e=>{
+    if(!document.getElementById('craftguidebox')) return;
+    const from=(e.detail||{}).from, a=document.activeElement, typing=a&&a.closest&&a.closest('#craftguidebox')&&/^(INPUT|TEXTAREA)$/.test(a.tagName)&&a.type!=='checkbox';
+    if(from==='input'||typing){later(()=>{calc1Out();calc2Out()});return}
+    later(()=>rerender(true));
+  });
 
   /* ---------- links from other tabs ---------- */
   const LINKS=[
