@@ -1,4 +1,4 @@
-var SIMSRC="data/sim.js?v=1792807931";
+var SIMSRC="data/sim.js?v=1792814439";
 const P=ALL[SLUG];
 document.getElementById('app').innerHTML=P.body;
 document.title=P.cls+' Guide · AION 2 Global Field Manual (Unofficial Fan Guide)';
@@ -7031,7 +7031,7 @@ var A2T=(function(){
    Mount: <div id="craftguidebox"></div> at the top of the 'crafting' tab (placed by reorg.py). Renders closed drop-downs:
    (1) fastest leveling route per profession (ticks: data-sv="cg-<prof>-<n>", saved by the global data-sv handler in gear_fn.js),
    (2) what to craft for your gear (full chains + material trees), (3) money makers, (4) rules that cost people materials,
-   (5) calculators. Settings (faction names, proficiency, your prices) are saved account-wide in S ('cg', 'cgprice').
+   (5) calculators, (6) gathering skill tree + point planner (saved in S 'cg'.gp). Settings (faction names, proficiency, your prices) are saved account-wide in S ('cg', 'cgprice').
    Also adds a one-line link to this guide on Gear & stats, Upgrade planner, Item finder and Farming. */
 (function(){
   const h=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -7130,7 +7130,7 @@ var A2T=(function(){
     if(st0.tdl){const t=(lv,k)=>[lv,70,85,100].filter((x,i,a)=>a.indexOf(x)===i&&x>=lv).map(P=>`${P}: <b>${pc(curveAt(k,P-lv))}</b>`).join(' · ');
       calc+=`<div class="cgcalc small"><span>True Dragon Lord success (opens at 55): ${t(55,'c1')}</span><span>(opens at 60): ${t(60,'c6')}</span></div>`;}
     return `<li class="cgstep"><label class="check"><input type="checkbox" data-sv="${h(st0.id)}"${sv[st0.id]?' checked':''}><span class="what"><span class="cgno">Step ${(i||0)+1}</span> <span class="tag gold">${h(st0.lv)}</span> <b>${h(st0.t)}</b></span></label>
-      <p class="small">${h(st0.do)}</p>${rec}${calc}${st0.tip?`<p class="small muted"><b>Tip:</b> ${h(st0.tip)}</p>`:''}${st0.ladder?`<p class="small muted">Expected crafts for your slot are worked out in <a href="#cg-gear" data-cggo="cg-gear">What to craft for your gear</a>.</p>`:''}${srcLine(st0.src)}</li>`;
+      <p class="small">${h(st0.do)}</p>${rec}${calc}${st0.tip?`<p class="small muted"><b>Tip:</b> ${h(st0.tip)}</p>`:''}${st0.gplan?`<p class="small">Skill costs and effects: <a href="#cg-gtree" data-cggo="cg-gtree">Gathering skill tree</a>. Your own split: <a href="#cg-gplan" data-cggo="cg-gplan">Gathering point planner</a>.</p>`:''}${st0.ladder?`<p class="small muted">Expected crafts for your slot are worked out in <a href="#cg-gear" data-cggo="cg-gear">What to craft for your gear</a>.</p>`:''}${srcLine(st0.src)}</li>`;
   }
   function routeHTML(){
     const d=D(), s=st(), sv=(S.get?S.get('sv',{}):{})||{};
@@ -7336,9 +7336,144 @@ var A2T=(function(){
   }
   function calcHTML(){return calc1HTML()+'<hr class="cghr">'+calc2HTML()+`<p class="small pricecheck"><b>Prices:</b> type your server's prices into any "Your price" box; they're saved in this browser and used everywhere in this guide. Check: ${PRICE_LINKS}.</p>`}
 
+  /* ---------- (1c) gathering skill tree + point planner (data: CRAFTGUIDE.gtree, gicons, gfamw; numbers: MetaBot.GG gathering = Global client) ---------- */
+  const GT=()=>D().gtree;
+  const gico=(ic,big)=>{const u=(D().gicons||{})[ic];return u?`<img class="ico cgico cggico${big?' big':''}" src="${u}" alt="" loading="lazy" width="${big?28:20}" height="${big?28:20}">`:''};
+  const famIc=(f,i)=>`GatherSkill_${f.ic}_0${i}`;
+  const PROFS=['Handicrafting','Blacksmithing','Armorsmithing','Alchemy','Cooking'];
+  const gTag=t=>`<span class="tag${/Unconfirmed|Unknown/i.test(t)?' warn':/KR/.test(t)?' gold':''}">${h(t)}</span>`;
+  function gtreeHTML(){
+    const g=GT(); if(!g) return ''; const C=g.common, Sp=g.spec;
+    const cum=C.cost.map((c,i)=>C.cost.slice(0,i+1).reduce((a,b)=>a+b,0));
+    const [ph,dt,ll]=C.skills;
+    const rows=C.cost.map((c,i)=>`<tr${i===C.novCap?' class="cgprorow"':''}><td><b>${i+1}</b></td><td>${c} <span class="muted">(${cum[i]})</span></td><td>${i<C.novCap?'Novice':'<span class="tag gold">Professional</span>'}</td><td>+${ph.per*(i+1)}</td><td>−${dt.per*(i+1)}</td><td>${ll.chance[i]}% ×2.5${i>=5?' or <b>×4</b>':''}</td></tr>`).join('');
+    const node=(ic,name,lv,cost,eff,need)=>`<div class="cggnode">${gico(ic,1)}<div><b>${h(name)}</b> <span class="small muted">max Lv ${lv} · ${cost}</span><div class="small">${eff}</div><div class="small muted">Needs: ${need}</div></div></div>`;
+    const pcts=Sp.pct.map(p=>p+'%').join(' · ');
+    const fam=f=>`<div class="cggfam"><div class="cggfamh">${gico(famIc(f,1),1)} <b>${h(f.n)}</b> <span class="small muted">${h(f.d)}</span></div>
+      <div class="cgmats small">${f.mats.map(m=>item(m)).join('')}</div>
+      <div class="cggchain">${node(famIc(f,1),f.seeker,1,'1 point',h(Sp.seeker),'nothing')}<span class="cggarrow" aria-hidden="true">→</span>
+      ${node(famIc(f,2),'Plentiful Harvest',3,'1 point per level',`${h(Sp.ph)} Lv 1–3: <b>${pcts}</b>.`,`${h(f.seeker)} 1; Lv 2–3 Professional`)}<span class="cggarrow" aria-hidden="true">→</span>
+      ${node(famIc(f,3),f.appr,3,'1 point per level',`${h(Sp.appr.replace('{w}',f.apprWhat))} Lv 1–3: <b>${pcts}</b>.`,'Plentiful Harvest 1; Lv 2–3 Professional')}</div></div>`;
+    return `<p class="small">${h(g.intro)}</p>
+      <div class="cgcalc small"><span><b>21</b> skills</span><span><b>3</b> common, max Lv 10, 40 points each (120 for all)</span><span><b>6</b> families × 3 specialty skills, 7 points per family (42 for all)</span><span>you earn <b>95</b> common + <b>14</b> specialty points by 100</span></div>
+      <details class="cgsub" id="cg-gt-pts"${OPEN.has('cg-gt-pts')?' open':''}><summary><b>How you earn points</b> <span class="small muted">gathering levels only: no quests or items give them</span></summary>
+        <ul class="plain small"><li><b>Common points:</b> ${h(g.points.common)}</li><li><b>Specialty points:</b> ${h(g.points.specTxt)}</li><li>${h(g.points.max)}</li><li>Gathering XP: ${num(gxp(1,50))} to reach 50, then the Professional quest (Korius in Verteron / Alzirr in Altgard: gather Ruby until a Splendent Ruby drops), then ${num(gxp(51,100))} more to 100.</li></ul>${srcLine(['mbgath','atgx','s4gex'])}</details>
+      <details class="cgsub" id="cg-gt-common"${OPEN.has('cg-gt-common')?' open':''}><summary>${gico(ph.ic)}${gico(dt.ic)}${gico(ll.ic)} <b>Common skills</b> <span class="small muted">work on every node; cost and effect at each level</span></summary>
+        <ul class="plain small">${C.skills.map(s=>`<li>${gico(s.ic)} <b>${h(s.n)}</b>: ${h(s.what)}</li>`).join('')}</ul>
+        <div class="tablewrap"><table class="cgtab cggtab"><thead><tr><th>Lv</th><th>Cost <span class="muted">(total)</span></th><th>Rank</th><th>${h(ph.n)}<br><span class="muted small">Success +</span></th><th>${h(dt.n)}<br><span class="muted small">Failure −</span></th><th>${h(ll.n)}</th></tr></thead><tbody>${rows}</tbody></table></div>
+        <p class="small muted">No prerequisites between them. Levels 1–5 cost 1, 2, 3, 4, 5 points; every level from 6 costs 5 and needs Professional rank. Gauge numbers are added to (or taken off) each roll; the base roll sizes aren't published.</p>${srcLine(['mbgath','atgx'])}</details>
+      <details class="cgsub" id="cg-gt-spec"${OPEN.has('cg-gt-spec')?' open':''}><summary>${gico('GatherSkill_Od_01')}${gico('GatherSkill_Metal_01')}${gico('GatherSkill_Jewelry_01')} <b>Specialty skills: 6 families</b> <span class="small muted">Seeker → Plentiful Harvest → Appraiser in each</span></summary>
+        ${Sp.fams.map(fam).join('')}${srcLine(['mbgath','atgx','s4gex'])}</details>
+      <details class="cgsub" id="cg-gt-rules"${OPEN.has('cg-gt-rules')?' open':''}><summary><b>Rules, resets and what isn't known</b> <span class="small muted">Novice caps, unlock order, Lady Luck timing, 50,000 Kina reset</span></summary>
+        <ul class="plain small cgrules">${g.rules.map(r=>`<li>${gTag(r.tag)} <b>${h(r.t)}:</b> ${h(r.d)} <span class="muted">(${srcLinks(r.src)})</span></li>`).join('')}</ul></details>
+      <p class="small">Want your own split? <a href="#cg-gplan" data-cggo="cg-gplan">Gathering point planner</a>.</p>`;
+  }
+  /* planner model */
+  const gpSt=()=>Object.assign({lv:50,goal:'prof',profs:['Handicrafting'],fam2:'auto',cb:'ll6',cp:'',sp:''},st().gp||{});
+  const gpSave=o=>save({gp:Object.assign(gpSt(),o)});
+  const cPts=L=>{let n=0;for(let l=2;l<=L;l++)if(l>40||l%10)n++;return n};
+  const sPts=L=>Object.entries(GT().points.spec).reduce((a,[l,v])=>a+(+l<=L?v:0),0);
+  function gFams(p){
+    const W=D().gfamw||{}, sum={};
+    const use=p.goal==='prof'?(p.profs&&p.profs.length?p.profs:PROFS):PROFS;
+    use.forEach(pr=>Object.entries(W[pr]||{}).forEach(([k,v])=>sum[k]=(sum[k]||0)+v));
+    let f1, f2, why;
+    if(p.goal==='kina'||p.goal==='odyle'){f1='od';f2='ore';why=p.goal==='kina'?'Ore second: Radiant Orichalcum Ore is the most-used gathered material after Odyle (120 recipes).':'Odyle gets every early specialty point; Ore second (the most-used family after Odyle).'}
+    else{
+      const rank=Object.entries(sum).sort((a,b)=>b[1]-a[1]);
+      const cookOnly=use.length===1&&use[0]==='Cooking';
+      f1=cookOnly?'food':sum.od?'od':(rank[0]||['od'])[0];
+      const rest=rank.filter(([k])=>k!==f1); f2=(rest[0]||['ore'])[0];
+      const fn=k=>(GT().spec.fams.find(f=>f.k===k)||{}).n||k;
+      why=`${cookOnly?'Cooking Ingredient first: Cooking uses Odyle in only a few recipes. ':''}${f1==='od'?'Odyle first: it goes into recipes of every profession you picked. ':''}${h(fn(f2))} second: ${num(sum[f2]||0)} materials across ${p.goal==='all'?'all five professions':h(use.join(', '))}${rest[1]?`, against ${num(rest[1][1])} ${h(fn(rest[1][0]))}`:''}.`;
+    }
+    if(p.fam2&&p.fam2!=='auto'&&p.fam2!==f1){f2=p.fam2;why+=' Second family set by you.'}
+    return {f1,f2,why};
+  }
+  function cSeq(cb){const q=[];for(let l=1;l<=5;l++)['ph','dt','ll'].forEach(k=>q.push({k,l}));
+    for(let l=6;l<=10;l++)q.push({k:'ph',l});for(let l=6;l<=9;l++)q.push({k:'dt',l});q.push(cb==='dt10'?{k:'dt',l:10}:{k:'ll',l:6});
+    q.forEach(x=>{x.cost=GT().common.cost[x.l-1];x.pro=x.l>5});return q}
+  function sSeq(f1,f2,odyleFirst){const n=[];const nov=f=>[{f,k:'s',l:1},{f,k:'p',l:1},{f,k:'a',l:1}];
+    if(odyleFirst) n.push(...nov(f1),...nov(f2)); else {const a=nov(f1),b=nov(f2);for(let i=0;i<3;i++)n.push(a[i],b[i])}
+    const pro=f=>[{f,k:'p',l:2},{f,k:'p',l:3},{f,k:'a',l:2},{f,k:'a',l:3}];
+    n.push(...pro(f1),...pro(f2)); n.forEach(x=>{x.cost=1;x.pro=x.l>1}); return n}
+  function walk(seq,pts,pro){let left=pts,i=0;const took=[];for(;i<seq.length;i++){const x=seq[i];if(x.pro&&!pro)break;if(x.cost>left)break;left-=x.cost;took.push(x)}return {took,left,next:seq[i]||null}}
+  function gplanCompute(p){
+    const L=Math.max(1,Math.min(100,Math.round(+p.lv||1))), pro=L>50;
+    const C=p.cp!==''&&p.cp!=null&&isFinite(+p.cp)?Math.max(0,Math.min(95,Math.round(+p.cp))):cPts(L);
+    const Sx=p.sp!==''&&p.sp!=null&&isFinite(+p.sp)?Math.max(0,Math.min(14,Math.round(+p.sp))):sPts(L);
+    const fam=gFams(p), cs=cSeq(p.cb), ss=sSeq(fam.f1,fam.f2,p.goal==='odyle');
+    const cw=walk(cs,C,pro), sw=walk(ss,Sx,pro);
+    const lv={ph:0,dt:0,ll:0}; cw.took.forEach(x=>lv[x.k]=x.l);
+    const fl={}; sw.took.forEach(x=>{fl[x.f]=fl[x.f]||{s:0,p:0,a:0};fl[x.f][x.k]=x.l});
+    // level-by-level timeline from 1 to 100 (the plan only ever adds points, so following it never needs a reset)
+    const ev=[]; let ci=0,si=0,cl=0,sl=0;
+    for(let l=1;l<=100;l++){cl+=(l>=2&&(l>40||l%10))?1:0; sl+=(GT().points.spec[l]||0); const pr=l>50;
+      while(ci<cs.length&&(!cs[ci].pro||pr)&&cs[ci].cost<=cl){cl-=cs[ci].cost;ev.push({L:l,x:cs[ci]});ci++}
+      while(si<ss.length&&(!ss[si].pro||pr)&&ss[si].cost<=sl){sl-=ss[si].cost;ev.push({L:l,x:ss[si]});si++}}
+    return {L,pro,C,Sx,fam,lv,fl,cw,sw,ev,cspent:C-cw.left,sspent:Sx-sw.left};
+  }
+  const famBy=k=>GT().spec.fams.find(f=>f.k===k);
+  function xName(x){const C=GT().common.skills;if(x.k==='ph'&&x.f==null)return C[0].n;if(x.k==='dt')return C[1].n;if(x.k==='ll')return C[2].n;
+    const f=famBy(x.f);return x.k==='s'?f.seeker:x.k==='p'?`Plentiful Harvest (${f.n})`:f.appr}
+  function xIc(x){if(x.f==null)return GT().common.skills.find(s=>s.k===x.k).ic;return famIc(famBy(x.f),{s:1,p:2,a:3}[x.k])}
+  function gplanHTML(){
+    const g=GT(); if(!g) return ''; const p=gpSt();
+    const goals=g.goals.map(x=>`<button type="button" data-cggpgoal="${x.k}" aria-pressed="${p.goal===x.k}">${h(x.n)}</button>`).join('');
+    const profs=PROFS.map(n=>`<label class="check"><input type="checkbox" data-cggpprof="${n}"${(p.profs||[]).includes(n)?' checked':''}> ${h(n)}</label>`).join('');
+    const famOpt=`<option value="auto"${p.fam2==='auto'?' selected':''}>Automatic</option>`+g.spec.fams.filter(f=>f.k!=='od').map(f=>`<option value="${f.k}"${p.fam2===f.k?' selected':''}>${h(f.n)}</option>`).join('');
+    return `<p class="small">Pick your gathering level and what you gather for. The planner spends your points in the best order, respecting the Novice caps and the unlock order, and remembers your choices in this browser.</p>
+      <div class="cgform small">
+        <label>Gathering level (1–100) <input class="cgnum" type="number" min="1" max="100" data-cggp="lv" value="${h(p.lv)}"></label>
+        <label>Common points <input class="cgnum" type="number" min="0" max="95" data-cggp="cp" placeholder="from level" value="${h(p.cp)}"></label>
+        <label>Specialty points <input class="cgnum" type="number" min="0" max="14" data-cggp="sp" placeholder="from level" value="${h(p.sp)}"></label>
+        <label>Second family <select data-cggp="fam2">${famOpt}</select></label>
+        <label>Common split at 100 <select data-cggp="cb"><option value="ll6"${p.cb!=='dt10'?' selected':''}>PH 10 / DT 9 / LL 6 (×4 jump)</option><option value="dt10"${p.cb==='dt10'?' selected':''}>PH 10 / DT 10 / LL 5</option></select></label>
+      </div>
+      <p class="small muted">Professional 1–50 counts as 51–100. Leave the point boxes empty to use what your level gives.</p>
+      <div class="cgbar"><span class="small">Goal:</span> <span class="seg cgseg" role="group" aria-label="Gathering goal">${goals}</span></div>
+      <div class="cgform small" id="cggpprofs"${p.goal==='prof'?'':' hidden'}>${profs}</div>
+      <div id="cggpout" aria-live="polite"></div>`;
+  }
+  function gplanOut(){
+    const box=document.getElementById('cggpout'); if(!box||!GT()) return;
+    const p=gpSt(), r=gplanCompute(p), g=GT(), C=g.common.skills;
+    const goal=g.goals.find(x=>x.k===p.goal)||g.goals[0];
+    const pcts=g.spec.pct, f1=famBy(r.fam.f1), f2=famBy(r.fam.f2);
+    const chip=(ic,t,b)=>`<span class="cgitem cggchip">${gico(ic)}${h(t)}${b!=null?` <b>${h(b)}</b>`:''}</span>`;
+    const comm=C.map(s=>chip(s.ic,s.n,`${r.lv[s.k]}/10`)).join('');
+    const famRow=f=>{const v=r.fl[f.k]||{s:0,p:0,a:0};return `<tr><td>${gico(famIc(f,1))} <b>${h(f.n)}</b></td><td>${v.s?'yes':'—'}</td><td>${v.p}/3 <span class="muted">(${v.p?pcts[v.p-1]+'%':'0%'})</span></td><td><b>×${(1+(v.p?pcts[v.p-1]:0)/100).toFixed(1)}</b></td><td>${v.a}/3 <span class="muted">(${v.a?pcts[v.a-1]+'%':'0%'})</span></td><td>${v.s+v.p+v.a}</td></tr>`};
+    const others=g.spec.fams.filter(f=>f.k!==r.fam.f1&&f.k!==r.fam.f2);
+    const llv=r.lv.ll;
+    const next=r.ev.filter(e=>e.L>r.L).slice(0,8);
+    const nameLv=x=>`${xName(x)} ${x.l}`;
+    const tl=[];r.ev.forEach(e=>{const t=tl[tl.length-1];if(t&&t.L===e.L)t.xs.push(e.x);else tl.push({L:e.L,xs:[e.x]})});
+    const late=[r.cw,r.sw].filter(w=>w.left>0&&w.next);
+    box.innerHTML=`<p class="small"><span class="tag wind">${h(goal.n)}</span> ${h(goal.d)}</p>
+      <div class="cgcalc small"><span>Rank: <b>${r.pro?'Professional':'Novice'}</b></span><span>common points <b>${r.cspent}</b> of ${r.C} spent</span><span>specialty points <b>${r.sspent}</b> of ${r.Sx} spent</span>${late.map(w=>`<span class="muted">${w.left} saved: next is ${h(nameLv(w.next))} (${w.next.cost} pt${w.next.cost>1?'s':''}${w.next.pro&&!r.pro?', needs Professional':''})</span>`).join('')}</div>
+      <h4 class="cgh4">Your points</h4>
+      <div class="cgmats small">${comm}</div>
+      <div class="tablewrap"><table class="cgtab cggtab"><thead><tr><th>Family</th><th>Seeker</th><th>Plentiful Harvest</th><th>Materials per gather</th><th>Appraiser (reroll)</th><th>Points</th></tr></thead><tbody>${famRow(f1)}${famRow(f2)}</tbody></table></div>
+      <p class="small muted">Not taken: ${others.map(f=>h(f.n)).join(', ')} (×1.0 materials, no minimap, no reroll).</p>
+      <h4 class="cgh4">What that does</h4>
+      <ul class="plain small"><li>${gico(C[0].ic)} Success gauge <b>+${r.lv.ph*C[0].per}</b> on every successful roll; ${gico(C[1].ic)} Failure gauge <b>−${r.lv.dt*C[1].per}</b> on every failed roll.</li>
+        <li>${gico(C[2].ic)} Lady Luck: ${llv?`<b>${C[2].chance[llv-1]}%</b> chance of a ×2.5${llv>=6?' or <b>×4</b>':''} Success jump`:'not taken yet'} <span class="muted">(players report it only fires once Failure is at 50% or more).</span></li>
+        <li>${gico(famIc(f1,2))} ${h(f1.n)}: <b>×${(1+((r.fl[f1.k]||{}).p?pcts[r.fl[f1.k].p-1]:0)/100).toFixed(1)}</b> materials per successful gather on average; ${h(f2.n)}: <b>×${(1+((r.fl[f2.k]||{}).p?pcts[r.fl[f2.k].p-1]:0)/100).toFixed(1)}</b>. Appraiser rerolls the ${h(f1.apprWhat)} on ${(r.fl[f1.k]||{}).a?pcts[r.fl[f1.k].a-1]:0}% of successful gathers (only when you didn't already get the top roll).</li></ul>
+      <p class="small"><b>Why this split:</b> ${r.fam.why} Common skills: cheapest levels first, so all three reach 5 together at Novice 50 with nothing wasted, then ${h(C[0].n)} to 10 and ${h(C[1].n)} next (Medieval Marty's order) for ${p.cb==='dt10'?'PH 10 / DT 10 / LL 5':'Screamheart\'s PH 10 / DT 9 / LL 6'}. It only ever adds points as you level, so following it never needs a reset.</p>
+      <h4 class="cgh4">Take next</h4>
+      ${next.length?`<ol class="cgnumlist small">${next.map(e=>`<li><span class="tag gold">Lv ${e.L}</span> ${gico(xIc(e.x))} ${h(nameLv(e.x))}${e.x.pro&&!r.pro?' <span class="muted">(after the Professional quest)</span>':''}</li>`).join('')}</ol>`:'<p class="small">Nothing left: your plan is complete.</p>'}
+      <details class="cgsub" id="cg-gp-tl"${OPEN.has('cg-gp-tl')?' open':''}><summary><b>Full plan, level by level</b> <span class="small muted">every point from gathering level 2 to 100</span></summary>
+        <div class="tablewrap"><table class="cgtab cggtab"><thead><tr><th>Lv</th><th>Spend on</th></tr></thead><tbody>${tl.map(t=>`<tr${t.L<=r.L?' class="cgdone"':''}><td>${t.L}${t.L===51?' <span class="muted">(Pro 1)</span>':''}</td><td>${t.xs.map(x=>`${gico(xIc(x))} ${h(nameLv(x))}`).join(', ')}</td></tr>`).join('')}</tbody></table></div>
+        <p class="small muted">Rows up to your level are greyed: you should already have them.</p></details>
+      <p class="small callout"><b>Already spent differently?</b> A full reset costs <b>50,000 Kina</b> ${gTag('Unconfirmed')} and gives back every point. It's worth it if your specialty points sit in a family you no longer gather; for a one-level difference in the common skills it isn't.</p>
+      ${srcLine(['mbgath','marty','shs','atgx','keen'])}`;
+  }
+
   /* ---------- render ---------- */
   const SECS=[
     ['cg-route','Fastest route to level each profession','Level band → what to craft, materials, Kina and time. Tick the steps as you go.',routeHTML],
+    ['cg-gtree','Gathering skill tree','All 21 Essence Extraction skills: cost and effect at every level, unlock order, how you earn points.',gtreeHTML],
+    ['cg-gplan','Gathering point planner','Your gathering level and goal in, the best point split, what to take next and the totals out.',gplanHTML],
     ['cg-one','One crafter for all your characters','Can one character max every profession and craft for your alts? Yes: what can be shared, the order to max everything, and how to hand items over.',oneHTML],
     ['cg-gear','What to craft for your gear','IL102 crafts in priority order with full material trees and where each material comes from.',gearHTML],
     ['cg-money','Money makers','Crafts that sold for profit, the break-even formula, and selling tips.',moneyHTML],
@@ -7382,6 +7517,21 @@ var A2T=(function(){
       '#craftguidebox .cgrules li{margin-bottom:10px}',
       '#craftguidebox .cgsrc{margin:4px 0 0}',
       '#craftguidebox .cgtop{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}',
+      '#craftguidebox .cggico{width:20px;height:20px;flex:none;border-radius:4px;vertical-align:middle}',
+      '#craftguidebox .cggico.big{width:28px;height:28px}',
+      '#craftguidebox summary .cggico{margin-right:2px}',
+      '#craftguidebox .cggtab td,#craftguidebox .cggtab th{white-space:nowrap}',
+      '#craftguidebox .cggtab td:last-child{white-space:normal}',
+      '#craftguidebox .cgprorow td{border-top:2px solid var(--gold)}',
+      '#craftguidebox .cgdone td{opacity:.55}',
+      '#craftguidebox .cggfam{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:8px 0;min-width:0}',
+      '#craftguidebox .cggfamh{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}',
+      '#craftguidebox .cggchain{display:flex;flex-wrap:wrap;gap:6px;align-items:stretch;margin-top:6px}',
+      '#craftguidebox .cggnode{display:flex;gap:8px;align-items:flex-start;flex:1 1 200px;min-width:0;background:var(--panel2);border-radius:8px;padding:6px 8px}',
+      '#craftguidebox .cggnode>div{min-width:0}',
+      '#craftguidebox .cggarrow{align-self:center;color:var(--muted)}',
+      '#craftguidebox .cggchip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:2px 8px}',
+      '@media (max-width:560px){#craftguidebox .cggarrow{display:none}#craftguidebox .cggnode{flex-basis:100%}}',
       '.cglink{margin:8px 0 12px}'].join('\n');
     document.head.appendChild(st0);
   }
@@ -7401,14 +7551,15 @@ var A2T=(function(){
       <p class="small muted">${h(D().credit)} ${h(D().vendorNote)} Checked ${h(D().v)}. Korean-only numbers are marked; Global client data is used first.</p></div></details>`;
     host.innerHTML=o;
     OPEN.forEach(id=>{const e=document.getElementById(id);if(e&&e.tagName==='DETAILS')e.open=true});
-    calc1Out(); calc2Out();
+    calc1Out(); calc2Out(); gplanOut();
   }
   function rerender(keepScroll){const y=window.scrollY;render();if(keepScroll)window.scrollTo(0,y)}
   window.renderCraftGuide=render;
 
   /* ---------- events ---------- */
   document.addEventListener('click',e=>{
-    const t=e.target.closest&&e.target.closest('[data-cgroute],[data-cgfac],[data-cgcalc],[data-cggo]'); if(!t||!t.closest('#craftguidebox')) return;
+    const t=e.target.closest&&e.target.closest('[data-cgroute],[data-cgfac],[data-cgcalc],[data-cggo],[data-cggpgoal]'); if(!t||!t.closest('#craftguidebox')) return;
+    if(t.dataset.cggpgoal){gpSave({goal:t.dataset.cggpgoal});t.parentNode.querySelectorAll('[data-cggpgoal]').forEach(b=>b.setAttribute('aria-pressed',String(b===t)));const pf=document.getElementById('cggpprofs');if(pf)pf.hidden=t.dataset.cggpgoal!=='prof';gplanOut();return}
     if(t.dataset.cgroute){save({route:t.dataset.cgroute});rerender(true);return}
     if(t.dataset.cgfac){save({fac:t.dataset.cgfac});rerender(true);return}
     if(t.dataset.cggo){e.preventDefault();const d=document.getElementById(t.dataset.cggo);if(d){d.open=true;d.scrollIntoView({block:'start'})}return}
@@ -7419,12 +7570,15 @@ var A2T=(function(){
   document.addEventListener('input',e=>{
     const t=e.target; if(!t.closest||!t.closest('#craftguidebox')) return;
     if(t.dataset.cgprice!=null){setPrice(t.dataset.cgprice,t.value);later(()=>{calc1Out();calc2Out()});return}
+    if(t.dataset.cggp&&t.tagName!=='SELECT'){gpSave({[t.dataset.cggp]:t.value});later(gplanOut);return}
     if(t.dataset.cg2){const s=st();const v=t.dataset.cg2==='r'?t.value:t.value;save({c2:Object.assign({},s.c2,{[t.dataset.cg2]:v})});later(calc2Out);return}
     if(t.dataset.cg1&&t.type!=='checkbox'&&t.tagName!=='SELECT'){const s=st();save({c1:Object.assign({},s.c1,{[t.dataset.cg1]:t.value})});later(calc1Out);return}
   });
   document.addEventListener('change',e=>{
     const t=e.target; if(!t.closest) return;
     if(t.closest('#craftguidebox')){
+      if(t.dataset.cggp){gpSave({[t.dataset.cggp]:t.value});gplanOut();return}
+      if(t.dataset.cggpprof){const ps=new Set(gpSt().profs||[]);if(t.checked)ps.add(t.dataset.cggpprof);else ps.delete(t.dataset.cggpprof);gpSave({profs:PROFS.filter(n=>ps.has(n))});gplanOut();return}
       if(t.dataset.cgprof){save({prof:Math.max(1,Math.min(100,+t.value||90))});rerender(true);return}
       if(t.dataset.cgslot){save({slot:t.value});rerender(true);return}
       if(t.dataset.cg1){const s=st();const k=t.dataset.cg1;const v=t.type==='checkbox'?(t.checked?1:0):t.value;const c1=Object.assign({},s.c1,{[k]:v});if(k==='prof'){c1.r='';c1.xp=''}if(k==='r'){c1.xp='';c1.bulk=0}save({c1});
