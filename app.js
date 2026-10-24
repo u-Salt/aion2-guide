@@ -1,4 +1,4 @@
-var SIMSRC="data/sim.js?v=1792867988";
+var SIMSRC="data/sim.js?v=1792873184";
 const P=ALL[SLUG];
 document.getElementById('app').innerHTML=P.body;
 document.title=P.cls+' Guide · AION 2 Global Field Manual (Unofficial Fan Guide)';
@@ -8578,12 +8578,86 @@ try{render();wire()}catch(e){console.error(e)}
       ${srcLine(['mbgath','marty','shs','atgx','keen'])}`;
   }
 
+  /* ---------- (1d) best titles while gathering + best spots to farm each material (data: CRAFTGUIDE.gspots, audit/r23/build_gspots.py) ---------- */
+  const GS=()=>D().gspots;
+  let GSQ='', GSF='all';
+  let FINDSET=null;
+  function finderHas(n){
+    if(!FINDSET){FINDSET=new Set();try{const I=(typeof ITEMSOURCES!=='undefined'&&ITEMSOURCES)||window.ITEMSOURCES;((I&&I.items)||[]).forEach(x=>{FINDSET.add(x.n);(x.a||[]).forEach(a=>FINDSET.add(a))})}catch(e){}}
+    return FINDSET.has(n);
+  }
+  const gsKey=r=>r.m.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  const gsSide=r=>r.b||(st().fac==='a'?r.a:r.e);
+  function gsRowFor(n){const g=GS();if(!g)return null;const A=D().asmo||{};
+    for(const f of g.fams)for(const r of f.rows){if(r.m===n||r.g.includes(n)||r.g.some(x=>A[x]===n)||A[r.m]===n)return r}return null}
+  function gsZone(z,side){
+    if(!z) return '—';
+    const nm=z.slug?`<a href="https://metabot.gg/en/aion-2/zones/${h(z.slug)}" target="_blank" rel="noopener noreferrer">${h(z.z)}</a>`:h(z.z);
+    const bits=[];if(z.lv)bits.push('Lv '+h(z.lv));if(z.spots)bits.push(`${num(z.spots)} gathering spots${z.only?' (only this node)':z.types&&z.types.length>1?` (${z.types.length} node types)`:''}`);
+    return `<b>${nm}</b>${bits.length?`<div class="small muted">${bits.join(' · ')}</div>`:''}`;
+  }
+  function gsTitlesHTML(){
+    const T=GS().titles, fa=st().fac==='a';
+    const kind={move:'Move',flight:'Flight',both:'Move + Flight'};
+    const li=x=>`<li><b>${h(fa&&x.na?x.na:x.n)}</b> <span class="tag${x.k==='flight'?' wind':x.k==='both'?' gold':''}">${kind[x.k]}</span> ${h(x.b)}<br><span class="muted">${h(x.how)} · ${h(x.ease)}</span></li>`;
+    const top=T.picks.filter(x=>x.best), rest=T.picks.filter(x=>!x.best);
+    return `<div class="callout cgtitles" id="cg-gs-titles"><p class="small"><b>Best titles while gathering.</b> ${h(T.line)}</p>
+      <ul class="plain small cgtl">${top.map(li).join('')}</ul>
+      <p class="small">${h(T.odyle)} ${h(T.slots)}</p>
+      <details class="cgsub" id="cg-gs-titles-more"${OPEN.has('cg-gs-titles-more')?' open':''}><summary><b>More speed titles and how to get them</b> <span class="small muted">easy quest and event titles first</span></summary>
+        <ul class="plain small cgtl">${rest.map(li).join('')}</ul><p class="small">${h(T.more)}</p></details>
+      <p class="small muted">${h(T.hidden)} ${gTag('Unconfirmed')}</p>${srcLine(T.src)}</div>`;
+  }
+  function gsRowHTML(r){
+    const s=gsSide(r), fa=st().fac==='a';
+    const fnd=[r.m,...r.g].find(finderHas);
+    const mat=`${item(r.m)}${fnd?`<div><button type="button" class="btn cgmini" data-cgfind="${h(fnd)}">Item finder →</button></div>`:''}`;
+    const grades=r.g.length>1?`<span class="cggrades">${r.g.map(g=>item(g)).join('')}</span>`:`<span class="small muted">one grade</span>`;
+    const mapLine=s.n?`<div class="small muted">${h(s.map)}: ${num(s.n)} ${h(s.node)} nodes</div>`:'';
+    const extra=[r.need,r.abyss,r.market].filter(Boolean).map(x=>`<div class="small muted">${h(x)}</div>`).join('');
+    const text=[r.m,dn(r.m),...r.g,...r.g.map(x=>(D().asmo||{})[x]||''),...['e','a','b'].filter(k=>r[k]).flatMap(k=>[r[k].best.z,r[k].alt.z,r[k].node||''])].join(' ').toLowerCase();
+    return `<tr id="cg-gs-${gsKey(r)}" data-gst="${h(text)}">
+      <td data-l="Material">${mat}</td><td data-l="Grade">${grades}</td>
+      <td data-l="${r.b?'Best':fa?'Best (Asmodian)':'Best (Elyos)'}">${gsZone(s.best)}${mapLine}</td><td data-l="Runner-up">${gsZone(s.alt)}</td>
+      <td data-l="Why"><span class="small">${h(s.why)}</span>${extra}</td><td data-l="Route tip"><span class="small">${h(s.tip)}</span></td>
+      <td data-l="PvP"><span class="small">${h(r.pvp)}</span></td><td data-l="Source"><span class="small">${srcLinks(r.src)}</span>${s.unc?' '+gTag('Unconfirmed'):''}</td></tr>`;
+  }
+  function gspotsHTML(){
+    const g=GS(); if(!g) return ''; const s=st();
+    const famBtns=`<button type="button" data-cggsf="all" aria-pressed="${GSF==='all'}">All</button>`+g.fams.map(f=>`<button type="button" data-cggsf="${f.k}" aria-pressed="${GSF===f.k}">${h(f.n)}</button>`).join('');
+    const rules=`<ul class="plain small cgrules">${g.rules.map(x=>`<li><b>${h(x.t)}</b>${x.unc?' '+gTag('Unconfirmed'):''}${x.kr?' '+gTag('KR'):''}<br>${h(x.d)}${x.src?` <span class="muted">(${srcLinks(x.src)})</span>`:''}</li>`).join('')}</ul>`;
+    const body=g.fams.map(f=>`<tbody data-gsf="${f.k}"><tr class="cggrp"><th colspan="8">${f.ic?gico('GatherSkill_'+f.ic+'_01'):''} ${h(f.n)} <span class="muted">(${f.rows.length})</span><div class="small muted cggnote">${h(f.gr)}</div></th></tr>${f.rows.map(gsRowHTML).join('')}</tbody>`).join('');
+    return `${gsTitlesHTML()}
+      <p class="small">${h(g.intro)}</p>
+      <details class="cgsub" id="cg-gs-rules"${OPEN.has('cg-gs-rules')?' open':''}><summary><b>How to read the table</b> <span class="small muted">reachable maps, PvP rules, spot counts, the other faction's map</span></summary>${rules}</details>
+      <div class="cgbar cggsbar"><label class="small cggsq">Find <input type="search" data-cggsq value="${h(GSQ)}" placeholder="material, grade or zone" aria-label="Filter materials"></label>
+        <span class="small">Zones for: <span class="seg" role="group" aria-label="Faction"><button type="button" data-cgfac="e" aria-pressed="${s.fac!=='a'}">Elyos</button><button type="button" data-cgfac="a" aria-pressed="${s.fac==='a'}">Asmodian</button></span></span></div>
+      <div class="cgbar small"><span class="seg cgseg" role="group" aria-label="Material family">${famBtns}</span></div>
+      <div class="tablewrap cggsw"><table class="cgtab cggs"><thead><tr><th>Material</th><th>Grade</th><th>Best zone</th><th>Runner-up</th><th>Why</th><th>Route tip</th><th>PvP</th><th>Source</th></tr></thead>${body}
+        <tbody class="cggsnone" hidden><tr><td colspan="8" class="small muted">No material matches. <button type="button" class="btn cgmini" data-cggsclear="1">Clear the filter</button></td></tr></tbody></table></div>
+      <p class="small muted">Zone names open the zone's MetaBot.GG page (map, nodes, monsters). Checked ${h(g.v)}.</p>`;
+  }
+  function gsFilter(){
+    const tb=document.querySelectorAll('#craftguidebox .cggs tbody[data-gsf]'); if(!tb.length) return;
+    const q=GSQ.trim().toLowerCase(); let shown=0;
+    tb.forEach(b=>{let n=0;b.querySelectorAll('tr[data-gst]').forEach(tr=>{const ok=(GSF==='all'||b.dataset.gsf===GSF)&&(!q||q.split(/\s+/).every(w=>tr.dataset.gst.includes(w)));tr.hidden=!ok;if(ok)n++});b.hidden=!n;shown+=n});
+    const none=document.querySelector('#craftguidebox .cggsnone'); if(none) none.hidden=!!shown;
+  }
+  /* "Farm this at ...": a short link to the spot row for a material (next-step card) */
+  function gsReset(){GSQ='';GSF='all';const q=document.querySelector('#craftguidebox [data-cggsq]');if(q)q.value='';document.querySelectorAll('#craftguidebox [data-cggsf]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.cggsf==='all')));gsFilter()}
+  function farmAt(n){
+    const r=gsRowFor(n); if(!r) return '';
+    const s=gsSide(r);
+    return `<a href="#cg-gs-${gsKey(r)}" data-cggo="cg-gs-${gsKey(r)}">Farm this at ${h(s.best.z)}</a>`;
+  }
+
   /* ---------- render ---------- */
   const SECS=[
     ['cg-route','Step-by-step leveling route','Pick a profession and tick each step: what to craft, how many, materials, Kina and time.',routeHTML],
     ['cg-gear','Gear you can craft (up to item level 102)','Which piece to craft first, its tier-by-tier ladder with success odds, and every material grouped by where you get it.',gearHTML],
     ['cg-money','Make Kina with crafting','Crafts that sold for profit, selling tips, and your prices.',moneyHTML],
     ['cg-one','One crafter for all your characters','Yes, one character can max every profession: what can be shared, the order, and how to hand gear to alts.',oneHTML],
+    ['cg-gspots','Best spots to farm each material','Best zone and runner-up for every gathered and dropped material, by faction: why, route tip, PvP risk. Plus the best titles while gathering.',gspotsHTML],
     ['cg-gplan','Gathering point planner','Your gathering level and goal in: the best point split and what to take next.',gplanHTML],
     ['cg-gtree','Gathering skill tree','All 21 gathering skills: cost and effect at every level, unlock order, how you earn points.',gtreeHTML],
     ['cg-rules','Rules that cost people materials','One line each: failed crafts, upgrade crafts, lost stones, bulk crafts and more.',rulesHTML],
@@ -8591,11 +8665,11 @@ try{render();wire()}catch(e){console.error(e)}
   ];
   /* goals: which parts each goal shows, in this order (the rest is hidden until "Show everything") */
   const GOALS=[
-    {k:'level',n:'Level my crafting fast',d:'The shortest route to 50, the upgrade quest, then on to 100.',ic:()=>icon("Novice Handicrafter's Magnifying Glass (Bound)"),secs:['cg-route','cg-calc','cg-rules','sys-crafting']},
+    {k:'level',n:'Level my crafting fast',d:'The shortest route to 50, the upgrade quest, then on to 100.',ic:()=>icon("Novice Handicrafter's Magnifying Glass (Bound)"),secs:['cg-route','cg-calc','cg-gspots','cg-rules','sys-crafting']},
     {k:'gear',n:'Craft gear for my character',d:'Which item level 102 pieces to make, in order, and what they cost.',ic:()=>icon('Splendent Wise Dragon Lord Ring'),secs:['cg-gear','cg-route','cg-rules','cg-calc','sys-crafting']},
     {k:'kina',n:'Make Kina',d:'Crafts that sold for profit, selling tips and your break-even price.',ic:()=>icon("Artisan's Kukuru Fried Meat"),secs:['cg-money','cg-calc','cg-route','cg-rules']},
     {k:'alts',n:'One character crafts for all my alts',d:'Max every profession on one crafter and hand the gear over.',ic:()=>icon("Professional Blacksmith's Hammer (Bound)"),secs:['cg-one','cg-gear','cg-route','cg-rules','cg-calc','sys-crafting']},
-    {k:'gather',n:'Gathering only',d:'Level gathering (Essence Extraction) and spend your skill points well.',ic:()=>gico('GatherSkill_Od_01',1),secs:['cg-route','cg-gplan','cg-gtree','sys-gathering']}
+    {k:'gather',n:'Gathering only',d:'Level gathering (Essence Extraction) and spend your skill points well.',ic:()=>gico('GatherSkill_Od_01',1),secs:['cg-route','cg-gspots','cg-gplan','cg-gtree','sys-gathering']}
   ];
   const OLDBOX=['sys-crafting','sys-gathering'];
   const goalOf=s=>GOALS.find(g=>g.k===s.goal)||null;
@@ -8676,12 +8750,22 @@ try{render();wire()}catch(e){console.error(e)}
     cs.forEach(c=>{const r=routeCalc(c);o.n+=r.n;o.secs+=r.secs;o.kina+=r.kina;Object.entries(r.raw).forEach(([k,v])=>o.raw[k]=(o.raw[k]||0)+v);Object.entries(r.crafts).forEach(([k,v])=>o.crafts[k]=(o.crafts[k]||0)+v)});
     return o.n?o:null;
   }
-  function whereShort(n){const s=srcOf(n),v=D().vendor[n];return s.t==='gather'?'gathering nodes':v!=null?`an NPC vendor, ${num(v)} Kina each`:s.d}
+  function whereShort(n){const s=srcOf(n),v=D().vendor[n];if(v!=null)return h(`an NPC vendor, ${num(v)} Kina each`);const fa=farmAt(n);return s.t==='gather'?`gathering nodes${fa?': '+fa:''}`:h(s.d)+(fa?` · ${fa}`:'')}
   function nextList(s){
     const d=D();
     if(s.goal==='alts'&&d.onecrafter) return {name:'One crafter: max every profession',sec:'cg-one',steps:d.onecrafter.order};
     const R=d.routes.find(r=>r.k===s.route)||d.routes[0];
     return {name:R.name,sec:'cg-route',steps:R.steps};
+  }
+  /* gathering steps: which zone to farm (materials named in the step text first, else the busiest all-round zone) */
+  function gsStepLine(x,s,mats){
+    const g=GS(); if(!g||mats) return '';
+    const txt=(x.do||'')+' '+(x.t||'');
+    const hits=[];g.fams.forEach(f=>f.rows.forEach(r=>{const base=r.m.split(' ')[0];if(f.k!=='mob'&&(txt.includes(r.m)||new RegExp('\\b'+base+'\\b').test(txt))&&!hits.includes(r))hits.push(r)}));
+    if(hits.length) return `<p class="small"><b>Where:</b> ${hits.slice(0,2).map(r=>`${h(dn(r.m))}: ${farmAt(r.m)}`).join(' · ')}</p>`;
+    if(s.route!=='gath') return '';
+    const z=g.allround[s.fac==='a'?'a':'e'];
+    return `<p class="small"><b>Where:</b> Farm this at <b>${h(z.z)}</b> (Lv ${h(z.lv)}, ${num(z.spots)} gathering spots), ${h(z.why)}. Every material: <a href="#cg-gspots" data-cggo="cg-gspots">Best spots to farm each material</a>.</p>`;
   }
   function nextHTML(){
     const s=st(), sv=svGet(), g=goalOf(s), L=nextList(s), d=D(), n=L.steps.length;
@@ -8693,7 +8777,7 @@ try{render();wire()}catch(e){console.error(e)}
     if(i>=0){
       const x=L.steps[i], k=stepNums(x);
       const make=k?Object.entries(k.crafts).map(([rn,c])=>`<span>${item(rn,Math.ceil(c))}</span>`).join(' then '):'';
-      const mats=k?Object.entries(k.raw).sort((a,b)=>b[1]-a[1]).map(([pn,q])=>`<li>${item(pn,Math.ceil(q))} <span class="muted">from ${h(whereShort(pn))}</span></li>`).join(''):'';
+      const mats=k?Object.entries(k.raw).sort((a,b)=>b[1]-a[1]).map(([pn,q])=>`<li>${item(pn,Math.ceil(q))} <span class="muted">from ${whereShort(pn)}</span></li>`).join(''):'';
       body=`<div class="cgnt"><span class="cgno">${i+1}</span> <b>${h(x.t)}</b>${x.lv?` <span class="tag gold">${h(x.lv)}</span>`:''}</div>
         <p class="small" data-cgloss>${h(x.do)}</p>
         ${make?`<p class="small"><b>Craft:</b> ${make}</p>`:''}
@@ -8702,6 +8786,7 @@ try{render();wire()}catch(e){console.error(e)}
         ${k?`<div class="cgcalc small"><span>about <b>${num(k.n)}</b> crafts</span><span>vendor items about <b>${num(k.kina)}</b> Kina</span><span>about <b>${fmtTime(k.secs)}</b> in an AFK queue</span></div>`:''}
         ${x.gcalc?`<div class="cgcalc small"><span><b>${num(gxp(x.gcalc.from,x.gcalc.to))}</b> gathering XP</span></div>`:''}
         ${x.tip?`<p class="small muted"><b>Tip:</b> ${h(x.tip)}</p>`:''}
+        ${gsStepLine(x,s,mats)}
         <div class="cgnb"><button type="button" class="btn primary" data-cgdone="${h(x.id)}">Done: show the next step</button><button type="button" class="btn cgmini" data-cggo="${L.sec}" data-cgstep="${h(x.id)}-d">See it in the full list</button>${undo}</div>`;
     } else if(g&&g.k==='gear'){
       const P=Math.max(1,Math.min(100,+s.prof||90)), types=['Greatsword','Longsword','Dagger','Mace','Bow','Staff','Spellbook','Orb'];
@@ -8852,6 +8937,19 @@ try{render();wire()}catch(e){console.error(e)}
       '#craftguidebox .cgmt .cgmp::before{content:"Your price ";color:var(--muted)}',
       '#craftguidebox .cgstackw{overflow:visible}#craftguidebox .cgstack thead{display:none}#craftguidebox .cgstack tr{display:block;padding:6px 0;border-bottom:1px solid var(--line)}#craftguidebox .cgstack td{display:block;border:0!important;padding:2px 4px!important}',
       '#craftguidebox .cgcards{grid-template-columns:1fr}#craftguidebox .cgpgrid{grid-template-columns:repeat(2,minmax(0,1fr))}#craftguidebox .cgpname{font-size:13px;overflow-wrap:anywhere}}',
+      /* best spots table + titles box (audit/r23) */
+      '#craftguidebox .cgtitles{margin:0 0 10px}#craftguidebox .cgtl li{margin:4px 0}',
+      '#craftguidebox .cggsq{display:flex;gap:6px;align-items:center;flex:1 1 220px;min-width:0}#craftguidebox .cggsq input{flex:1;min-width:0;max-width:320px}',
+      '#craftguidebox .cggs td{min-width:110px}#craftguidebox .cggs td:nth-child(5),#craftguidebox .cggs td:nth-child(6){min-width:200px}',
+      '#craftguidebox .cggs tr.cggrp th{background:var(--panel2);text-align:left;font:700 13.5px var(--f-body);text-transform:none;letter-spacing:0;color:var(--gold)}',
+      '#craftguidebox .cggrades{display:flex;flex-direction:column;gap:2px}',
+      '#craftguidebox .cggs tr.cgflash td{animation:cgflash 1.6s ease-out}@keyframes cgflash{from{background:rgba(255,208,43,.25)}to{background:transparent}}',
+      '@media (max-width:820px){#craftguidebox .cggsw{overflow:visible}#craftguidebox .cggs thead{display:none}#craftguidebox .cggs,#craftguidebox .cggs tbody{display:block}',
+      '#craftguidebox .cggs tbody[hidden],#craftguidebox .cggs tr[hidden]{display:none!important}',
+      '#craftguidebox .cggs tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px 10px;padding:8px 0;border-bottom:1px solid var(--line)}',
+      '#craftguidebox .cggs tr.cggrp{display:block}#craftguidebox .cggs td,#craftguidebox .cggs th{border:0!important;padding:2px 4px!important;min-width:0!important;overflow-wrap:anywhere}',
+      '#craftguidebox .cggs td:nth-child(n+5){grid-column:1/-1}#craftguidebox .cggs td[data-l]::before{content:attr(data-l);display:block;font-size:12px;color:var(--muted)}',
+      '#craftguidebox .cggrades{flex-direction:row;flex-wrap:wrap}}',
       '.cglink{margin:8px 0 12px}'].join('\n');
     document.head.appendChild(st0);
   }
@@ -8875,7 +8973,7 @@ try{render();wire()}catch(e){console.error(e)}
       <p class="small muted">${h(D().credit)} ${h(D().vendorNote)} Checked ${h(D().v)}. Korean-only numbers are marked; Global client data is used first.</p></div></details>`;
     host.innerHTML=o;
     OPEN.forEach(id=>{const e=document.getElementById(id);if(e&&e.tagName==='DETAILS')e.open=true});
-    calc1Out(); calc2Out(); gplanOut(); oldBoxes(g);
+    calc1Out(); calc2Out(); gplanOut(); gsFilter(); oldBoxes(g);
     try{markGloss(host)}catch(e){console.error(e)}
   }
   function rerender(keepScroll){const y=window.scrollY;render();if(keepScroll)window.scrollTo(0,y)}
@@ -8888,15 +8986,20 @@ try{render();wire()}catch(e){console.error(e)}
     const sp=e.target.closest&&e.target.closest('.cgt');
     if(sp&&sp.closest('#craftguidebox')){e.preventDefault();(tipFor===sp&&Date.now()-tipAt>400)?hideCgTip():showCgTip(sp);return}
     if(tipEl&&!tipEl.contains(e.target))hideCgTip();
-    const t=e.target.closest&&e.target.closest('[data-cgroute],[data-cgfac],[data-cgcalc],[data-cggo],[data-cggpgoal],[data-cggoal],[data-cgdone],[data-cgundo]'); if(!t||!t.closest('#craftguidebox,#sys-crafting,#sys-gathering')) return;
+    const t=e.target.closest&&e.target.closest('[data-cgroute],[data-cgfac],[data-cgcalc],[data-cggo],[data-cggpgoal],[data-cggoal],[data-cgdone],[data-cgundo],[data-cggsf],[data-cggsclear],[data-cgfind]'); if(!t||!t.closest('#craftguidebox,#sys-crafting,#sys-gathering')) return;
     if(t.dataset.cggoal){const k=t.dataset.cggoal==='all'?'':t.dataset.cggoal;const s=st(),o={goal:k};if(k==='gather')o.route='gath';else if(k&&s.route==='gath')o.route=classRoute();
       save(o);rerender(true);if(k){const nx=document.getElementById('cg-next');if(nx&&nx.scrollIntoView)nx.scrollIntoView({block:'nearest'})}return}
+    if(t.dataset.cggsf){GSF=t.dataset.cggsf;t.parentNode.querySelectorAll('[data-cggsf]').forEach(b=>b.setAttribute('aria-pressed',String(b===t)));gsFilter();return}
+    if(t.dataset.cggsclear){gsReset();return}
+    if(t.dataset.cgfind){e.preventDefault();if(typeof window.findItem==='function')window.findItem(t.dataset.cgfind);return}
     if(t.dataset.cgdone){svSet(t.dataset.cgdone,true);rerender(true);return}
     if(t.dataset.cgundo){svSet(t.dataset.cgundo,false);rerender(true);return}
     if(t.dataset.cggpgoal){gpSave({goal:t.dataset.cggpgoal});t.parentNode.querySelectorAll('[data-cggpgoal]').forEach(b=>b.setAttribute('aria-pressed',String(b===t)));const pf=document.getElementById('cggpprofs');if(pf)pf.hidden=t.dataset.cggpgoal!=='prof';gplanOut();return}
     if(t.dataset.cgroute){save({route:t.dataset.cgroute});rerender(true);return}
     if(t.dataset.cgfac){save({fac:t.dataset.cgfac});rerender(true);return}
-    if(t.dataset.cggo){e.preventDefault();go(t.dataset.cggo,t.dataset.cgstep);return}
+    if(t.dataset.cggo){e.preventDefault();const id=t.dataset.cggo;if(/^cg-gs-/.test(id)){const row=document.getElementById(id);if(row&&row.hidden)gsReset();
+        if(row&&row.tagName==='TR'){row.classList.remove('cgflash');void row.offsetWidth;row.classList.add('cgflash')}}
+      go(id,t.dataset.cgstep);return}
     if(t.dataset.cgcalc){const s=st();save({c2:Object.assign({},s.c2,{r:t.dataset.cgcalc,p:s.prof||100})});rerender(true);const d=document.getElementById('cg-calc');if(d){d.hidden=false;d.open=true;setTimeout(()=>{const x=document.getElementById('cg2out');(x||d).scrollIntoView({block:'center'})},30)}}
   });
   document.addEventListener('mouseover',e=>{const sp=e.target.closest&&e.target.closest('#craftguidebox .cgt');if(sp&&sp!==tipFor)showCgTip(sp)});
@@ -8909,6 +9012,7 @@ try{render();wire()}catch(e){console.error(e)}
   function later(fn){clearTimeout(tmr);tmr=setTimeout(fn,250)}
   document.addEventListener('input',e=>{
     const t=e.target; if(!t.closest||!t.closest('#craftguidebox')) return;
+    if(t.dataset.cggsq!=null){GSQ=t.value;gsFilter();return}
     if(t.dataset.cgprice!=null){setPrice(t.dataset.cgprice,t.value);later(()=>{calc1Out();calc2Out()});return}
     if(t.dataset.cggp&&t.tagName!=='SELECT'){gpSave({[t.dataset.cggp]:t.value});later(gplanOut);return}
     if(t.dataset.cg2){const s=st();save({c2:Object.assign({},s.c2,{[t.dataset.cg2]:t.value})});later(calc2Out);return}
