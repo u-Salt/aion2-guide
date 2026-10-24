@@ -1,4 +1,4 @@
-var SIMSRC="data/sim.js?v=1792863151";
+var SIMSRC="data/sim.js?v=1792867988";
 const P=ALL[SLUG];
 document.getElementById('app').innerHTML=P.body;
 document.title=P.cls+' Guide · AION 2 Global Field Manual (Unofficial Fan Guide)';
@@ -2878,13 +2878,25 @@ const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
 const mmss=s=>Math.floor(s/60)+':'+String(Math.round(s%60)).padStart(2,'0');
 function uiConfig(st){
   const base={boss:st.boss,duration:st.dur==='boss'?'boss':Number(st.dur)||180,rotation:st.rot,partyBuffs:st.party?'typical':'none',consumables:st.cons?'typical':'none'};
-  if(st.sheet==='mine'){const cc=myCharCfg();if(cc)return {cfg:Object.assign(cc.cfg,base),cc}}
+  if(st.sheet==='mine'){const cc=myCharCfg();if(cc){const cfg=Object.assign(cc.cfg,base);mbApply(cfg,true);return {cfg,cc}}}
   const tier=st.sheet==='p10'?'p10':'median';
   const cfg=Object.assign({'class':SLUG,statSheet:tier,ranks:tier},base);
   // the guide's macro runs with the guide's perks and Stigmas; "what typical players press" keeps the community ones
   const g=st.rot==='guide'?guideSetup(tier):null;
   if(g){cfg.perks=JSON.parse(JSON.stringify(g.perks));if(g.stigmas){cfg.stigmas=g.stigmas.slice();cfg.stigmaLevels=Object.assign({},g.stigmaLevels)}if(g.ranks&&Object.keys(g.ranks).length)cfg.ranks=Object.assign({},g.ranks)}
+  mbApply(cfg,false);
   return {cfg,cc:null};
+}
+/* "Build for my character" (mybuild_fn.js) -> "Show me in the Simulator": settings().mb = true runs that tab's recommended
+   Stigmas, perks and macro (saved per class as S 'mybuildres'.sim) instead of the picks above; the typed-in skill ranks go along
+   when the stats are not "My character". */
+function mbRes(){if(!settings().mb)return null;let o=null;try{o=S.get('mybuildres',null)}catch(e){}return o&&o.sim&&o.slug===SLUG&&Array.isArray(o.sim.stigmas)?o:null}
+function mbApply(cfg,mine){
+  const o=mbRes();if(!o)return false;const s=o.sim;
+  cfg.perks=JSON.parse(JSON.stringify(s.perks||{}));cfg.stigmas=s.stigmas.slice();cfg.stigmaLevels=Object.assign({},s.stigmaLevels||{});
+  if(s.rotation&&typeof s.rotation==='object')cfg.rotation=JSON.parse(JSON.stringify(s.rotation));
+  if(!mine&&s.ranks&&typeof s.ranks==='object')cfg.ranks=Object.assign({},typeof cfg.ranks==='object'?cfg.ranks:{},s.ranks);
+  return true;
 }
 function resolved(cfg){
   const d=D(),df=d.defaults||{},tier=typeof cfg.statSheet==='string'?cfg.statSheet:'median',pick=o=>(o&&(o[tier]||o.median))||{};
@@ -2895,6 +2907,8 @@ function resolved(cfg){
 function setupLabel(st,cc){
   const sh=st.sheet==='mine'&&cc?`${H(cc.name||'your character')}'s stats`:st.sheet==='p10'?'top-10% stats':'typical stats';
   const bi=bossInfo(st.boss),dur=st.dur==='boss'?(bi.fightSec||180):Number(st.dur);
+  const mb=mbRes();
+  if(mb)return `${sh}, ${H((BOSSES.find(b=>b[0]===st.boss)||[0,st.boss])[1])}, ${mmss(dur)} fight, the Stigmas, perks and macro from Build for my character (${H(mb.sim.label||'your pick')}), party buffs ${st.party?'on':'off'}, consumables ${st.cons?'on':'off'}`;
   return `${sh}, ${H((BOSSES.find(b=>b[0]===st.boss)||[0,st.boss])[1])}, ${mmss(dur)} fight, ${H((ROTS.find(r=>r[0]===st.rot)||[0,''])[1].toLowerCase())}${st.sheet==='mine'&&cc?'':st.rot==='guide'?" with the guide's perks and Stigmas":" with typical players' perks and Stigmas"}, party buffs ${st.party?'on':'off'}, consumables ${st.cons?'on':'off'}`;
 }
 function prog(t){const p=$('simprog');if(p)p.textContent=t}
@@ -2930,6 +2944,7 @@ function renderSim(){
     <label><input type="checkbox" id="simparty"${st.party?' checked':''}> Party buffs <span class="small muted">(Chanter/Cleric aura, boss tolerance cut, Power of the Storm)</span></label>
     <label><input type="checkbox" id="simcons"${st.cons?' checked':''}> Consumables <span class="small muted">(Power Shard)</span></label>
    </div>
+   <div id="simmb"></div>
    <div id="simmine"></div>
    <div class="chrow"><button type="button" class="btn primary" id="simrun">Simulate</button><button type="button" class="btn" id="simworth">What's each stat worth?</button></div>
    <div id="simprog" role="status" aria-live="polite"></div>
@@ -2962,7 +2977,13 @@ function renderSim(){
   on('simrun','click',runMain);on('simworth','click',runWorth);on('simcmp','click',runCompare);
   on('simpskill','change',fillPerks);
   on('simcstat','change',e=>{const s=STATS[e.target.value];const a=$('simcamt');if(a)a.value=s?s.amt:''});
-  renderMine();fillCompare();
+  renderMine();fillCompare();mbNote();
+}
+function mbNote(){
+  const box=$('simmb');if(!box)return;const o=mbRes();
+  if(!o){box.innerHTML='';return}
+  box.innerHTML=`<div class="callout ok small"><b>Using your picks from <a href="#mybuild" data-goto="mybuild">Build for my character</a>:</b> ${H(o.sim.label||'')}. The Rotation box above is not used while this is on. <button type="button" class="btn" id="simmboff">Use the guide's setup instead</button></div>`;
+  const b=$('simmboff');if(b)b.addEventListener('click',()=>{saveSettings({mb:false});mbNote();fillCompare()});
 }
 function renderMine(){
   const box=$('simmine');if(!box)return;const st=settings();
@@ -3099,6 +3120,9 @@ function runCompare(){
 }
 
 /* ---------- wiring ---------- */
+// shared with "Build for my character" (mybuild_fn.js): engine loader, character -> simulator config, the guide's perk rules
+window.AionSimUI={has:HAS,loadEngine,D,myChar,buildCharCfg:(d,rec,M)=>buildCharCfg(d,rec,M),rowPerksAt,perkMatch,slotsAt,mirrorFollow:(d,p)=>mirrorFollow(d,p),guideSetup,
+  refresh:()=>{try{if(built&&engine==='ready'&&HAS)renderSim()}catch(e){}}};
 if(HAS){if(!window.AionSim)window.AionSim={};if(typeof window.AionSim.estimateGain!=='function')window.AionSim.estimateGain=estimateGain}
 function onShow(){
   if(tabOpen('simulator')){if(built&&engine==='ready'){const sel=$('simsheet');if(sel){const v=sel.value;sel.innerHTML=sheetOptions(settings());if(sel.value!==v){renderMine();fillCompare()}}}openSim()}
@@ -7149,6 +7173,813 @@ var A2T=(function(){
   /* a #build= link pasted into an already-open tab: same handling as on load */
   window.addEventListener('hashchange',()=>{if(!/^#build=/.test(String(location.hash||'')))return; try{incoming(); render()}catch(e){console.error(e)}});
   {const o=window.applyStore;if(typeof o==='function')window.applyStore=function(){const r=o.apply(this,arguments);try{LC=null;render()}catch(e){}return r}}
+})();
+
+/* ---------- "Build for my character" tab (id mybuild, group Your build) ----------
+   Your character in -> the best Stigmas, perks and macro for THAT character out, tested in the simulator.
+   Inputs: My character (char_fn.js chGet/chModel: skill ranks, Stigmas owned / equipped + levels, level, Combat Power, gear stats via
+   sim_fn.js buildCharCfg) or a compact form (S 'mybuild', per class). Goal, play style (by hand / macro only) and ping are always asked.
+   Search: MB_CORE (below) runs in a Web Worker made from a Blob (engine + simdata: split build importScripts(data/sim.js), single file
+   the inert #aionsim-src text). No Worker (file://, strict CSP, jsdom) -> the same code runs on the page in small time slices.
+   Only what the character can use is tried: perks unlocked at their ranks (slotsAt / spec unlock), Stigmas they own at their levels,
+   open Stigma slots (<= 4 on Global), macros of <= 20 steps. Start = the guide's picks (and the mode card), then coordinate search
+   (Stigma swaps, every legal perk set per skill, macro options), paired seeds, confirm run; the pick is never below the guide default.
+   PvP arena is not simulated: the arena card, filtered to what the character owns / has unlocked.
+   Output store: S 'mybuildres' = {slug, ts, key, view (display strings), sim (perks/stigmas/levels/rotation/ranks for the Simulator)}.
+   Reads: C, SLUG, P.SKILLNUMS, ic(), S, buildBar()/macroChoice() (app.js), window.AionSimUI (sim_fn.js), buildcodeFormat (buildcode_fn.js). */
+(function(){
+'use strict';
+
+/* ======================= search core (runs in the worker AND on the page) ======================= */
+function MB_CORE(){
+  'use strict';
+  const now=()=>(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now();
+  const clone=o=>JSON.parse(JSON.stringify(o));
+  const slotsAt=r=>r>=20?3:r>=12?2:r>=8?1:0;
+  const FOLLOW={chanter:{'Onslaught':['Resonance Crush','Bolt Crush','Storm Chain'],'Incandescent Blow':['Bursting Blow'],'Dark Crush':['Piercing Strike']},
+    sorcerer:{'Flame Arrow':['Burst','Pyroclasm'],'Ice Chain':['Cold Wave']},cleric:{'Condemnation':['Condemnation (EP)']}};
+  const followers=slug=>{const o={};const M=FOLLOW[slug]||{};Object.keys(M).forEach(r=>M[r].forEach(f=>{o[f]=r}));if(slug==='gladiator'){o['Smashing Blow']='Rending Blow';o['Upward Strike']='Overhead Slam'}return o};
+  function mirror(slug,d,perks){ // same rule as sim_fn.js mirrorFollow (follow-up skills carry their root's perks)
+    const M=FOLLOW[slug]||{};
+    Object.keys(M).forEach(root=>{if(!Array.isArray(perks[root]))return;M[root].forEach(f=>{if(!d.skills[f])return;
+      perks[f]=slug==='sorcerer'?perks[root].filter(k=>d.skills[f].specs&&d.skills[f].specs[k]):perks[root].slice()})});
+    if(slug==='gladiator'){const rb=perks['Rending Blow']||[],os=perks['Overhead Slam']||[];
+      if(d.skills['Smashing Blow'])perks['Smashing Blow']=[1,4].filter(k=>rb.indexOf(k)>=0);
+      if(d.skills['Upward Strike'])perks['Upward Strike']=os.indexOf(4)>=0?[4]:[]}
+    return perks;
+  }
+  function combos(a,k){const out=[];(function rec(i,cur){if(cur.length===k){out.push(cur.slice());return}for(let j=i;j<a.length;j++){cur.push(a[j]);rec(j+1,cur);cur.pop()}})(0,[]);return out}
+  function legal(spec,rank){
+    const keys=Object.keys(spec||{}).map(Number).filter(k=>(spec[k].unlock||0)<=rank).sort((x,y)=>x-y);
+    const n=Math.min(slotsAt(rank),keys.length);
+    return n?combos(keys,n):[[]];
+  }
+  const sortN=a=>(a||[]).slice().sort((x,y)=>x-y);
+  const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
+  function applyRanks(d,base,add){
+    const r=Object.assign({},base);
+    Object.keys(add||{}).forEach(n=>{r[n]=add[n];const s=d.skills[n];(s&&s.combo||[]).forEach(st=>{r[st]=add[n]})});
+    Object.keys(d.skills).forEach(n=>{const s=d.skills[n];if(s.rankFrom&&add&&add[s.rankFrom])r[n]=add[s.rankFrom]});
+    return r;
+  }
+
+  function* run(A,job,emit){
+    const T0=now();
+    const D=job.d||((typeof AION_SIMDATA!=='undefined'&&AION_SIMDATA&&AION_SIMDATA.classes)||{})[job.slug];
+    if(!D)throw new Error('no class data for '+job.slug);
+    const FOL=followers(job.slug);
+    const rots={};job.rots.forEach(r=>{rots[r.id]=r});
+    const ranks0=job.base.ranks||{};
+    const rankOf=(n,add)=>{const r=applyRanks(D,ranks0,add);return r[n]||(D.skills[n]&&D.skills[n].defaultRank)||1};
+    const cache=new Map();let fights=0,lastEmit=0,stop=false;
+    const budget=job.budgetMs||30000,hard=job.hardMs||40000;
+    const over=f=>now()-T0>budget*(f==null?1:f);
+    const label={t:'Starting'};let phase=0,phaseN=1,W=[0.04,0.10,0.26,0.34,0.06,0.12,0.08],PW=0;
+    function prog(force){const t=now();if(!force&&t-lastEmit<150)return;lastEmit=t;
+      const base=W.slice(0,PW).reduce((a,b)=>a+b,0),p=Math.min(0.99,Math.max((base+W[PW]*Math.min(1,phase/Math.max(1,phaseN))),(t-T0)/hard*0.9));
+      emit({type:'progress',p,label:label.t,secs:(t-T0)/1000,fights})}
+    function setPhase(i,n,t){PW=i;phase=0;phaseN=n||1;label.t=t;prog(true)}
+    // Stigmas the macro does not press do nothing, so a swapped-in Stigma takes the bar slot (macro step) of the one it replaces;
+    // with no free slot it gets its own macro step (<= 20 steps) or, when skills are pressed by hand, goes on the by-hand list
+    const isStig=n=>!!(D.skills[n]&&D.skills[n].type==='stigma');
+    function rotFor(c){
+      const base=rots[c.rot],rot=clone(base.rot),names=[];
+      const nm=e=>typeof e==='string'?e:(e&&e.skill);
+      (rot.steps||[]).forEach(st=>st.forEach(e=>{const n=nm(e);if(n&&isStig(n)&&names.indexOf(n)<0)names.push(n)}));
+      (rot.manual||[]).forEach(e=>{const n=nm(e);if(n&&isStig(n)&&names.indexOf(n)<0)names.push(n)});
+      const extra=c.stigmas.filter(n=>names.indexOf(n)<0),freed=names.filter(n=>c.stigmas.indexOf(n)<0);
+      const map={},subs=[],added=[],byHand=[];
+      extra.forEach((n,i)=>{if(freed[i]){map[freed[i]]=n;subs.push([freed[i],n])}});
+      const rn=e=>{if(typeof e==='string')return map[e]||e;if(e&&e.skill&&map[e.skill]){const x=clone(e);x.skill=map[e.skill];return x}return e};
+      rot.steps=(rot.steps||[]).map(st=>st.map(rn));if(rot.manual)rot.manual=rot.manual.map(rn);
+      extra.slice(freed.length).forEach(n=>{const mc=D.skills[n].maxCharge;
+        if(!base.mo&&(mc||rot.steps.length>=20)){(rot.manual||(rot.manual=[])).push(mc?{skill:n,charge:mc}:{skill:n});byHand.push(n)}
+        else if(rot.steps.length<20){rot.steps.push([n]);added.push(n)}});
+      return {rot,subs,added,byHand};
+    }
+    function cfgOf(c){
+      const cfg=clone(job.base);
+      const rk=applyRanks(D,ranks0,c.ranksAdd);cfg.ranks=rk;
+      const perks={};Object.keys(c.perks).forEach(k=>{perks[k]=c.perks[k].slice()});
+      cfg.perks=mirror(job.slug,D,perks);
+      cfg.stigmas=c.stigmas.slice();cfg.stigmaLevels={};c.stigmas.forEach(s=>{cfg.stigmaLevels[s]=c.levels[s]||1});
+      cfg.rotation=rotFor(c).rot;
+      return cfg;
+    }
+    function keyOf(c){
+      const pk={};Object.keys(c.perks).sort().forEach(k=>{if(c.perks[k].length)pk[k]=sortN(c.perks[k])});
+      return JSON.stringify([c.rot,c.stigmas.slice().sort().map(s=>s+':'+(c.levels[s]||1)),pk,c.ranksAdd||{}]);
+    }
+    const score=r=>{if(job.metric==='time'){const ta=r.timeAttack||{};const t=ta.clearTime||r.duration||1;return 1000/t}return r.dps};
+    function* evalC(c,K){
+      const key=keyOf(c);let e=cache.get(key);
+      if(!e){e={arr:[],err:null,per:null};cache.set(key,e)}
+      if(e.err)return null;
+      let cfg=null;
+      while(e.arr.length<K){
+        if(!cfg)cfg=cfgOf(c);
+        const i=e.arr.length;
+        try{
+          const r=A.simulate(Object.assign({},cfg,{iterations:1,seed:(job.seed||11)+i*7919}));
+          e.arr.push(score(r));
+          if(!e.per){e.per={};(r.perSkill||[]).forEach(p=>{e.per[p.name]={dmg:p.damage,casts:p.casts}})}
+          if(!e.dps)e.dps=[];e.dps.push(r.dps);if(r.timeAttack)(e.ct||(e.ct=[])).push(r.timeAttack.clearTime);
+        }catch(err){e.err=String(err&&err.message||err);return null}
+        fights++;prog();
+        if(now()-T0>hard)stop=true;
+        yield;
+      }
+      return e.arr.slice(0,K);
+    }
+    const entry=c=>cache.get(keyOf(c));
+    function cmp(a,b){ // paired relative difference a vs b (same seeds)
+      if(!a||!b)return {rel:a&&!b?1:-1,se:0};
+      const n=Math.min(a.length,b.length);if(!n)return {rel:0,se:1};
+      const mb=mean(b.slice(0,n))||1,ds=[];for(let i=0;i<n;i++)ds.push((a[i]-b[i])/mb);
+      const m=mean(ds),sd=n>1?Math.sqrt(ds.reduce((x,y)=>x+(y-m)*(y-m),0)/(n-1)):0;
+      return {rel:m,se:sd/Math.sqrt(n)};
+    }
+    const better=(a,b,z,min)=>{const c=cmp(a,b);return c.rel>Math.max(min==null?0.001:min,(z==null?1:z)*c.se)};
+
+    /* ---- 0. timing probe ---- */
+    setPhase(0,3,'Timing the simulator on this device');
+    const G=clone(job.starts.guide);
+    let gArr=yield* evalC(G,3);
+    if(!gArr)throw new Error('The simulator could not run the guide setup: '+(entry(G).err||'unknown error'));
+    const msPer=Math.max(0.5,(now()-T0)/3);
+    // plan: evaluations we expect, fights per evaluation (K) and for the confirm runs (Kc)
+    const skillsAll=Object.keys(D.skills).filter(n=>{const s=D.skills[n];return s.type!=='stigma'&&s.type!=='passive'&&s.specs&&Object.keys(s.specs).length&&!FOL[n]});
+    const per0=entry(G).per||{};
+    const used=skillsAll.filter(n=>per0[n]&&per0[n].casts>0);
+    const nComb=used.reduce((a,n)=>a+Math.max(0,legal(D.skills[n].specs,rankOf(n)).length-1),0);
+    const own=Object.keys(job.owned||{});const N=Math.max(0,Math.min(4,job.slots|0));
+    const nStig=N?Math.max(N,N*Math.max(0,own.length-N))*2:0;
+    const estEvals=job.rots.length*Object.keys(job.starts).length+nStig+nComb*1.5+job.rots.length+12+Math.min(8,used.length)*2+(job.unowned||[]).length;
+    const fightsAvail=Math.max(60,budget*0.88/msPer);
+    let K=job.K||Math.max(4,Math.min(40,Math.floor(fightsAvail/(estEvals+3*4))));
+    let Kc=job.Kc||Math.max(K,Math.min(120,K*3));
+    emit({type:'plan',K,Kc,msPer,estEvals:Math.round(estEvals)});
+
+    /* ---- 1. starting points x macro options ---- */
+    const starts=Object.keys(job.starts).map(k=>Object.assign(clone(job.starts[k]),{_from:k}));
+    const tries=[];
+    starts.forEach(s=>{const rl=s._from==='current'?[s.rot]:job.rots.map(r=>r.id);rl.forEach(r=>tries.push(Object.assign(clone(s),{rot:r})))});
+    setPhase(1,tries.length,'Trying the guide setup, your current setup and the macro options');
+    const tried=[];
+    for(const c of tries){const a=yield* evalC(c,K);phase++;tried.push({c,a})}
+    let best=null;
+    if(!tried.some(t=>t.a))throw new Error('The simulator could not run any starting setup.');
+    tried.forEach(t=>{if(!t.a)return;if(t.c._from==='current'&&!t.c._legal)return;if(!best||mean(t.a)>mean(best.a))best=t});
+    // a mode card (or the guide) close to the top stays the start: its extra perks (self-heal) cost no damage
+    const pref=job.metric==='time'?['card','guide']:['card','guide'];
+    for(const p of pref){const t=tried.filter(x=>x.c._from===p&&x.a).sort((x,y)=>mean(y.a)-mean(x.a))[0];if(t&&best&&t!==best&&!better(best.a,t.a,1.5,0.002)){best=t;break}}
+    let cur=clone(best.c),curA=best.a;delete cur._legal;
+    const startFrom=cur._from;
+
+    /* ---- 2. Stigmas: fill empty slots, then single swaps (owned Stigmas at the owner's levels) ---- */
+    const pool=own.filter(n=>D.skills[n]&&D.skills[n].type==='stigma');
+    const swaps=[];
+    if(N&&pool.length){
+      setPhase(2,Math.max(1,nStig),'Testing your Stigmas');
+      cur.stigmas=cur.stigmas.filter(s=>pool.indexOf(s)>=0).slice(0,N);
+      while(cur.stigmas.length<N&&!stop){
+        let bc=null,ba=null;
+        for(const s of pool){if(cur.stigmas.indexOf(s)>=0)continue;const c=clone(cur);c.stigmas.push(s);c.levels[s]=job.owned[s];const a=yield* evalC(c,K);phase++;if(a&&(!ba||mean(a)>mean(ba))){bc=c;ba=a}}
+        if(!bc)break;cur=bc;curA=ba;
+      }
+      for(let pass=0;pass<3&&!stop&&!over(0.45);pass++){
+        let bc=null,ba=null,what=null;
+        for(let i=0;i<cur.stigmas.length;i++)for(const s of pool){
+          if(cur.stigmas.indexOf(s)>=0)continue;
+          const c=clone(cur);const out=c.stigmas[i];c.stigmas[i]=s;c.levels[s]=job.owned[s];
+          const a=yield* evalC(c,K);phase++;
+          if(a&&better(a,ba||curA,1)){bc=c;ba=a;what=[out,s]}
+          if(stop)break;
+        }
+        if(!bc)break;cur=bc;curA=ba;swaps.push(what);
+      }
+    }else{cur.stigmas=cur.stigmas.filter(s=>pool.indexOf(s)>=0).slice(0,N)}
+    curA=yield* evalC(cur,K);
+
+    /* ---- 3. perks: every legal set (unlocked at the owner's rank) per skill, biggest skills first ---- */
+    const share=entry(cur)&&entry(cur).per||per0;
+    const order=used.slice().sort((x,y)=>((share[y]||{}).dmg||0)-((share[x]||{}).dmg||0));
+    setPhase(3,Math.max(1,nComb),'Testing perks');
+    const perkLog=[];
+    for(let pass=0;pass<2&&!stop;pass++){
+      let changed=false;
+      for(const sk of order){
+        if(stop||over(pass?0.8:0.78))break;
+        const L=legal(D.skills[sk].specs,rankOf(sk));if(L.length<2)continue;
+        label.t='Testing perks on '+sk;
+        const have=JSON.stringify(sortN(cur.perks[sk]));let bc=null,ba=null;
+        for(const set of L){
+          if(JSON.stringify(set)===have)continue;
+          const c=clone(cur);c.perks[sk]=set.slice();
+          const a=yield* evalC(c,K);if(!pass)phase++;
+          if(a&&better(a,ba||curA,1)){bc=c;ba=a}
+          if(stop)break;
+        }
+        if(bc){perkLog.push([sk,cur.perks[sk],bc.perks[sk]]);cur=bc;curA=ba;changed=true}
+      }
+      if(!changed)break;
+    }
+
+    /* ---- 4. macro options again with the new Stigmas and perks ---- */
+    setPhase(4,job.rots.length,'Checking the macro options again');
+    for(const r of job.rots){if(r.id===cur.rot||stop)continue;const c=clone(cur);c.rot=r.id;const a=yield* evalC(c,K);phase++;if(a&&better(a,curA,1)){cur=c;curA=a}}
+
+    /* ---- 5. confirm: more fights for the pick, the guide default and the current setup ---- */
+    const left=Math.max(0,hard-(now()-T0)-2000);
+    Kc=Math.max(K,Math.min(Kc,Math.floor(left*0.45/msPer/3)));
+    setPhase(5,3,'Confirming with '+Kc+' fights each');
+    const finalA=yield* evalC(cur,Kc);phase++;
+    const guideA=yield* evalC(G,Kc);phase++;
+    let currentA=null;const CUR=job.starts.current?Object.assign(clone(job.starts.current),{}):null;
+    if(CUR){currentA=yield* evalC(CUR,Kc);phase++}
+    let pick=cur,pickA=finalA,pickFrom='search';
+    // a change must beat the guide default by more than the noise of the confirm fights, otherwise the guide's picks stay
+    if(!pickA||(guideA&&!better(pickA,guideA,1.5,0.002))){pick=G;pickA=guideA;pickFrom='guide'}
+    if(CUR&&CUR._legal&&currentA&&better(currentA,pickA,1.5,0.002)){pick=CUR;pickA=currentA;pickFrom='current'}
+
+    /* ---- 6. extras: next Stigma level, next skill rank, what is missing ---- */
+    setPhase(6,8,'Working out what to improve next');
+    const KX=Math.max(4,Math.min(K,12));
+    const pickK=yield* evalC(pick,KX);
+    const gain=a=>a&&pickK?cmp(a,pickK):null;
+    const COST=l=>l<=5?1:l<=10?2:l<=15?4:8; // shards for reaching level l
+    const stigNext=[];
+    for(const s of pick.stigmas){
+      if(stop&&over(1.05))break;
+      const lv=pick.levels[s]||1;if(lv>=20)continue;
+      const to=[5,10,15,20].find(m=>m>lv);let sh=0;for(let l=lv+1;l<=to;l++)sh+=COST(l);
+      const c=clone(pick);c.levels[s]=to;const a=yield* evalC(c,KX);const g=gain(a);
+      if(g)stigNext.push({n:s,from:lv,to,shards:sh,rel:g.rel,se:g.se,perShard:g.rel/sh});
+    }
+    phase=2;
+    const sharePick=(entry(pick)&&entry(pick).per)||share;
+    const rankCands=used.filter(n=>rankOf(n)<25).sort((x,y)=>((sharePick[y]||{}).dmg||0)-((sharePick[x]||{}).dmg||0)).slice(0,job.rankTop||8);
+    const rankNext=[];
+    for(const n of rankCands){
+      if(stop&&over(1.1))break;
+      const r0=rankOf(n),add=Object.assign({},pick.ranksAdd||{},{[n]:r0+1});
+      const c=clone(pick);c.ranksAdd=add;
+      let a=yield* evalC(c,KX),best1=c,unl=null;
+      const L0=legal(D.skills[n].specs,r0),L1=legal(D.skills[n].specs,r0+1);
+      if(JSON.stringify(L0)!==JSON.stringify(L1)){
+        unl=slotsAt(r0+1)>slotsAt(r0)?'perk slot':'perk';
+        for(const set of L1.slice(0,10)){const c2=clone(c);c2.perks[n]=set.slice();const a2=yield* evalC(c2,KX);if(a2&&(!a||mean(a2)>mean(a))){a=a2;best1=c2}}
+      }
+      const g=gain(a);if(g)rankNext.push({n,from:r0,to:r0+1,rel:g.rel,se:g.se,unlock:unl,perks:unl?best1.perks[n]:null});
+    }
+    rankNext.sort((x,y)=>y.rel-x.rel);
+    phase=5;
+    // what is missing: each chosen Stigma's worth (take it out), then unowned Stigmas in the weakest slot, an extra slot, the guide's full set
+    const missing=[];let weakest=null,extraSlot=null,guideFull=null;
+    if(pick.stigmas.length&&!(stop&&over(1.15))){
+      let wv=Infinity;
+      for(const s of pick.stigmas){const c=clone(pick);c.stigmas=c.stigmas.filter(x=>x!==s);const a=yield* evalC(c,KX);const g=gain(a);if(g&&g.rel<wv){wv=g.rel;weakest={n:s,rel:-g.rel}}}
+    }
+    const unowned=(job.unowned||[]).filter(n=>D.skills[n]&&D.skills[n].type==='stigma');
+    if(weakest&&N)for(const s of unowned){
+      if(stop&&over(1.2))break;
+      const c=clone(pick);c.stigmas=c.stigmas.map(x=>x===weakest.n?s:x);c.levels[s]=job.assumeLevel||5;
+      const a=yield* evalC(c,KX);const g=gain(a);if(g&&g.rel>0.002)missing.push({n:s,rel:g.rel,se:g.se,replaces:weakest.n,lvl:job.assumeLevel||5});
+    }
+    missing.sort((x,y)=>y.rel-x.rel);
+    phase=7;
+    if(N<4&&!(stop&&over(1.25))){
+      let be=null;
+      for(const s of pool.concat(unowned)){if(pick.stigmas.indexOf(s)>=0)continue;const c=clone(pick);c.stigmas.push(s);c.levels[s]=job.owned[s]||job.assumeLevel||5;const a=yield* evalC(c,KX);const g=gain(a);if(g&&(!be||g.rel>be.rel))be={n:s,rel:g.rel,owned:pool.indexOf(s)>=0}}
+      extraSlot=be;
+    }
+    if(job.guideFull&&!(stop&&over(1.3))){
+      const gf=clone(job.guideFull);gf.rot=pick.rot;gf.perks=clone(pick.perks);
+      const a=yield* evalC(gf,KX);const g=gain(a);if(g)guideFull={rel:g.rel,se:g.se,missing:job.guideMissing||[]};
+    }
+    prog(true);
+    const pickE=entry(pick),gE=entry(G),cE=CUR?entry(CUR):null;
+    const vs=(a)=>a?cmp(pickA,a.slice(0,pickA.length)):null;
+    return {
+      pick:{stigmas:pick.stigmas,levels:pick.levels,perks:pick.perks,rot:pick.rot,from:pickFrom,start:startFrom,rotUsed:rotFor(pick),
+        mean:mean(pickA),dps:mean((pickE.dps||[]).slice(0,pickA.length)),clear:pickE.ct?mean(pickE.ct.slice(0,pickA.length)):null,per:pickE.per,
+        perksMirrored:mirror(job.slug,D,clone(pick.perks))},
+      guide:{rotUsed:rotFor(G),mean:mean(guideA),dps:mean((gE.dps||[]).slice(0,Kc)),clear:gE.ct?mean(gE.ct.slice(0,Kc)):null,vs:vs(guideA)},
+      current:CUR&&currentA?{mean:mean(currentA),dps:mean((cE.dps||[]).slice(0,Kc)),clear:cE.ct?mean(cE.ct.slice(0,Kc)):null,vs:vs(currentA),legal:!!CUR._legal}:null,
+      swaps,perkLog,stigNext,rankNext,missing:missing.slice(0,4),weakest,extraSlot,guideFull,
+      K,Kc,fights,secs:(now()-T0)/1000,msPer,stopped:stop,evals:cache.size
+    };
+  }
+  return {run,legal,slotsAt,mirror,combos};
+}
+
+/* worker side: load the engine, then run jobs posted by the page */
+function MB_GLUE(){
+  var gen=null,cancelled=false;
+  function loop(){
+    if(cancelled||!gen)return;
+    var t0=Date.now();
+    try{while(Date.now()-t0<120){var x=gen.next();if(x.done){postMessage({type:'done',result:x.value});gen=null;return}}}
+    catch(err){postMessage({type:'error',msg:String(err&&err.message||err)});gen=null;return}
+    setTimeout(loop,0);
+  }
+  self.onmessage=function(e){
+    var m=e.data||{};
+    if(m.type==='start'){cancelled=false;gen=CORE.run(self.AionSim,m.job,function(x){postMessage(x)});setTimeout(loop,0)}
+    if(m.type==='cancel'){cancelled=true;gen=null}
+  };
+  postMessage({type:'ready',ok:!!(self.AionSim&&self.AionSim.simulate&&self.AION_SIMDATA)});
+}
+
+/* ======================= page side ======================= */
+const CORE=MB_CORE();
+const h=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=id=>document.getElementById(id);
+const G=f=>{try{return f()}catch(e){return undefined}};
+const icon=n=>{try{return typeof ic==='function'?ic(n,'sm'):''}catch(e){return ''}};
+const pct=(x,d)=>(x>=0?'+':'−')+Math.abs(x*100).toFixed(d==null?1:d)+'%';
+const fmt=n=>Math.round(Number(n)||0).toLocaleString('en-US');
+const KEYN={LMB:'Left click',RMB:'Right click',Space:'Space'};
+const keyName=k=>KEYN[k]||k;
+const GOALS=[['raid','Raid boss'],['nightmare','Nightmare (solo boss)'],['trial','Ascension Trial'],['daily','Daily dungeon'],['arena','PvP arena']];
+const CC=()=>G(()=>C)||{};
+const UI=()=>window.AionSimUI||null;
+const simCls=()=>{const U=UI();return !!(U&&U.has)};
+const TRIAL=[{name:'Room 1',targets:11,hpEach:80000},{name:'Room 2',targets:14,hpEach:80000,gap:10},{name:'Room 3',targets:16,hpEach:80000,gap:10},{name:'Duduri + Dodori',boss:true,targets:2,hp:1200000,gap:10}];
+function DAILY(){const p=[];for(let i=0;i<5;i++){p.push({name:'Wave',targets:8,hpEach:15000,gap:i===0?0:3});p.push({name:'Wave',targets:8,hpEach:15000,gap:2});p.push({name:'Elite',targets:1,hpEach:150000,gap:5})}return p}
+const GOALCFG={raid:()=>({boss:'Divine Auldor',duration:'boss',partyBuffs:'typical',consumables:'typical'}),
+  nightmare:()=>({scenario:'solo',position:'front'}),
+  trial:()=>({scenario:'trial',aoe:false,travelGap:10,phases:TRIAL}),
+  daily:()=>({scenario:'daily',aoe:false,travelGap:3,maxTime:600,phases:DAILY()})};
+
+/* ---------- inputs (remembered per class) ---------- */
+function inp(){const o=G(()=>S.get('mybuild',null))||{};const f=o.form||{};
+  return {goal:o.goal||(G(()=>MODE)==='pvp'?'arena':'raid'),hands:o.hands==='macro'?'macro':'hand',ping:o.ping==null?'':o.ping,src:o.src||'char',stamp:o.stamp||'',
+    form:{level:f.level==null?45:f.level,cp:f.cp==null?'':f.cp,attack:f.attack||'',crit:f.crit||'',cs:f.cs||'',slots:f.slots||'auto',ranks:f.ranks||{},stig:f.stig||{}}}}
+function saveInp(p){try{S.set('mybuild',p)}catch(e){}}
+function myRec(){const U=UI();if(U&&U.myChar)return G(()=>U.myChar())||null;
+  if(typeof chGet!=='function')return null;const r=G(()=>chGet());if(!r)return null;
+  try{if(typeof chSlugOf==='function'&&chSlugOf(chClassOf(r))!==SLUG)return null}catch(e){return null}return r}
+function charRead(){
+  const rec=myRec();if(!rec||typeof chModel!=='function')return null;
+  let M;try{M=chModel(rec)}catch(e){return null}
+  const ranks={},stig={},eq=[],perks={};let unk=0;
+  (M.skills||[]).forEach(s=>{
+    if(s.cat==='Dp'){if(s.acquired||s.equip){stig[s.name]={own:true,lvl:s.level>0?s.level:0};if(s.equip&&s.level>0)eq.push(s.name);if(!(s.level>0))unk++}}
+    else if(s.level>0&&s.cat!=='Passive')ranks[s.name]=s.level;
+    if(Array.isArray(s.specs)&&s.specs.length)perks[s.name]=s.specs.map(Number);
+  });
+  return {rec,M,name:M.name,level:Number(M.level)||null,cp:Number(M.cp)||null,ranks,stig,eq,perks,unk,stamp:[M.name,M.serverId,M.fetched,M.af1Seen].join('|'),hasPerks:Object.keys(perks).length>0};
+}
+function stigPool(){
+  const L=G(()=>window.buildcodeFormat.lists().pool)||[];
+  const extra=[].concat((CC().stigmasPve||[]).map(s=>s.name),(CC().stigmasPvp||[]).map(s=>s.name)).filter(Boolean);
+  return [...new Set(L.concat(extra))];
+}
+function slotLevels(){const s=(CC().stigmasPve||[]).map(x=>+x.slot).filter(x=>x>0).sort((a,b)=>a-b);return s.length>=4?s.slice(0,4):[22,27,32,37]}
+function openSlots(I,ch){const lv=Number(ch&&ch.level)||Number(I.form.level)||45;const auto=slotLevels().filter(x=>x<=lv).length;return I.form.slots==='auto'?auto:Math.max(0,Math.min(4,+I.form.slots||0))}
+// one-time fill of the form from a newly loaded character (stigma levels the official page shows as 0 keep what you typed)
+function syncFromChar(I,ch){
+  if(!ch||I.stamp===ch.stamp)return I;
+  const f=I.form;f.level=ch.level||f.level;f.cp=ch.cp||f.cp;f.ranks=Object.assign({},ch.ranks);
+  const old=f.stig||{};f.stig={};
+  Object.keys(ch.stig).forEach(n=>{const v=ch.stig[n];f.stig[n]={own:true,lvl:v.lvl>0?v.lvl:((old[n]&&old[n].lvl)||1),fromChar:v.lvl>0}});
+  I.stamp=ch.stamp;I.src='char';saveInp(I);return I;
+}
+
+/* ---------- styles ---------- */
+function addStyle(){
+  if($('mbstyle'))return;const st=document.createElement('style');st.id='mbstyle';
+  st.textContent=`#mybuildbox{display:grid;gap:18px}
+#mybuildbox .mbbar{height:12px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);overflow:hidden}
+#mybuildbox .mbbar i{display:block;height:100%;width:0;background:var(--gold);transition:width .25s}
+#mybuildbox .mbsum{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:10px}
+#mybuildbox .mbstat{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+#mybuildbox .mbstat b{display:block;font-size:20px;color:var(--gold)}
+#mybuildbox .mbstat.good b{color:var(--wind)}
+#mybuildbox .mblist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+#mybuildbox .mblist li{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;min-width:0}
+#mybuildbox .mbperk{display:inline-flex;gap:6px;align-items:baseline;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:3px 8px;font-size:14px;max-width:100%;overflow-wrap:anywhere}
+#mybuildbox .mbperk .n{font:600 12px var(--f-mono);color:var(--gold)}
+#mybuildbox .mbkeys{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+#mybuildbox .mbbarg{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr));gap:8px}
+#mybuildbox .mbslot{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:14px;min-width:0;overflow-wrap:anywhere}
+#mybuildbox .mbslot.man{border-style:dashed}
+#mybuildbox .mbstig{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:6px 14px}
+#mybuildbox .mbstig label,#mybuildbox .mbranks label{display:flex;gap:6px;align-items:center;font-size:14px;min-width:0}
+#mybuildbox .mbstig input[type=number],#mybuildbox .mbranks input{width:64px;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:4px 6px}
+#mybuildbox .mbranks{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,210px),1fr));gap:6px 14px}
+#mybuildbox .mbranks label span,#mybuildbox .mbstig label span{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+#mybuildbox details>summary{cursor:pointer}
+#mybuildbox .seg{flex-wrap:wrap;max-width:100%}
+#mybuildbox .chg{color:var(--wind);font-weight:600}`;
+  document.head.appendChild(st);
+}
+
+/* ---------- the form ---------- */
+function rankSkills(){
+  const d=G(()=>UI().D());
+  const pri=(CC().activePriority||[]).slice();
+  if(d)Object.keys(d.skills).forEach(n=>{const s=d.skills[n];if(s.type==='active'&&s.specs&&Object.keys(s.specs).length&&pri.indexOf(n)<0)pri.push(n)});
+  return pri.filter(n=>!d||(d.skills[n]&&d.skills[n].type!=='stigma'));
+}
+function formHtml(I,ch){
+  const f=I.form,pool=stigPool(),gp=(CC().stigmasPve||[]).map(s=>s.name);
+  const slots=openSlots(I,ch),auto=slotLevels().filter(x=>x<=(Number(ch&&ch.level)||Number(f.level)||45)).length;
+  const fresh=!Object.keys(f.stig||{}).length; // nothing saved yet: the guide's four are ticked as a starting point
+  const st=n=>f.stig[n]||(ch||!fresh?{own:false,lvl:1}:{own:gp.indexOf(n)>=0,lvl:10});
+  const stigRows=pool.map(n=>{const s=st(n);return `<label>${icon(n)}<input type="checkbox" data-mbown="${h(n)}"${s.own?' checked':''}><span>${h(n)}${gp.indexOf(n)>=0?' <span class="tag gold">guide</span>':''}</span>Lv <input type="number" min="1" max="20" value="${h(s.lvl||1)}" data-mblvl="${h(n)}" aria-label="${h(n)} level"></label>`}).join('');
+  const rk=rankSkills().map(n=>`<label>${icon(n)}<span>${h(n)}</span><input type="number" min="1" max="40" placeholder="typical" value="${h(f.ranks[n]||'')}" data-mbrank="${h(n)}" aria-label="${h(n)} rank"></label>`).join('');
+  return `<div class="simform">
+    <label class="f">Character level<input type="number" id="mblevel" min="1" max="50" value="${h(f.level)}"></label>
+    <label class="f">Combat Power<input type="number" id="mbcp" min="0" placeholder="blank = typical player" value="${h(f.cp)}"></label>
+    <label class="f">Open Stigma slots<select id="mbslots"><option value="auto"${f.slots==='auto'?' selected':''}>From my level (${auto})</option>${[0,1,2,3,4].map(n=>`<option value="${n}"${String(f.slots)===String(n)?' selected':''}>${n}</option>`).join('')}</select></label>
+   </div>
+   <details><summary class="small"><b>Attack, Critical Hit, Combat Speed</b> <span class="muted">(optional: your in-game totals replace the estimate from Combat Power)</span></summary>
+    <div class="simform" style="margin-top:8px"><label class="f">Attack<input type="number" id="mbatk" min="0" value="${h(f.attack)}"></label><label class="f">Critical Hit<input type="number" id="mbcrit" min="0" value="${h(f.crit)}"></label><label class="f">Combat Speed (%)<input type="number" id="mbcs" min="0" step="any" value="${h(f.cs)}"></label></div></details>
+   <details${ch?'':' open'}><summary class="small"><b>Stigmas you own and their levels</b> <span class="muted">(${pool.filter(n=>st(n).own).length} ticked · ${slots} slot${slots===1?'':'s'} open)</span></summary>
+    ${ch&&ch.unk?`<p class="small muted" style="margin:8px 0">NCSoft's page shows level 0 for Stigmas you own but have not equipped. Type their real levels here if you know them (otherwise level 1 is assumed).</p>`:''}
+    <div class="mbstig" style="margin-top:8px">${stigRows}</div></details>
+   <details${ch?'':' open'}><summary class="small"><b>Skill ranks</b> <span class="muted">(the in-game number, with gear and Daevanion bonuses; blank = typical for your Combat Power)</span></summary>
+    <div class="mbranks" style="margin-top:8px">${rk}</div></details>`;
+}
+function readForm(I){
+  const v=id=>{const e=$(id);return e?e.value:null};
+  const f=I.form;
+  if($('mblevel')){f.level=+v('mblevel')||45;f.cp=v('mbcp');f.slots=v('mbslots')||'auto';f.attack=v('mbatk')||'';f.crit=v('mbcrit')||'';f.cs=v('mbcs')||''}
+  const box=$('mybuildbox');if(!box)return I;
+  const lv={};box.querySelectorAll('[data-mblvl]').forEach(e=>{lv[e.dataset.mblvl]=e.value});
+  box.querySelectorAll('[data-mbown]').forEach(e=>{const n=e.dataset.mbown;f.stig[n]=Object.assign({},f.stig[n]||{},{own:e.checked,lvl:Math.max(1,Math.min(20,parseInt(lv[n],10)||1))})});
+  box.querySelectorAll('[data-mbrank]').forEach(e=>{const x=parseInt(e.value,10);if(x>0)f.ranks[e.dataset.mbrank]=Math.min(40,x);else delete f.ranks[e.dataset.mbrank]});
+  const g=box.querySelector('[data-mbgoal][aria-pressed="true"]');if(g)I.goal=g.dataset.mbgoal;
+  const hs=box.querySelector('[data-mbhand][aria-pressed="true"]');if(hs)I.hands=hs.dataset.mbhand;
+  if($('mbping'))I.ping=v('mbping');
+  return I;
+}
+
+/* ---------- building the job (page side; needs the engine loaded for the class data) ---------- */
+function simData(){return G(()=>window.AION_SIMDATA.classes[SLUG])}
+function inherit(d,ranks){
+  Object.keys(d.skills).forEach(n=>{(d.skills[n].combo||[]).forEach(st=>{if(ranks[n])ranks[st]=ranks[n]})});
+  Object.keys(d.skills).forEach(n=>{const s=d.skills[n];if(s.rankFrom&&ranks[s.rankFrom])ranks[n]=ranks[s.rankFrom]});
+  return ranks;
+}
+const amb=(sk,k)=>SLUG==='assassin'&&sk==='Ambush'?(k===1?2:k===2?1:k):k; // simdata numbers Ambush perks 1/2 the other way round
+function guidePerks(d,ranks){
+  const U=UI(),rows=(CC().perks&&CC().perks.rows)||[],perks={};
+  Object.keys(d.skills).forEach(n=>{const s=d.skills[n];if(s.specs&&Object.keys(s.specs).length&&s.type!=='stigma')perks[n]=[]});
+  rows.forEach(r=>{const s=d.skills[r.skill];if(!s||!s.specs)return;const rk=ranks[r.skill]||s.defaultRank||1;
+    const p=U.rowPerksAt(r,s.specs,rk);
+    if(p.length<U.slotsAt(rk)&&r.leveling){const m=U.perkMatch(r.leveling,s.specs);if(m&&p.indexOf(m)<0&&(s.specs[m].unlock||0)<=rk)p.push(m)}
+    perks[r.skill]=p.map(k=>amb(r.skill,k))});
+  return perks;
+}
+function cardPerks(d,ranks,base,card){
+  const U=UI(),p=JSON.parse(JSON.stringify(base));
+  ((card&&card.perks)||[]).forEach(row=>{const s=d.skills[row.skill];if(!s||!s.specs)return;const rk=ranks[row.skill]||s.defaultRank||1,n=U.slotsAt(rk),want=[];
+    (row.perks||[]).forEach(t=>{const k=U.perkMatch(t,s.specs);if(k&&(s.specs[k].unlock||0)<=rk&&want.length<n&&want.indexOf(k)<0)want.push(k)});
+    p[row.skill]=want.map(k=>amb(row.skill,k))});
+  return p;
+}
+function convRot(d,bar,steps,guideRot,note){
+  const map={};
+  ((guideRot&&guideRot.steps)||[]).forEach(st=>st.forEach(e=>{if(e&&typeof e==='object'&&e.skill){const b=String(e.skill).replace(/\s*\(.*\)$/,'');const L=map[b]||(map[b]=[]);if(!L.some(x=>JSON.stringify(x)===JSON.stringify(e)))L.push(e)}}));
+  const out=[];
+  (steps||[]).forEach(k=>{const b=(bar||[]).find(x=>x.k===k);if(!b)return;const st=[];(b.rows||[]).forEach(n=>{if(map[n])map[n].forEach(e=>st.push(JSON.parse(JSON.stringify(e))));else if(d.skills[n])st.push(n)});if(st.length)out.push(st)});
+  return {type:'macro',note:note||'',steps:out,manual:JSON.parse(JSON.stringify((guideRot&&guideRot.manual)||[]))};
+}
+function macroOnly(d,rot){
+  const r=JSON.parse(JSON.stringify(rot)),add=[];
+  (r.manual||[]).forEach(m=>{const n=m&&m.skill;if(n&&d.skills[n]&&add.indexOf(n)<0)add.push(n)});
+  r.manual=[];const moved=[];add.forEach(n=>{if(r.steps.length<20){r.steps.push([n]);moved.push(n)}});
+  r.movedIn=moved;return r;
+}
+function rotOptions(d,hands){
+  const out=[],g=d.rotations&&d.rotations.guide;if(!g)return out;
+  const A=CC().macroAlt;
+  out.push({id:'guide',label:"the guide's macro",rot:g,keys:'cur'});
+  if(A&&Array.isArray(A.barSteps)&&A.barSteps.length<=20&&Array.isArray(A.bar)){const r=convRot(d,A.bar,A.barSteps,g,'guide New option');if(r.steps.length)out.push({id:'alt',label:'the "New option" macro: '+(A.name||''),rot:r,keys:'alt'})}
+  const res=out.map(o=>hands==='macro'?Object.assign({},o,{id:o.id+'-mo',label:o.label+', macro only',rot:macroOnly(d,o.rot),mo:true}):o);
+  return res.filter(o=>o.rot.steps.length<=20).map(o=>Object.assign(o,{steps:o.rot.steps.length}));
+}
+function buildJob(I,ch,opts){
+  opts=opts||{};
+  const U=UI(),d=simData();if(!U||!d)return {err:'The simulator data is not loaded.'};
+  const f=I.form,goal=I.goal;
+  // stats: the loaded character (gear, boards) or a stand-in built from the form's Combat Power
+  let cc=null;
+  if(ch&&I.src==='char')cc=G(()=>U.buildCharCfg(d,ch.rec,ch.M));
+  if(!cc){const M={name:'',cp:Number(f.cp)||0,stats:{},gear:[],arcana:[],boards:{},skills:[]};cc=G(()=>U.buildCharCfg(d,{},M))}
+  if(!cc)return {err:'Could not build a stat sheet.'};
+  const cfg=JSON.parse(JSON.stringify(cc.cfg));
+  [['attack','attack'],['crit','crit'],['combatSpeed','cs']].forEach(([k,x])=>{const v=Number(f[x]);if(f[x]!==''&&isFinite(v)&&v>0)cfg.stats[k]=v});
+  const ranks=Object.assign({},typeof cfg.ranks==='object'?cfg.ranks:{});
+  Object.keys(f.ranks||{}).forEach(n=>{if(d.skills[n]&&d.skills[n].type!=='stigma'&&f.ranks[n]>0)ranks[n]=+f.ranks[n]});
+  inherit(d,ranks);
+  const base=Object.assign({'class':SLUG,statSheet:cfg.statSheet,stats:cfg.stats,ranks},(GOALCFG[goal]||GOALCFG.raid)());
+  if(cfg.theostone)base.theostone=cfg.theostone;
+  const N=openSlots(I,ch);
+  const owned={},unowned=[];
+  Object.keys(d.skills).forEach(n=>{const s=d.skills[n];if(s.type!=='stigma'||s.alwaysAvailable)return;const x=f.stig[n];if(x&&x.own)owned[n]=Math.max(1,Math.min(20,+x.lvl||1));else unowned.push(n)});
+  const eqL=Object.keys(owned).map(n=>owned[n]).sort((a,b)=>b-a).slice(0,4);
+  const assumeLevel=Math.max(5,Math.min(10,eqL.length?eqL[Math.floor((eqL.length-1)/2)]:5));
+  const rots=rotOptions(d,I.hands);
+  if(!rots.length)return {err:'No macro to test for this class.'};
+  const gp=guidePerks(d,ranks),gst=(CC().stigmasPve||[]).map(s=>s.name).filter(n=>d.skills[n]);
+  const eq=(ch&&ch.eq||[]).filter(n=>owned[n]);
+  const fill=list=>{const o=list.filter(n=>owned[n]);eq.forEach(n=>{if(o.length<N&&o.indexOf(n)<0)o.push(n)});return o.slice(0,N)};
+  const lv=list=>{const o={};list.forEach(n=>{o[n]=owned[n]||assumeLevel});return o};
+  const gS=fill(gst);
+  const starts={guide:{rot:rots[0].id,stigmas:gS,levels:lv(gS),perks:gp}};
+  const card=CC().modeSetups&&CC().modeSetups[goal];
+  if(card&&goal!=='raid'){const cs=fill(((card.stigmas||[]).filter(n=>d.skills[n])));starts.card={rot:rots[0].id,stigmas:cs,levels:lv(cs),perks:cardPerks(d,ranks,gp,card)}}
+  // current setup: equipped Stigmas + your perks (AionFlex code) or the guide's perks at your ranks + your macro choice
+  if(ch&&I.src==='char'){
+    const cp=JSON.parse(JSON.stringify(gp));let known=false,legalP=true;
+    Object.keys(ch.perks||{}).forEach(sk=>{const s=d.skills[sk];if(!s||!s.specs||s.type==='stigma')return;known=true;const rk=ranks[sk]||1;
+      const ks=ch.perks[sk].map(k=>amb(sk,k)).filter(k=>s.specs[k]);if(ks.some(k=>(s.specs[k].unlock||0)>rk)||ks.length>U.slotsAt(rk))legalP=false;cp[sk]=ks.filter(k=>(s.specs[k].unlock||0)<=rk).slice(0,U.slotsAt(rk))});
+    const cs=eq.slice(0,Math.max(N,eq.length));
+    const myAlt=G(()=>S.get('macroOpt','cur'))==='alt';
+    const r=rots.find(x=>x.id===(myAlt?'alt':'guide')+(I.hands==='macro'?'-mo':''))||rots[0];
+    starts.current={rot:r.id,stigmas:cs,levels:lv(cs),perks:cp,_legal:legalP&&cs.length<=N,_perksKnown:known};
+  }
+  const gm=gst.filter(n=>!owned[n]);
+  const job={slug:SLUG,base,metric:(goal==='trial'||goal==='daily')?'time':'dps',rots,starts,owned,unowned,slots:N,assumeLevel,guideMissing:gm,
+    budgetMs:opts.budgetMs||30000,hardMs:opts.hardMs||40000,seed:opts.seed||11};
+  if(gm.length&&N){const full=gst.slice(0,N);job.guideFull={rot:rots[0].id,stigmas:full,levels:lv(full),perks:gp}}
+  if(opts.K)job.K=opts.K;if(opts.Kc)job.Kc=opts.Kc;if(opts.rankTop)job.rankTop=opts.rankTop;
+  return {job,meta:{cc,ranks,owned,N,assumeLevel,gp,card:!!starts.card,currentKnown:starts.current?starts.current._perksKnown:null,src:ch&&I.src==='char'?'char':'form'}};
+}
+
+/* ---------- running: Web Worker first, page fallback ---------- */
+let RUN=null;
+function workerSource(){
+  let head='self.window=self;\n';
+  if(typeof SIMSRC!=='undefined'&&SIMSRC){head+='importScripts('+JSON.stringify(new URL(SIMSRC,location.href).href)+');\n'}
+  else{const el=$('aionsim-src');if(!el)return null;head+=el.textContent+'\n'}
+  return head+'var CORE=('+MB_CORE.toString()+')();\n('+MB_GLUE.toString()+')();\n';
+}
+function startRun(job,on){
+  const R={cancelled:false,worker:false,w:null,url:null};RUN=R;
+  const finish=()=>{if(R.w)try{R.w.terminate()}catch(e){}if(R.url)try{URL.revokeObjectURL(R.url)}catch(e){}R.w=null};
+  R.cancel=()=>{R.cancelled=true;finish();if(R.timer)clearTimeout(R.timer)};
+  const fallback=why=>{
+    if(R.cancelled)return;finish();R.worker=false;R.why=why;
+    let gen;try{gen=CORE.run(window.AionSim,job,m=>{if(!R.cancelled)on(m)})}catch(e){on({type:'error',msg:String(e.message||e)});return}
+    const pump=()=>{if(R.cancelled)return;const t0=Date.now();
+      try{while(Date.now()-t0<35){const x=gen.next();if(x.done){on({type:'done',result:x.value});return}}}catch(e){on({type:'error',msg:String(e&&e.message||e)});return}
+      R.timer=setTimeout(pump,0)};
+    R.timer=setTimeout(pump,0);
+  };
+  let src=null;
+  try{if(typeof Worker!=='undefined'&&typeof Blob!=='undefined'&&window.URL&&URL.createObjectURL&&!window.MB_NO_WORKER)src=workerSource()}catch(e){src=null}
+  if(!src){fallback('no worker');return R}
+  try{
+    R.url=URL.createObjectURL(new Blob([src],{type:'text/javascript'}));
+    const w=new Worker(R.url);R.w=w;let ready=false;
+    const to=setTimeout(()=>{if(!ready)fallback('worker timeout')},15000);
+    w.onmessage=e=>{const m=e.data||{};if(R.cancelled)return;
+      if(m.type==='ready'){ready=true;clearTimeout(to);if(!m.ok){fallback('worker engine');return}R.worker=true;w.postMessage({type:'start',job});return}
+      if(m.type==='done'||m.type==='error')finish();
+      on(m)};
+    w.onerror=e=>{try{e.preventDefault()}catch(x){}clearTimeout(to);if(!R.worker||!ready)fallback('worker error');else on({type:'error',msg:String(e.message||'worker error')})};
+  }catch(e){fallback('worker blocked')}
+  return R;
+}
+
+/* ---------- turning the result into plain-English output ---------- */
+function skillNums(sk){const SN=G(()=>P.SKILLNUMS)||null;return SN&&(SN.sk||[]).find(x=>x.n===sk)||null}
+function perkView(d,sk,k){
+  const g=amb(sk,k),sx=((skillNums(sk)||{}).sx||[]).find(x=>x[0]===g),sp=(d.skills[sk]&&d.skills[sk].specs||{})[k]||{};
+  return {num:g,text:sx?sx[2]:(sp.text||('Perk '+g)),unlock:sx?sx[1]:(sp.unlock||0),dmg:!!(sp.ops&&sp.ops.length)};
+}
+function barFor(opt){
+  if(!opt)return null;
+  if(opt.keys==='alt'&&CC().macroAlt)return {bar:CC().macroAlt.bar,steps:CC().macroAlt.barSteps.slice()};
+  if(CC().bar&&CC().barSteps)return {bar:CC().bar,steps:CC().barSteps.slice()};
+  if(typeof buildBar==='function'){const o=window.macroChoice;try{window.macroChoice=()=>'cur';return buildBar()}catch(e){return null}finally{window.macroChoice=o}}
+  return null;
+}
+function makeView(job,meta,res,I,ch){
+  const d=simData(),pick=res.pick,opt=job.rots.find(r=>r.id===pick.rot)||job.rots[0];
+  const cur=job.starts.current,gd=job.starts.guide;
+  const stig=pick.stigmas.map(n=>({n,l:pick.levels[n]||1,isNew:!!(cur&&cur.stigmas.indexOf(n)<0),guide:gd.stigmas.indexOf(n)>=0}));
+  const rows=((CC().perks&&CC().perks.rows)||[]).map(r=>r.skill);
+  const per=pick.per||{};
+  const skills=Object.keys(pick.perks).filter(sk=>(pick.perks[sk]||[]).length&&d.skills[sk]).sort((a,b)=>{const x=rows.indexOf(a),y=rows.indexOf(b);return (x<0?99:x)-(y<0?99:y)||(((per[b]||{}).dmg||0)-((per[a]||{}).dmg||0))});
+  const same=(a,b)=>JSON.stringify((a||[]).slice().sort())===JSON.stringify((b||[]).slice().sort());
+  const perks=skills.map(sk=>({skill:sk,rank:meta.ranks[sk]||1,picks:pick.perks[sk].map(k=>perkView(d,sk,k)),dropped:(gd.perks[sk]||[]).filter(k=>pick.perks[sk].indexOf(k)<0).map(k=>perkView(d,sk,k)),vsGuide:!same(pick.perks[sk],gd.perks[sk]),vsCur:cur&&cur._perksKnown?!same(pick.perks[sk],cur.perks[sk]):null}));
+  const B0=barFor(opt),RU=pick.rotUsed||{rot:opt.rot,subs:[],added:[],byHand:[]};
+  // the bar with swapped-in Stigmas on the slot of the Stigma they replace; extra ones on a free slot (and a macro step)
+  const B=B0?{bar:JSON.parse(JSON.stringify(B0.bar)),steps:B0.steps.slice()}:null;let steps=B?B.steps:[];const manual=[],notes=[];
+  if(B){
+    (RU.subs||[]).forEach(([from,to])=>{B.bar.forEach(b=>{b.rows=(b.rows||[]).map(n=>n===from?to:n)});notes.push(`put ${to} on the slot where the guide has ${from}`)});
+    (RU.added||[]).forEach(n=>{let b=B.bar.find(x=>!x.man&&x.k!=='Space'&&!(x.rows||[]).length);if(b){b.rows=[n];b.free=0;if(steps.length<20)steps.push(b.k);notes.push(`put ${n} on free slot ${keyName(b.k)} and add it to the macro`)}else manual.push(n)});
+    (RU.byHand||[]).forEach(n=>{const b=B.bar.find(x=>!x.man&&x.k!=='Space'&&!(x.rows||[]).length);if(b){b.rows=[n];b.man=1;b.free=0}manual.push(n)});
+  }
+  const rot=RU.rot;
+  if(opt.mo&&B){(opt.rot.movedIn||[]).forEach(n=>{const b=B.bar.find(x=>(x.rows||[]).indexOf(n)>=0);if(b&&steps.indexOf(b.k)<0&&steps.length<20)steps.push(b.k);else if(!b)manual.push(n)})}
+  else(rot.manual||[]).forEach(m=>{if(m&&m.skill&&manual.indexOf(m.skill)<0)manual.push(m.skill)});
+  const tot=Object.values(per).reduce((a,x)=>a+(x.dmg||0),0)||1;
+  const mix=Object.keys(per).map(n=>({n,share:per[n].dmg/tot})).filter(x=>x.share>=0.01).sort((a,b)=>b.share-a.share).slice(0,8);
+  const vsG=res.guide&&res.guide.vs,vsC=res.current&&res.current.vs;
+  let conf='low',ctext;
+  if(pick.from==='guide'||(vsG&&Math.abs(vsG.rel)<0.002))ctext="The guide's setup (adjusted to what you own and have unlocked) is already the best the simulator found for your character.";
+  else{conf=vsG.rel>3*vsG.se&&vsG.rel>=0.01?'high':vsG.rel>2*vsG.se?'medium':'low';
+    ctext=conf==='high'?'The gain over the guide default is well above the simulator\'s noise.':conf==='medium'?'The gain over the guide default is real in the simulator but small; an in-game dummy test (60 s, 3 runs each) is worth it before you spend anything.':'The difference to the guide default is about the size of the simulator\'s noise: both setups are equally good, use whichever you prefer.'}
+  const ping=Number(I.ping);
+  return {ts:Date.now(),cls:G(()=>P.cls)||SLUG,goal:I.goal,metric:job.metric,hands:I.hands,ping:I.ping,src:meta.src,name:ch&&I.src==='char'?ch.name:'',level:ch&&I.src==='char'?ch.level:I.form.level,cp:ch&&I.src==='char'?ch.cp:I.form.cp,
+    slots:job.slots,owned:Object.keys(job.owned).length,
+    pick:{from:pick.from,dps:pick.dps,clear:pick.clear,label:opt.label,id:opt.id,steps:steps,barNotes:notes,stepsN:Math.min(20,steps.length||opt.steps),bar:B?B.bar:null,manual,mo:!!opt.mo},
+    guide:res.guide,current:res.current,currentKnown:meta.currentKnown,
+    stig,stigNext:(res.stigNext||[]).filter(x=>x.rel>0).sort((a,b)=>b.perShard-a.perShard).slice(0,3),
+    perks,ranks:(res.rankNext||[]).filter(x=>x.rel>0.0005).slice(0,4).map(x=>Object.assign({},x,{perks:x.perks?x.perks.map(k=>perkView(d,x.n,k)):null})),
+    missing:res.missing||[],weakest:res.weakest,extraSlot:res.extraSlot,guideFull:res.guideFull,assumeLevel:job.assumeLevel,
+    mix,conf,ctext,K:res.K,Kc:res.Kc,fights:res.fights,secs:res.secs,worker:!!(RUN&&RUN.worker),stopped:res.stopped,
+    delay:isFinite(ping)&&I.ping!==''?(ping>=80?20:10):null};
+}
+
+/* ---------- rendering ---------- */
+let ui={running:false,msg:'',bad:false,prog:null,confirmSave:false};
+function goalName(g){return (GOALS.find(x=>x[0]===g)||[0,g])[1]}
+function render(){
+  const box=$('mybuildbox');if(!box)return;addStyle();
+  let I=inp();const ch=charRead();if(ch)I=syncFromChar(I,ch);
+  const res=G(()=>S.get('mybuildres',null));const view=res&&res.slug===SLUG?res.view:null;
+  const useChar=!!ch&&I.src==='char';
+  const who=useChar?`<b>${h(ch.name||'Your character')}</b> · level ${h(ch.level||'?')} · ${fmt(ch.cp)} Combat Power · ${Object.keys(ch.ranks).length} skill ranks · ${Object.values(ch.stig).filter(x=>x.own).length} Stigmas owned (${ch.eq.length} equipped)${ch.hasPerks?' · perks from your AionFlex code':''}`:'';
+  const head=`<div class="box" style="display:grid;gap:12px">
+   <h3 style="margin:0">Your character</h3>
+   ${ch?`<div class="chrow small"><span>${useChar?'Using':'Loaded but not used:'} ${useChar?who:h(ch.name||'')}</span><button type="button" class="btn" data-mb="${useChar?'use-form':'use-char'}">${useChar?'Type my own numbers instead':'Use my loaded character'}</button></div>
+     ${useChar?`<p class="small muted" style="margin:0">From <a href="#mychar" data-goto="mychar">My character</a>: skill ranks, Stigmas you own and their levels, level (open Stigma slots), Combat Power and gear stats. NCSoft's page has no perks (an AionFlex code adds yours), no ping and no goal, so set those below. You can correct any number in the drop-downs.</p>`:''}`
+     :`<p class="small muted" style="margin:0">No character loaded. Load it on <a href="#mychar" data-goto="mychar">My character</a> to fill everything in automatically, or type the numbers below. Your entries are saved in this browser.</p>`}
+   ${formHtml(I,useChar?ch:null)}
+  </div>`;
+  const goalSeg=`<div class="box" style="display:grid;gap:12px"><h3 style="margin:0">What it is for</h3>
+   <div class="chrow"><span class="small muted">Content</span><span class="seg" role="group" aria-label="Content goal">${GOALS.map(([k,n])=>`<button type="button" data-mbgoal="${k}" aria-pressed="${I.goal===k}">${n}</button>`).join('')}</span></div>
+   <div class="chrow"><span class="small muted">How you play</span><span class="seg" role="group" aria-label="Play style"><button type="button" data-mbhand="hand" aria-pressed="${I.hands==='hand'}">Macro + some skills by hand</button><button type="button" data-mbhand="macro" aria-pressed="${I.hands==='macro'}">Macro only</button></span></div>
+   <div class="simform"><label class="f">Ping (ms)<input type="number" id="mbping" min="0" max="999" placeholder="e.g. 60" value="${h(I.ping)}"></label></div>
+   ${I.goal==='arena'?'':`<div class="chrow"><button type="button" class="btn primary" data-mb="run"${ui.running?' disabled':''}>Find my best setup</button>${ui.running?'<button type="button" class="btn" data-mb="cancel">Stop</button>':''}<span class="small muted">Up to about 40 seconds. The page stays usable while it works.</span></div>`}
+   <div id="mbprog" role="status" aria-live="polite">${progHtml()}</div>
+   ${ui.msg?`<div class="callout${ui.bad?'':' ok'} small" role="status">${ui.msg}</div>`:''}
+  </div>`;
+  let out='';
+  if(I.goal==='arena')out=arenaHtml(I,useChar?ch:null);
+  else if(!simCls())out=`<div class="callout"><b>The ${h(G(()=>P.cls)||'')} isn't simulated yet.</b> It is Korea-only and its Global skill numbers aren't out, so this tab can't test setups for it. Use <a href="#rotation" data-goto="rotation">Rotation &amp; macro</a> and <a href="#skills" data-goto="skills">Skills &amp; Stigmas</a>.</div>`;
+  else if(view)out=resultHtml(view,res.key!==inputKey(I,ch));
+  box.innerHTML=head+goalSeg+out; // icons are placed explicitly (no decorate(): it would add a second icon)
+}
+function progHtml(){
+  const p=ui.prog;if(!ui.running||!p)return '';
+  return `<div class="mbbar" role="progressbar" aria-label="Search progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(p.p*100)}"><i style="width:${(p.p*100).toFixed(1)}%"></i></div>
+   <p class="small muted" style="margin:6px 0 0">${h(p.label||'')}… ${Math.round(p.p*100)}% · ${(p.secs||0).toFixed(0)} s · ${fmt(p.fights||0)} fights simulated${RUN?(RUN.worker?' · running in the background':' · running on the page'):''}</p>`;
+}
+function setProg(p){ui.prog=p;const el=$('mbprog');if(el)el.innerHTML=progHtml()}
+function inputKey(I,ch){const f=I.form;return JSON.stringify([I.goal,I.hands,I.src,I.src==='char'&&ch?ch.stamp:'',f.level,f.cp,f.attack,f.crit,f.cs,f.slots,f.ranks,Object.keys(f.stig).sort().map(n=>[n,!!f.stig[n].own,f.stig[n].lvl])])}
+function deltaWord(view,vs,what){
+  if(!vs)return '';
+  const r=vs.rel,se=vs.se;
+  if(Math.abs(r)<Math.max(0.002,se*1.5))return `<b>about the same</b> as ${what}`;
+  return view.metric==='time'?`<b class="chg">${pct(r)}</b> clear speed vs ${what}`:`<b class="chg">${pct(r)}</b> damage vs ${what}`;
+}
+function resultHtml(v,stale){
+  const sec=(t)=>v.metric==='time'?`${Math.floor(t/60)}:${String(Math.round(t%60)).padStart(2,'0')}`:'';
+  const num=x=>v.metric==='time'?(x&&x.clear?sec(x.clear)+' clear':'—'):(x&&x.dps?fmt(x.dps)+' DPS':'—');
+  const P0=v.pick;
+  const sum=`<div class="mbsum">
+    <div class="mbstat good"><span class="small muted">Your best setup</span><b>${num(P0)}</b><span class="small">${P0.from==='guide'?"the guide's picks fit you best":P0.from==='current'?'your current setup':'found for you'}</span></div>
+    ${v.current?`<div class="mbstat"><span class="small muted">vs your current setup</span><b>${v.current.vs?pct(v.current.vs.rel):'—'}</b><span class="small">${num(v.current)}${v.currentKnown===false?' (perks assumed = guide)':''}</span></div>`:''}
+    <div class="mbstat"><span class="small muted">vs the guide default</span><b>${v.guide&&v.guide.vs?pct(v.guide.vs.rel):'—'}</b><span class="small">${num(v.guide)}</span></div>
+   </div>
+   ${v.goal==='nightmare'||v.goal==='trial'||v.goal==='daily'?`<p class="small muted" style="margin:0">This search scores damage${v.metric==='time'?' (clear time)':''} only. The ${h(goalName(v.goal))} card on <a href="#builds" data-goto="builds">Other builds &amp; modes</a> may swap in self-heal perks that cost a little damage; take them if you are dying.</p>`:''}
+   <p class="small muted" style="margin:0">The numbers are estimates: the simulator gets about 77% of real absolute damage right but about 99% of the skill mix, so the <b>% differences</b> between setups are what to trust, not the DPS figure itself.${v.metric==='time'?' Ascension Trial and Daily dungeon are scored by clear time on a standard run (room sizes and mob HP are estimates).':''}</p>`;
+  const stigs=v.slots?`<div class="box" style="display:grid;gap:10px"><h3 style="margin:0">Stigmas</h3>
+   <ul class="mblist">${v.stig.map(s=>`<li>${icon(s.n)}<b>${h(s.n)}</b> <span class="small muted">level ${s.l}</span>${s.isNew?' <span class="tag t-good">equip</span>':''}${s.guide?' <span class="tag gold">guide</span>':''}</li>`).join('')||'<li class="muted">None of your Stigmas helps here.</li>'}</ul>
+   ${v.stig.length<v.slots?`<p class="small muted" style="margin:0">${v.slots-v.stig.length} slot${v.slots-v.stig.length>1?'s':''} empty: you don't own a Stigma the simulator can use there.</p>`:''}
+   ${v.stigNext.length?`<p class="small" style="margin:0"><b>Level next with shards:</b> ${v.stigNext.map((x,i)=>`${i?'then ':''}${icon(x.n)}<b>${h(x.n)}</b> ${x.from} → ${x.to} (${x.shards} shard${x.shards>1?'s':''}, about ${pct(x.rel)})`).join('; ')}.</p>`:''}
+   <p class="small muted" style="margin:0">Levels 1–5 cost 1 shard each, 6–10 cost 2, 11–15 cost 4, 16–20 cost 8.</p></div>`
+   :`<div class="callout small">No Stigma slot open yet (the first opens at level ${slotLevels()[0]}).</div>`;
+  const chg=v.perks.filter(p=>p.vsCur||(p.vsCur==null&&p.vsGuide));
+  const perkRow=p=>`<li>${icon(p.skill)}<b>${h(p.skill)}</b> <span class="small muted">rank ${p.rank}</span>${p.picks.map(x=>`<span class="mbperk"><span class="n">#${x.num}</span>${h(x.text)}<span class="small muted">[${x.unlock}]</span></span>`).join('')}${p.vsGuide?` <span class="tag t-ok">not the guide pick</span>${(p.dropped||[]).length?` <span class="small muted">(the guide takes ${p.dropped.map(x=>'#'+x.num+' '+h(x.text)+(x.dmg?'':', no damage effect')).join(' and ')} here${p.dropped.some(x=>!x.dmg)?': keep it if you need the self-heal, MP or mobility':''})</span>`:''}`:''}${p.vsCur?' <span class="tag t-good">change</span>':''}</li>`;
+  const perks=`<div class="box" style="display:grid;gap:10px"><h3 style="margin:0">Perks</h3>
+   <p class="small muted" style="margin:0">#n is the perk's number in the game's perk window, [n] the rank it unlocks at. Only perks you have unlocked are used.${v.currentKnown===false?' Your current perks are not on NCSoft\'s page, so "change" tags are not shown (an AionFlex code in My character adds them).':''}</p>
+   ${chg.length?`<p class="small" style="margin:0"><b>${v.currentKnown?'Change':'Set'} these ${chg.length} skill${chg.length>1?'s':''}:</b></p><ul class="mblist">${chg.map(perkRow).join('')}</ul>`:'<p class="small" style="margin:0"><b>No changes needed</b> from '+(v.currentKnown?'your current perks':"the guide's perks")+'.</p>'}
+   <details><summary class="small"><b>All perks for this setup</b> (${v.perks.length} skills)</summary><ul class="mblist" style="margin-top:8px">${v.perks.map(perkRow).join('')}</ul></details></div>`;
+  const ranks=`<div class="box" style="display:grid;gap:10px"><h3 style="margin:0">Skill ranks: raise these next</h3>
+   ${v.ranks.length?`<ol class="small" style="margin:0;padding-left:20px;display:grid;gap:6px">${v.ranks.map(r=>`<li>${icon(r.n)}<b>${h(r.n)}</b> ${r.from} → ${r.to}: about ${pct(r.rel,2)}${r.unlock?` (opens a new ${r.unlock}${r.perks&&r.perks.length?': take '+r.perks.map(x=>'#'+x.num+' '+h(x.text)).join(' + '):''})`:''}</li>`).join('')}</ol><p class="small muted" style="margin:0">One more rank from a skill point, a gear line or a Daevanion node. Tested on your best setup above.</p>`:'<p class="small muted" style="margin:0">No single rank-up made a measurable difference in this test.</p>'}</div>`;
+  const P1=v.pick,bar=P1.bar;
+  const macro=`<div class="box" style="display:grid;gap:10px"><h3 style="margin:0">Macro and skill bar</h3>
+   <p class="small" style="margin:0">Use <b>${h(P1.label)}</b>${P1.steps.length?` (${P1.steps.length} step${P1.steps.length>1?'s':''}, the limit is 20)`:''}.</p>
+   ${P1.steps.length?`<div class="mbkeys" aria-label="Macro steps">${P1.steps.map((k,i)=>`<span class="kbd" title="step ${i+1}">${h(keyName(k))}</span>`).join('')}</div>`:''}
+   ${(P1.barNotes||[]).length?`<p class="small" style="margin:0"><b>Skill bar change${P1.barNotes.length>1?'s':''}:</b> ${P1.barNotes.map(h).join('; ')}.</p>`:''}
+   ${P1.manual.length?`<p class="small" style="margin:0"><b>${P1.mo?'Not in the macro (put them on free slots if you want them):':'By hand:'}</b> ${P1.manual.map(n=>`${icon(n)}<b>${h(n)}</b>`).join(', ')}</p>`:''}
+   ${P1.mo?'<p class="small muted" style="margin:0">Macro only: the skills the guide presses by hand were added as extra macro steps (charged skills fire without a charge).</p>':''}
+   ${v.delay?`<p class="small" style="margin:0">Delay per step: <b>${v.delay} ms</b> at ${h(v.ping)} ping${v.delay===20?' (at about 80 ping or more, 20 ms beat 10 ms in a 100-ping dummy test)':''}.</p>`:'<p class="small muted" style="margin:0">Delay per step: 10 ms; 20 ms at about 80 ping or more (type your ping above).</p>'}
+   ${bar?`<details><summary class="small"><b>Skill bar for this macro</b></summary><div class="mbbarg" style="margin-top:8px">${bar.filter(b=>(b.rows||[]).length).map(b=>`<div class="mbslot${b.man?' man':''}"><span class="kbd">${h(keyName(b.k))}</span> ${b.rows.map((n,i)=>`<div>${icon(n)}${h(n)}${b.rows.length>1?` <span class="small muted">row ${i}</span>`:''}</div>`).join('')}${b.man?'<div class="small muted">by hand</div>':''}</div>`).join('')}</div><p class="small muted" style="margin:8px 0 0">The full bar, rules and delays are on <a href="#rotation" data-goto="rotation">Rotation &amp; macro</a>.</p></details>`:''}
+   ${v.mix.length?`<details><summary class="small"><b>Damage by skill in this setup</b></summary><ul class="mblist small" style="margin-top:8px">${v.mix.map(x=>`<li>${icon(x.n)}${h(x.n)} <span class="muted">${(x.share*100).toFixed(0)}%</span></li>`).join('')}</ul></details>`:''}</div>`;
+  const miss=[];
+  if(v.guideFull&&v.guideFull.missing.length)miss.push(`<li>The guide's full Stigma set (you are missing ${v.guideFull.missing.map(n=>`${icon(n)}<b>${h(n)}</b>`).join(', ')}, tested at level ${v.assumeLevel}): ${v.guideFull.rel>0.002?'about '+pct(v.guideFull.rel):'no gain over your pick'}.</li>`);
+  v.missing.forEach(m=>miss.push(`<li>${icon(m.n)}<b>${h(m.n)}</b> at level ${m.lvl} in place of ${h(m.replaces)}: about ${pct(m.rel)}.</li>`));
+  if(v.extraSlot&&v.extraSlot.rel>0.002)miss.push(`<li>Your next Stigma slot (level ${slotLevels()[v.slots]||'?'}) with ${icon(v.extraSlot.n)}<b>${h(v.extraSlot.n)}</b>${v.extraSlot.owned?'':' (not owned yet)'}: about ${pct(v.extraSlot.rel)}.</li>`);
+  const missing=`<div class="box" style="display:grid;gap:10px"><h3 style="margin:0">What you're missing</h3>${miss.length?`<ul class="small" style="margin:0;padding-left:20px;display:grid;gap:6px">${miss.join('')}</ul>`:'<p class="small muted" style="margin:0">Nothing you could get would add a measurable amount here.</p>'}${v.weakest?`<p class="small muted" style="margin:0">Your weakest Stigma here is ${h(v.weakest.n)} (worth about ${(v.weakest.rel*100).toFixed(1)}% of your damage).</p>`:''}</div>`;
+  const how=`<details class="box"><summary><b>How sure is this?</b> <span class="tag ${v.conf==='high'?'t-good':v.conf==='medium'?'t-ok':''}">${v.conf==='high'?'high':v.conf==='medium'?'medium':'low difference'}</span></summary>
+   <div class="small" style="display:grid;gap:6px;margin-top:8px"><p style="margin:0">${h(v.ctext)}</p>
+   <p style="margin:0">Searched ${fmt(v.fights)} simulated fights in ${v.secs.toFixed(0)} s${v.worker?' in the background':''}: ${v.K} fights per idea, ${v.Kc} for the final check of your pick, the guide default and your current setup (the same fights for each, so small differences show).${v.stopped?' The time limit cut the search short; run it again for a longer look.':''} ${goalName(v.goal)}${v.metric==='time'?', scored by clear time':', scored by damage per second'}.</p>
+   <p style="margin:0">Perks with no damage effect (self-heal, mobility, MP) are kept where the guide or the mode card picks them, since the simulator gives them no value. Ping and held keys are not simulated.</p></div></details>`;
+  const btns=`<div class="box" style="display:grid;gap:10px"><div class="chrow">${ui.confirmSave?`<b class="small">Replace the Stigmas and perks saved in Share &amp; compare?</b><button type="button" class="btn primary" data-mb="save-yes">Yes, save</button><button type="button" class="btn" data-mb="save-no">Cancel</button>`:`<button type="button" class="btn primary" data-mb="save">Save as my build</button>`}<button type="button" class="btn" data-mb="sim">Show me in the Simulator</button></div>
+   <p class="small muted" style="margin:0">Save puts these Stigmas, perks and the macro choice into <a href="#buildshare" data-goto="buildshare">Share &amp; compare</a>, so you can share them as a build code.</p></div>`;
+  return (stale?`<div class="callout small">Your inputs changed since this result (${h(new Date(v.ts).toLocaleString())}). Press <b>Find my best setup</b> again.</div>`:'')+
+    `<div class="box" style="display:grid;gap:12px"><h3 style="margin:0">Best setup for ${v.name?h(v.name):'your character'} · ${h(goalName(v.goal))}</h3>${sum}</div>`+stigs+perks+macro+ranks+missing+how+btns;
+}
+function arenaHtml(I,ch){
+  const card=CC().modeSetups&&CC().modeSetups.arena;
+  if(!card)return `<div class="callout">No PvP arena setup for this class yet. See <a href="#pvp" data-goto="pvp">PvP build</a>.</div>`;
+  const f=I.form,own=n=>!!(f.stig[n]&&f.stig[n].own),ranks=f.ranks||{};
+  const N=openSlots(I,ch);
+  const st=(card.stigmas||[]).map(n=>({n,own:own(n),l:(f.stig[n]||{}).lvl||1}));
+  const arr=x=>Array.isArray(x)?x:(x&&typeof x==='object'?Object.values(x):[]);
+  const alt=[].concat(arr(CC().stigmasPvp),arr(CC().stigmaPvpAlt)).map(s=>typeof s==='string'?s:(s&&s.name)).filter(n=>n&&typeof n==='string'&&own(n)&&!st.some(x=>x.n===n));
+  const perk=t=>{const m=String(t).match(/\[(\d+)\]/);return m?+m[1]:0};
+  return `<div class="box" style="display:grid;gap:10px"><h3 style="margin:0">${h(card.title||'PvP arena')}</h3>
+   <p class="small" style="margin:0">${h(card.summary||'')}</p>
+   <p class="small muted" style="margin:0">PvP isn't simulated (players dodge, block, heal and move), so this is the guide's arena setup, checked against what you own and have unlocked.</p>
+   <h4 style="margin:4px 0 0">Stigmas (${N} slot${N===1?'':'s'} open)</h4>
+   <ul class="mblist">${st.slice(0,Math.max(N,0)||4).map(s=>`<li>${icon(s.n)}<b>${h(s.n)}</b> ${s.own?`<span class="small muted">level ${s.l}</span> <span class="tag t-good">you own it</span>`:'<span class="tag t-bad">not owned</span>'}</li>`).join('')}</ul>
+   ${st.some(s=>!s.own)&&alt.length?`<p class="small" style="margin:0">Until you get the missing one${st.filter(s=>!s.own).length>1?'s':''}, use what you own from the guide's PvP list: ${alt.slice(0,3).map(n=>`${icon(n)}<b>${h(n)}</b>`).join(', ')}.</p>`:''}
+   <h4 style="margin:4px 0 0">Perks</h4>
+   <ul class="mblist">${(card.perks||[]).map(p=>{const rk=+ranks[p.skill]||0;return `<li>${icon(p.skill)}<b>${h(p.skill)}</b>${rk?` <span class="small muted">rank ${rk}</span>`:''}${(p.perks||[]).map(t=>{const u=perk(t),lock=rk&&u>rk;return `<span class="mbperk">${h(String(t).replace(/\s*\[\d+\]\s*$/,''))}<span class="small muted">[${u||'?'}]</span>${lock?' <span class="tag t-bad">locked</span>':''}</span>`}).join('')}</li>`}).join('')}</ul>
+   <details><summary class="small"><b>Why these perks</b></summary><ul class="small" style="margin:8px 0 0;padding-left:20px">${(card.perks||[]).map(p=>`<li><b>${h(p.skill)}</b>: ${h(p.note||'')}</li>`).join('')}</ul></details>
+   <p class="small" style="margin:0">The full arena card (skill bar, how to play) is on <a href="#builds" data-goto="builds">Other builds &amp; modes</a>.</p></div>`;
+}
+
+/* ---------- actions ---------- */
+function run(opts){
+  let I=readForm(inp());saveInp(I);
+  const ch=charRead();
+  if(I.goal==='arena'){render();return Promise.resolve(null)}
+  const U=UI();if(!U||!U.has){ui.msg='This class is not simulated.';ui.bad=true;render();return Promise.resolve(null)}
+  ui.running=true;ui.msg='';ui.prog={p:0,label:'Loading the simulator',secs:0,fights:0};ui.confirmSave=false;render();
+  return new Promise(resolve=>{
+    U.loadEngine(ok=>{
+      if(!ok){ui.running=false;ui.msg='The simulator could not load in this browser.';ui.bad=true;render();resolve(null);return}
+      const B=buildJob(I,ch,opts);
+      if(B.err){ui.running=false;ui.msg=h(B.err);ui.bad=true;render();resolve(null);return}
+      const key=inputKey(I,ch);
+      startRun(B.job,m=>{
+        if(m.type==='progress')setProg(m);
+        else if(m.type==='done'){
+          ui.running=false;let view=null;
+          try{view=makeView(B.job,B.meta,m.result,I,ch)}catch(e){ui.msg='Could not show the result: '+h(e.message);ui.bad=true;render();resolve(null);return}
+          const pick=m.result.pick,opt=B.job.rots.find(r=>r.id===pick.rot)||B.job.rots[0];
+          const sim={perks:pick.perksMirrored,stigmas:pick.stigmas,stigmaLevels:pick.levels,rotation:(pick.rotUsed&&pick.rotUsed.rot)||opt.rot,ranks:B.meta.ranks,label:view.pick.label+(pick.stigmas.length?', '+pick.stigmas.join(', '):'')};
+          const rec={slug:SLUG,ts:Date.now(),key,view,sim,raw:{rot:pick.rot,stigmas:pick.stigmas,levels:pick.levels,perks:pick.perks}};
+          try{S.set('mybuildres',rec)}catch(e){}
+          window.MyBuild.last={job:B.job,meta:B.meta,result:m.result,view,worker:!!(RUN&&RUN.worker)};
+          ui.msg='';render();resolve(window.MyBuild.last);
+        }else if(m.type==='error'){ui.running=false;ui.msg='The search stopped: '+h(m.msg);ui.bad=true;render();resolve(null)}
+      });
+    });
+  });
+}
+function saveBuild(){
+  const res=G(()=>S.get('mybuildres',null));if(!res||res.slug!==SLUG||!res.raw){ui.msg='Run the search first.';ui.bad=true;return}
+  const p=Object.assign({pve:[],pvp:[],perks:{}},G(()=>S.get('bcplan',null))||{});
+  p.pve=res.raw.stigmas.slice(0,4).map(n=>({n,l:Math.min(20,res.raw.levels[n]||1)}));
+  const rows=((CC().perks&&CC().perks.rows)||[]).map(r=>r.skill);p.perks=Object.assign({},p.perks||{});
+  rows.forEach(sk=>{const a=res.raw.perks[sk];if(Array.isArray(a)&&a.length)p.perks[sk]=a.map(k=>amb(sk,k)).slice(0,3);else if(a)delete p.perks[sk]});
+  try{S.set('bcplan',p);S.set('macroOpt',/^alt/.test(res.raw.rot)?'alt':'cur')}catch(e){}
+  try{if(typeof window.renderBuildCode==='function')window.renderBuildCode()}catch(e){}
+  ui.msg='Saved: your Stigmas, perks and macro choice are now in <a href="#buildshare" data-goto="buildshare">Share &amp; compare</a> (press Share my build there for a code).';ui.bad=false;
+}
+function toSim(){
+  const res=G(()=>S.get('mybuildres',null));if(!res||res.slug!==SLUG){ui.msg='Run the search first.';ui.bad=true;render();return}
+  try{const s=Object.assign({},S.get('sim',{})||{},{mb:true});if(charRead()&&res.view.src==='char')s.sheet='mine';if(res.view.goal==='raid'){s.boss='Divine Auldor';s.dur='boss';s.party=true}S.set('sim',s)}catch(e){}
+  try{const U=UI();if(U&&U.refresh)U.refresh()}catch(e){}
+  if(typeof show==='function')show('simulator',true);
+}
+function wire(){
+  const box=$('mybuildbox');if(!box||box.dataset.mbw)return;box.dataset.mbw=1;
+  box.addEventListener('click',e=>{
+    const t=e.target.closest&&e.target.closest('[data-mb],[data-mbgoal],[data-mbhand]');if(!t)return;
+    if(t.dataset.mbgoal||t.dataset.mbhand){const I=readForm(inp());if(t.dataset.mbgoal)I.goal=t.dataset.mbgoal;else I.hands=t.dataset.mbhand;saveInp(I);render();return}
+    const a=t.dataset.mb;
+    if(a==='run'){run();return}
+    if(a==='cancel'){if(RUN)RUN.cancel();ui.running=false;ui.msg='Stopped.';ui.bad=true;render();return}
+    if(a==='use-form'||a==='use-char'){const I=readForm(inp());I.src=a==='use-char'?'char':'form';if(a==='use-char')I.stamp='';saveInp(I);render();return}
+    if(a==='save'){ui.confirmSave=true;render();return}
+    if(a==='save-no'){ui.confirmSave=false;render();return}
+    if(a==='save-yes'){ui.confirmSave=false;saveBuild();render();return}
+    if(a==='sim'){toSim();return}
+  });
+  box.addEventListener('change',e=>{const t=e.target;if(!t||ui.running)return;if(t.closest('.box')){const I=readForm(inp());saveInp(I);
+    if(t.id==='mbslots'||t.dataset.mbown){render()}}});
+}
+function onShow(){const s=$('mybuild');if(s&&!s.hidden&&!ui.running){render();wire()}}
+window.MyBuild={run,render,buildJob:(o)=>{const I=readForm(inp());return buildJob(I,charRead(),o)},core:MB_CORE,last:null,inputs:inp,saveInputs:saveInp};
+{const o=window.show;if(typeof o==='function')window.show=function(){const r=o.apply(this,arguments);try{onShow()}catch(e){}return r}}
+{const o=window.renderMyChar;if(typeof o==='function')window.renderMyChar=function(){const r=o.apply(this,arguments);try{onShow()}catch(e){}return r}}
+{const o=window.setMode;if(typeof o==='function')window.setMode=function(){const r=o.apply(this,arguments);try{onShow()}catch(e){}return r}}
+try{render();wire()}catch(e){console.error(e)}
 })();
 
 /* ---------- Achievement farming (data: global ACHFARM = audit/r8/achfarm.json; achievement names, goals and rewards
