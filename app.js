@@ -1,4 +1,4 @@
-var SIMSRC="data/sim.js?v=1792816650";
+var SIMSRC="data/sim.js?v=1792863151";
 const P=ALL[SLUG];
 document.getElementById('app').innerHTML=P.body;
 document.title=P.cls+' Guide · AION 2 Global Field Manual (Unofficial Fan Guide)';
@@ -7242,13 +7242,19 @@ var A2T=(function(){
   try{render()}catch(err){console.error(err);const d=document.getElementById('achfarmbox');if(d)d.innerHTML='<p class="callout small">This section could not load. Please report it with the feedback link.</p>'}
 })();
 
-/* ---------- Crafting guide: "Fastest way to craft everything" (data: global CRAFTGUIDE = audit/r16/craftguide.json,
+/* ---------- Crafting guide (data: global CRAFTGUIDE = audit/r16/craftguide.json,
    built by audit/r16/build_craftguide.py from the Global recipe table on MetaBot.GG + audit/r16/craftguide_src.json) ----------
-   Mount: <div id="craftguidebox"></div> at the top of the 'crafting' tab (placed by reorg.py). Renders closed drop-downs:
-   (1) fastest leveling route per profession (ticks: data-sv="cg-<prof>-<n>", saved by the global data-sv handler in gear_fn.js),
-   (2) what to craft for your gear (full chains + material trees), (3) money makers, (4) rules that cost people materials,
-   (5) calculators, (6) gathering skill tree + point planner (saved in S 'cg'.gp). Settings (faction names, proficiency) are saved account-wide in S ('cg'); your prices live in the shared price store
-   (prices_fn.js, window.A2P: per server, with dates; the old 'cgprice' key is only read once by it).
+   Mount: <div id="craftguidebox"></div> at the top of the 'crafting' tab (placed by reorg.py).
+   Layout (Oct 24 redesign, audit/r21): "Start here" box (plain overview + goal picker, saved in S 'cg'.goal) and a
+   "Your next step" card (reads the route ticks, a Done button ticks the step), then closed drop-downs shown or hidden by
+   the goal: (1) step-by-step route per profession (ticks: data-sv="cg-<prof>-<n>", saved by the global data-sv handler
+   in gear_fn.js), (2) gear you can craft (ladder per slot + material table grouped by where it comes from), (3) make Kina,
+   (4) one crafter for all your characters, (5) gathering point planner + skill tree (saved in S 'cg'.gp), (6) the rules
+   that cost people materials, (7) calculator + price panel. Crafting words get plain-language popovers (GLOSS below).
+   The older boxes #sys-crafting / #sys-gathering (more_systems.html, audit/r4/coverage.json) follow the guide as
+   "basics" drop-downs and follow the goal too. Settings (goal, faction names, proficiency) are saved account-wide in S
+   ('cg'); prices live in the shared price store (prices_fn.js, window.A2P: per server, with dates; the old 'cgprice' key
+   is only read once by it). The price panel (and its private-build hooks) sits in #cg-money and #cg-calc.
    Also adds a one-line link to this guide on Gear & stats, Upgrade planner, Item finder and Farming. */
 (function(){
   const h=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -7259,7 +7265,9 @@ var A2T=(function(){
   const PRICE_LINKS='<a href="https://questlog.gg/aion-2/en/auction-house" target="_blank" rel="noopener noreferrer">questlog.gg Market</a> · <a href="https://a2-tracker.com/" target="_blank" rel="noopener noreferrer">A2-Tracker</a> · <a href="https://aion2.exchange/" target="_blank" rel="noopener noreferrer">aion2.exchange</a> <span class="muted">(third-party sites: players&#39; asking prices, not sales)</span>';
   const GSTORE=(k,d)=>{try{return (S.gget?S.gget(k,d):S.get(k,d))||d}catch(e){return d}};
   const PSTORE=(k,v)=>{try{S.gset?S.gset(k,v):S.set(k,v)}catch(e){}};
-  const st=()=>Object.assign({fac:'e',prof:90,route:'hand',slot:'',c1:{},c2:{}},GSTORE('cg',{}));
+  const st=()=>Object.assign({fac:'e',prof:90,route:classRoute(),slot:'',goal:'',c1:{},c2:{}},GSTORE('cg',{}));
+  const svGet=()=>{try{return (S.get?S.get('sv',{}):{})||{}}catch(e){return {}}};
+  const svSet=(k,v)=>{try{const o=svGet();if(v)o[k]=true;else delete o[k];S.set('sv',o)}catch(e){}};
   const save=o=>PSTORE('cg',Object.assign(st(),o));
   const AP=()=>(typeof window!=='undefined'&&window.A2P)||null;
   const prices=()=>AP()?AP().flat():GSTORE('cgprice',{});
@@ -7337,35 +7345,47 @@ var A2T=(function(){
     const r=idx()[n]; if(!r) return '';
     return `<div class="cgrec small">${item(n)} <span class="muted">(${h(r.p)} ${r.lv})</span> = ${r.parts.map(([pn,pq])=>item(pn,pq)).join(' + ')}</div>`;
   }
-  function stepHTML(st0,sv,i){
-    let calc='';
+  const bar=(d,n)=>`<span class="cgpbar" role="progressbar" aria-label="Progress" aria-valuemin="0" aria-valuemax="${n}" aria-valuenow="${d}"><i style="width:${n?Math.round(d/n*100):0}%"></i></span>`;
+  // numbers of one route step: XP, crafts, vendor Kina, time and the materials (with where each comes from)
+  function stepCalc(st0){
     if(st0.calc){
       const c=routeCalc(st0.calc);
-      calc=c.unknown&&!c.n?`<p class="small muted">No measured XP per craft for this recipe yet: use the calculator below with your own number.</p>`
-        :`<div class="cgcalc small"><span><b>${num(c.xp)}</b> XP</span><span>about <b>${num(c.n)}</b> crafts</span><span>vendor Kina about <b>${num(c.kina)}</b></span><span>idle time about <b>${fmtTime(c.secs)}</b></span></div>
-          <div class="cgmats small">${Object.entries(c.raw).map(([pn,q])=>item(pn,Math.ceil(q))).join('')}</div>`;
+      if(c.unknown&&!c.n) return {meta:'',html:`<p class="small muted">No measured XP per craft for this recipe yet: use the calculator with your own number.</p>`};
+      return {c,meta:`about ${num(c.n)} crafts · ${fmtTime(c.secs)}`,
+        html:`<div class="cgcalc small"><span><b>${num(c.xp)}</b> XP to gain</span><span>about <b>${num(c.n)}</b> crafts</span><span>vendor items about <b>${num(c.kina)}</b> Kina</span><span>about <b>${fmtTime(c.secs)}</b> in an AFK queue</span></div>
+          <div class="small cglbl">Materials for this step:</div><div class="cgmats small">${Object.entries(c.raw).map(([pn,q])=>item(pn,Math.ceil(q))).join('')}</div>`};
     }
-    if(st0.gcalc) calc=`<div class="cgcalc small"><span><b>${num(gxp(st0.gcalc.from,st0.gcalc.to))}</b> gathering XP</span></div>`;
-    const rec=st0.r?recipeLine(st0.r):'';
-    if(st0.tdl){const t=(lv,k)=>[lv,70,85,100].filter((x,i,a)=>a.indexOf(x)===i&&x>=lv).map(P=>`${P}: <b>${pc(curveAt(k,P-lv))}</b>`).join(' · ');
-      calc+=`<div class="cgcalc small"><span>True Dragon Lord success (opens at 55): ${t(55,'c1')}</span><span>(opens at 60): ${t(60,'c6')}</span></div>`;}
-    return `<li class="cgstep"><label class="check"><input type="checkbox" data-sv="${h(st0.id)}"${sv[st0.id]?' checked':''}><span class="what"><span class="cgno">Step ${(i||0)+1}</span> <span class="tag gold">${h(st0.lv)}</span> <b>${h(st0.t)}</b></span></label>
-      <p class="small">${h(st0.do)}</p>${rec}${calc}${st0.tip?`<p class="small muted"><b>Tip:</b> ${h(st0.tip)}</p>`:''}${st0.gplan?`<p class="small">Skill costs and effects: <a href="#cg-gtree" data-cggo="cg-gtree">Gathering skill tree</a>. Your own split: <a href="#cg-gplan" data-cggo="cg-gplan">Gathering point planner</a>.</p>`:''}${st0.ladder?`<p class="small muted">Expected crafts for your slot are worked out in <a href="#cg-gear" data-cggo="cg-gear">What to craft for your gear</a>.</p>`:''}${srcLine(st0.src)}</li>`;
+    if(st0.gcalc){const v=gxp(st0.gcalc.from,st0.gcalc.to);return {meta:`${num(v)} gathering XP`,html:`<div class="cgcalc small"><span><b>${num(v)}</b> gathering XP</span></div>`}}
+    return {meta:'',html:''};
+  }
+  function stepHTML(st0,sv,i){
+    const k=stepCalc(st0); let calc=k.html;
+    const rec=st0.r?`<div class="small cglbl">Recipe:</div>${recipeLine(st0.r)}`:'';
+    if(st0.tdl){const t=(lv,kk)=>[lv,70,85,100].filter((x,j,a)=>a.indexOf(x)===j&&x>=lv).map(P=>`${P}: <b>${pc(curveAt(kk,P-lv))}</b>`).join(' · ');
+      calc+=`<div class="cgcalc small"><span>True Dragon Lord success by proficiency (recipes that open at 55): ${t(55,'c1')}</span><span>(open at 60): ${t(60,'c6')}</span></div>`;}
+    const id=st0.id+'-d', done=!!sv[st0.id];
+    return `<li class="cgstep${done?' done':''}"><div class="cgsrow"><label class="check"><input type="checkbox" data-sv="${h(st0.id)}"${done?' checked':''}><span class="what"><span class="cgno">${(i||0)+1}</span> <span class="tag gold">${h(st0.lv)}</span> <b>${h(st0.t)}</b></span></label>${k.meta?`<span class="small muted cgmeta">${h(k.meta)}</span>`:''}</div>
+      <details class="cgmore" id="${h(id)}"${OPEN.has(id)?' open':''}><summary class="small">Details</summary>
+      <p class="small">${h(st0.do)}</p>${rec}${calc}${st0.tip?`<p class="small muted"><b>Tip:</b> ${h(st0.tip)}</p>`:''}${st0.gplan?`<p class="small">Skill costs and effects: <a href="#cg-gtree" data-cggo="cg-gtree">Gathering skill tree</a>. Your own split: <a href="#cg-gplan" data-cggo="cg-gplan">Gathering point planner</a>.</p>`:''}${st0.ladder?`<p class="small muted">The crafts your slot needs, tier by tier, are in <a href="#cg-gear" data-cggo="cg-gear">Gear you can craft</a>.</p>`:''}${srcLine(st0.src)}</details></li>`;
   }
   function routeHTML(){
-    const d=D(), s=st(), sv=(S.get?S.get('sv',{}):{})||{};
+    const d=D(), s=st(), sv=svGet();
     const R=d.routes.find(r=>r.k===s.route)||d.routes[0];
-    const btns=d.routes.map(r=>`<button type="button" data-cgroute="${r.k}" aria-pressed="${r.k===R.k}">${h(r.name.replace(' (Essence Extraction)',''))}</button>`).join('');
+    const btns=d.routes.map(r=>{const n0=r.steps.filter(x=>sv[x.id]).length;
+      return `<button type="button" class="cgpbtn" data-cgroute="${r.k}" aria-pressed="${r.k===R.k}"><span class="cgpname">${h(r.name.replace(' (Essence Extraction)',''))}</span><span class="small muted">${n0}/${r.steps.length}</span>${bar(n0,r.steps.length)}</button>`}).join('');
     const done=R.steps.filter(x=>sv[x.id]).length;
     const V=d.video;
-    return `<div class="cgbar"><span class="seg cgseg" role="group" aria-label="Profession">${btns}</span></div>
-      <p class="small"><span class="tag wind">${h(R.pick)}</span> ${h(R.why)} <span class="muted">${done}/${R.steps.length} steps ticked.</span></p>
+    return `<p class="small">Pick a profession, then work down the list and tick each step when it's done. <b>Details</b> on a step shows the recipe, the materials, the Kina and the time.</p>
+      <div class="cgpgrid" role="group" aria-label="Profession">${btns}</div>
+      <p class="small cgrhead"><span class="tag wind">${h(R.pick)}</span> ${h(R.why)}</p>
+      <div class="cgprog small">${bar(done,R.steps.length)}<span><b>${done}</b> of ${R.steps.length} steps done</span></div>
       <ol class="cgsteps">${R.steps.map((x,i)=>stepHTML(x,sv,i)).join('')}</ol>
-      <p class="small muted">${h(d.xpRules)} Crafts take about ${d.secPerCraft} s each in an AFK queue (GAC Film Room measured 76 in about 7 minutes); queues of 999 have run overnight (Duky). Estimates use Korean-measured XP per craft where Global has no number.</p>
-      <details class="cgsub"><summary><b>How this route differs from Screamheart's video</b> <span class="small muted">what we kept and what we changed, and why</span></summary>
+      <details class="cgsub" id="cg-route-how"${OPEN.has('cg-route-how')?' open':''}><summary><b>How the numbers are worked out</b> <span class="small muted">XP per craft, time per craft, Korean numbers</span></summary>
+        <p class="small muted">${h(d.xpRules)} Crafts take about ${d.secPerCraft} s each in an AFK queue (GAC Film Room measured 76 in about 7 minutes); queues of 999 have run overnight (Duky). Estimates use Korean-measured XP per craft where Global has no number. "Vendor items" counts only the materials you buy from NPCs.</p></details>
+      <details class="cgsub" id="cg-route-video"${OPEN.has('cg-route-video')?' open':''}><summary><b>How this route differs from Screamheart's video</b> <span class="small muted">what we kept and what we changed, and why</span></summary>
         <p class="small">${h(V.intro)} ${srcLinks([V.s])}</p>
-        <div class="tablewrap"><table><thead><tr><th>In the video</th><th>Our route</th></tr></thead><tbody>${V.diffs.map(x=>`<tr><td class="small">${h(x.his)}</td><td class="small">${h(x.ours)} <span class="muted">(${srcLinks(x.src)})</span></td></tr>`).join('')}</tbody></table></div></details>
-      <details class="cgsub"><summary><b>Achievements and titles that pay you for crafting</b> <span class="small muted">refining stones, Ultimate stones and titles</span></summary>
+        <div class="tablewrap cgstackw"><table class="cgtab cgstack"><thead><tr><th>In the video</th><th>Our route</th></tr></thead><tbody>${V.diffs.map(x=>`<tr><td class="small">${h(x.his)}</td><td class="small">${h(x.ours)} <span class="muted">(${srcLinks(x.src)})</span></td></tr>`).join('')}</tbody></table></div></details>
+      <details class="cgsub" id="cg-route-ach"${OPEN.has('cg-route-ach')?' open':''}><summary><b>Achievements and titles that pay you for crafting</b> <span class="small muted">refining stones, Ultimate stones and titles</span></summary>
         <ul class="plain small">${d.ach.map(a=>`<li><b>${h(a.n)}</b>: ${h(a.g)}. <span class="muted">${h(a.r)}</span></li>`).join('')}</ul>
         <p class="small">Tick them on <a href="#achfarm" data-goto="achfarm">Achievement farming</a>. Levelling a second profession to 50 just for its 2 Artisan's Refining Stones and 2 Ultimate stones is worth it (Screamheart).</p>${srcLine(d.achSrc)}</details>`;
   }
@@ -7374,29 +7394,34 @@ var A2T=(function(){
   const tagOf=t=>`<span class="tag${/Unconfirmed/i.test(t)?' warn':''}">${h(t)}</span>`;
   function oneHTML(){
     const d=D(), O=d.onecrafter; if(!O) return '';
-    const sv=(S.get?S.get('sv',{}):{})||{};
+    const sv=svGet();
     const tot={xp:0,n:0,kina:0,secs:0,raw:{}}, gx={v:0};
     const steps=O.order.map((st0,i)=>{
-      let calc='';
+      let calc='', meta='';
       if(st0.calc){
-        const parts=st0.calc.map(c=>{const r=routeCalc(c);tot.xp+=r.xp;tot.n+=r.n;tot.kina+=r.kina;tot.secs+=r.secs;Object.entries(r.raw).forEach(([pn,q])=>tot.raw[pn]=(tot.raw[pn]||0)+q);
+        let n=0,secs=0;
+        const parts=st0.calc.map(c=>{const r=routeCalc(c);tot.xp+=r.xp;tot.n+=r.n;tot.kina+=r.kina;tot.secs+=r.secs;n+=r.n;secs+=r.secs;Object.entries(r.raw).forEach(([pn,q])=>tot.raw[pn]=(tot.raw[pn]||0)+q);
           return `<span>${st0.calc.length>1?(c.p?h(c.p)+' ':'')+c.from+'–'+c.to+': ':''}<b>${num(r.n)}</b> crafts, ${num(r.kina)} vendor Kina, ${fmtTime(r.secs)}</span>`});
-        calc=`<div class="cgcalc small">${parts.join('')}</div>`;
+        calc=`<div class="cgcalc small">${parts.join('')}</div>`; meta=`about ${num(n)} crafts · ${fmtTime(secs)}`;
       }
-      if(st0.gcalc){const v=gxp(st0.gcalc.from,st0.gcalc.to);gx.v+=v;calc=`<div class="cgcalc small"><span><b>${num(v)}</b> gathering XP</span></div>`}
-      return `<li class="cgstep"><label class="check"><input type="checkbox" data-sv="${h(st0.id)}"${sv[st0.id]?' checked':''}><span class="what"><span class="cgno">Step ${i+1}</span> <b>${h(st0.t)}</b></span></label>
-        <p class="small">${h(st0.do)}</p>${calc}${srcLine(st0.src)}</li>`}).join('');
+      if(st0.gcalc){const v=gxp(st0.gcalc.from,st0.gcalc.to);gx.v+=v;calc=`<div class="cgcalc small"><span><b>${num(v)}</b> gathering XP</span></div>`;meta=`${num(v)} gathering XP`}
+      const id=st0.id+'-d', done=!!sv[st0.id];
+      return `<li class="cgstep${done?' done':''}"><div class="cgsrow"><label class="check"><input type="checkbox" data-sv="${h(st0.id)}"${done?' checked':''}><span class="what"><span class="cgno">${i+1}</span> <b>${h(st0.t)}</b></span></label>${meta?`<span class="small muted cgmeta">${h(meta)}</span>`:''}</div>
+        <details class="cgmore" id="${h(id)}"${OPEN.has(id)?' open':''}><summary class="small">Details</summary><p class="small">${h(st0.do)}</p>${calc}${srcLine(st0.src)}</details></li>`}).join('');
+    const nd=O.order.filter(x=>sv[x.id]).length;
     const ess=tot.raw["Balaur's Essence"]||0, c=costOf(tot.raw);
     return `<p class="small callout ok"><b>Short answer:</b> ${h(O.verdict)}</p>${srcLine(O.verdictSrc)}
-      <ul class="plain small cgrules">${O.facts.map(x=>`<li><b>${h(x.t)}</b> ${tagOf(x.tag)}<br>${h(x.d)} <span class="muted">(${srcLinks(x.src)})</span></li>`).join('')}</ul>
-      <details class="cgsub" id="cg-one-share"${OPEN.has('cg-one-share')?' open':''}><summary><b>What your crafter can send to alts, and what each alt does itself</b> <span class="small muted">by item type, from the item tooltips</span></summary>
-        <div class="tablewrap"><table class="cgtab"><thead><tr><th>Item</th><th>Can it go to an alt?</th><th>How</th></tr></thead><tbody>${O.share.map(x=>`<tr><td class="small">${h(x.w)}</td><td class="small"><b>${h(x.a)}</b></td><td class="small">${h(x.how)} <span class="muted">(${srcLinks(x.src)})</span></td></tr>`).join('')}</tbody></table></div></details>
-      <details class="cgsub" id="cg-one-order"${OPEN.has('cg-one-order')?' open':''}><summary><b>Step by step: max every profession on one character</b> <span class="small muted">cheapest order, shared materials, time and Kina</span></summary>
-        <p class="small">Each profession's own route (with tips) is under <a href="#cg-route" data-cggo="cg-route">Fastest route to level each profession</a>; this is the order to run them in on one character.</p>
+      <details class="cgsub" id="cg-one-facts"${OPEN.has('cg-one-facts')?' open':''}><summary><b>What is shared and what isn't</b> <span class="small muted">professions, proficiency, gathering points, class and faction</span></summary>
+        <ul class="plain small cgrules">${O.facts.map(x=>`<li><b>${h(x.t)}</b> ${tagOf(x.tag)}<br>${h(x.d)} <span class="muted">(${srcLinks(x.src)})</span></li>`).join('')}</ul></details>
+      <details class="cgsub" id="cg-one-order"${OPEN.has('cg-one-order')?' open':''}><summary><b>Step by step: max every profession on one character</b> <span class="small muted">cheapest order, time and Kina · ${nd} of ${O.order.length} done</span></summary>
+        <p class="small">Each profession's own route (with tips) is under <a href="#cg-route" data-cggo="cg-route">Step-by-step leveling route</a>; this is the order to run them in on one character.</p>
+        <div class="cgprog small">${bar(nd,O.order.length)}<span><b>${nd}</b> of ${O.order.length} steps done</span></div>
         <ol class="cgsteps">${steps}</ol>
         <div class="cgcalc small"><span>Total for four professions to 100: <b>${num(tot.n)}</b> crafts</span><span>about <b>${fmtTime(tot.secs)}</b> of AFK queue</span><span>vendor Kina about <b>${num(tot.kina)}</b></span><span><b>${num(Math.ceil(ess))}</b> Balaur's Essence</span><span>at your prices <b>${num(c.k)}</b>${c.miss.length?` <span class="muted">(no price yet for ${c.miss.map(n=>h(dn(n))).join(', ')}: type it in any Your price box)</span>`:''}</span><span><b>${num(gx.v)}</b> gathering XP</span></div>
         <p class="small muted">Cooking isn't counted (no measured XP per craft), nor the upgrade quests, the gear ladders or gathering time. XP per Balaur craft is a rough Korean number, so treat the 51–100 part as an estimate. 80–100 is optional.</p></details>
-      <details class="cgsub" id="cg-one-hand"${OPEN.has('cg-one-hand')?' open':''}><summary><b>How to hand an IL102 piece to an alt</b> <span class="small muted">Server Storage, then the alt runs the upgrades</span></summary>
+      <details class="cgsub" id="cg-one-share"${OPEN.has('cg-one-share')?' open':''}><summary><b>What your crafter can send to alts, and what each alt does itself</b> <span class="small muted">by item type, from the item tooltips</span></summary>
+        <div class="tablewrap cgstackw"><table class="cgtab cgstack"><thead><tr><th>Item</th><th>Can it go to an alt?</th><th>How</th></tr></thead><tbody>${O.share.map(x=>`<tr><td class="small">${h(x.w)}</td><td class="small"><b>${h(x.a)}</b></td><td class="small">${h(x.how)} <span class="muted">(${srcLinks(x.src)})</span></td></tr>`).join('')}</tbody></table></div></details>
+      <details class="cgsub" id="cg-one-hand"${OPEN.has('cg-one-hand')?' open':''}><summary><b>How to hand an item level 102 piece to an alt</b> <span class="small muted">Server Storage, then the alt runs the upgrades</span></summary>
         <ol class="small cgnumlist">${O.handoff.map(x=>`<li>${h(x)}</li>`).join('')}</ol>${srcLine(O.handoffSrc)}</details>
       <details class="cgsub" id="cg-one-limits"${OPEN.has('cg-one-limits')?' open':''}><summary><b>Limits</b> <span class="small muted">other servers, other faction, mail</span></summary>
         <ul class="plain small cgrules">${O.limits.map(x=>`<li><b>${h(x.t)}</b> ${tagOf(x.tag)}<br>${h(x.d)} <span class="muted">(${srcLinks(x.src)})</span></li>`).join('')}</ul></details>`;
@@ -7432,61 +7457,93 @@ var A2T=(function(){
     return {steps,acc,crafts:crafts+acc._crafts};
   }
   function costOf(raw){let k=0,miss=[];Object.entries(raw).forEach(([n,q])=>{const p=priceOf(n);if(p==null)miss.push(n);else k+=p*q});return {k,miss}}
+  // material table grouped by where each material comes from (dungeon, monsters, shops, gathering, vendors, your ladder)
+  const GRP={dungeon:'Dungeon drops',mob:'Monster drops',shop:'Shops',market:'Market',other:'Drops, chests or the Market',gather:'Gathering (Essence Extraction)',vendor:'NPC vendors (bought with Kina)',ladder:'Your own ladder'};
+  const GORD={dungeon:0,mob:1,shop:2,market:3,other:4,gather:5,vendor:6,ladder:7};
   function matsTable(raw,id){
-    const rows=Object.entries(raw).sort((a,b)=>{const o={dungeon:0,mob:1,shop:2,other:3,gather:4,vendor:5,ladder:6};return (o[srcOf(a[0]).t]-o[srcOf(b[0]).t])||b[1]-a[1]});
-    return `<div class="tablewrap"><table class="cgtab"><thead><tr><th>Material</th><th>Need</th><th>Where from</th><th>Your price</th></tr></thead><tbody>${rows.map(([n,q])=>{const s=srcOf(n);const p=prices()[n];
-      return `<tr><td class="small">${item(n)}</td><td class="small">${num(Math.ceil(q))}</td><td class="small"><span class="tag">${h(s.tag)}</span> ${h(s.d)}${s.src?` <span class="muted">(${srcLinks(s.src)})</span>`:''}</td><td class="small"><input class="cgnum" type="number" min="0" step="100" data-cgprice="${h(n)}" value="${p!=null?h(p):''}" placeholder="${D().vendor[n]!=null?num(D().vendor[n]):'Kina'}" aria-label="Your price for ${h(dn(n))}">${ageTag(n)}</td></tr>`}).join('')}</tbody></table></div>`;
+    const rows=Object.entries(raw).map(([n,q])=>({n,q,s:srcOf(n)})).sort((a,b)=>(((GORD[a.s.t]!=null?GORD[a.s.t]:9)-(GORD[b.s.t]!=null?GORD[b.s.t]:9))||b.q-a.q));
+    let last=null, body='';
+    rows.forEach(({n,q,s})=>{
+      if(s.t!==last){last=s.t;const cnt=rows.filter(r=>r.s.t===s.t).length;
+        body+=`<tr class="cggrp"><th colspan="4">${h(GRP[s.t]||s.tag)} <span class="muted">(${cnt})</span>${s.t==='gather'?`<div class="small muted cggnote">${h(D().gatherNote)}</div>`:''}</th></tr>`}
+      const p=prices()[n], where=s.t==='gather'?'Gathering node':h(s.d)+(s.src?` <span class="muted">(${srcLinks(s.src)})</span>`:'');
+      body+=`<tr><td class="small cgmn">${item(n)}</td><td class="small cgmq"><b>${num(Math.ceil(q))}</b></td><td class="small cgmw">${where}</td><td class="small cgmp"><input class="cgnum" type="number" min="0" step="100" data-cgprice="${h(n)}" value="${p!=null?h(p):''}" placeholder="${D().vendor[n]!=null?num(D().vendor[n]):'Kina'}" aria-label="Your price for ${h(dn(n))}">${ageTag(n)}</td></tr>`});
+    return `<div class="tablewrap cgmtw"><table class="cgtab cgmt"><thead><tr><th>Material</th><th>Need</th><th>Where exactly</th><th>Your price</th></tr></thead><tbody>${body}</tbody></table></div>`;
+  }
+  // the chain of one slot as a ladder: tier → tier with success odds and expected crafts
+  const PHASES=[
+    {ks:['grey','exp','art'],t:'1 · The ladder',d:'Craft the grey piece until about 1 in 4 comes out Splendent; each Splendent goes into the next tier (grey → Expert\'s → Artisan\'s).'},
+    {ks:['tdl','stdl'],t:'2 · True Dragon Lord',d:'Uses one Artisan\'s Splendent piece. A failed craft destroys it, so craft this at high proficiency.'},
+    {ks:['white','swhite','wise','swise'],t:'3 · Upgrades to item level 102',d:'Upgrade (transfer) crafts: they never fail. Each White and Wise step uses one more Artisan\'s Splendent.'}
+  ];
+  function ladderHTML(pl,P){
+    const rung=x=>{const r=x.r, lock=r.lv>P, sp=x.o&&x.o.s<1?pc(x.o.s):'100%';
+      return `<li class="cgrung${lock?' lock':''}"><div class="cgrtop">${item(r.n)}${r.lv?` <span class="muted small">opens at ${r.lv}</span>`:''}${lock?` <span class="tag warn">needs ${r.lv}</span>`:''}</div>
+        <div class="cgrstats small"><span>success <b>${sp}</b></span><span>expected crafts <b>${n1(x.n)}</b></span></div>
+        <div class="small"><span class="muted">Each craft uses:</span> ${r.parts.map(([pn,pq])=>item(pn,pq)).join(' ')}</div>
+        <div class="small muted">${h(x.note)}</div></li>`};
+    return PHASES.map(ph=>{const xs=pl.steps.filter(x=>ph.ks.includes(x.k));if(!xs.length)return '';
+      return `<div class="cgphase"><div class="cgphh"><b>${h(ph.t)}</b> <span class="small muted">${h(ph.d)}</span></div><ol class="cgladder">${xs.map(rung).join('')}</ol></div>`}).join('');
   }
   function slotHTML(sl,P,sv){
     const L=line(sl.k); if(!L) return '';
     const pl=plan(L,P), c=costOf(pl.acc.raw);
     const id='cg-gear-'+sl.k.toLowerCase();
-    const stepRows=pl.steps.map(x=>{const r=x.r;const lock=r.lv>P;
-      return `<tr><td class="small">${item(r.n)}${r.lv?` <span class="muted">(${r.lv})</span>`:''}${lock?' <span class="tag">needs '+r.lv+'</span>':''}</td><td class="small">${x.o&&x.o.s<1?pc(x.o.s):'100%'}</td><td class="small">${n1(x.n)}</td><td class="small">${r.parts.map(([pn,pq])=>item(pn,pq)).join(' ')}<br><span class="muted">${h(x.note)}</span></td></tr>`}).join('');
     const subs=Object.entries(pl.acc._sub).map(([n,k])=>`${item(n)} about ${num(Math.ceil(k))} crafts`).join(' · ');
-    return `<details class="cgsub" id="${id}"><summary><b>${h(sl.n)}: ${h(dn(L.swise?L.swise.n:L.wise.n))}</b> <span class="small muted">${h(sl.why)}</span></summary>
+    return `<details class="cgsub" id="${id}"${OPEN.has(id)?' open':''}><summary><b>${h(sl.n)}: ${h(dn(L.swise?L.swise.n:L.wise.n))}</b>${sv[id]?' <span class="tag wind">have it</span>':''} <span class="small muted">${h(sl.why)}</span></summary>
       <label class="check"><input type="checkbox" data-sv="${id}"${sv[id]?' checked':''}><span class="what small">I have this piece</span></label>
-      <p class="small"><b>Full chain at proficiency ${P}:</b> about <b>${num(pl.crafts)}</b> crafts in total (about ${fmtTime(pl.crafts*D().secPerCraft)} of queue), vendor and your-price Kina about <b>${num(c.k)}</b>${c.miss.length?` <span class="muted">(+ ${c.miss.length} materials without a price: type them below)</span>`:''}.</p>
-      <div class="tablewrap"><table class="cgtab"><thead><tr><th>Step</th><th>Success</th><th>Crafts (expected)</th><th>Each craft uses</th></tr></thead><tbody>${stepRows}</tbody></table></div>
+      <p class="small"><b>The whole chain at proficiency ${P}:</b> about <b>${num(pl.crafts)}</b> crafts (about ${fmtTime(pl.crafts*D().secPerCraft)} of AFK queue) and about <b>${num(c.k)}</b> Kina at vendor and your prices${c.miss.length?` <span class="muted">(+ ${c.miss.length} materials without a price: type them in All raw materials)</span>`:''}.</p>
+      ${ladderHTML(pl,P)}
       ${subs?`<p class="small muted">Intermediate crafts inside this: ${subs}.</p>`:''}
-      <details class="cgsub"><summary><b>All raw materials</b> <span class="small muted">expanded down to gathered, dropped and vendor items, with where each comes from</span></summary>${matsTable(pl.acc.raw,id)}
+      <details class="cgsub" id="${id}-mats"${OPEN.has(id+'-mats')?' open':''}><summary><b>All raw materials</b> <span class="small muted">grouped by where you get them, with your prices</span></summary>${matsTable(pl.acc.raw,id)}
       <p class="small pricecheck"><b>Craft or buy?</b> Grey, Expert's and Artisan's pieces and a Splendent True Dragon Lord from a great success can be bought: if the Market price is below your material cost, buy that step. Upgrade results can't be sold. Check prices: ${PRICE_LINKS}. The in-game Market (28-day price) is the final word.</p></details>
       ${srcLine(sl.src)}</details>`;
   }
   function gearHTML(){
-    const d=D(), s=st(), P=Math.max(1,Math.min(100,+s.prof||90)), sv=(S.get?S.get('sv',{}):{})||{};
+    const d=D(), s=st(), P=Math.max(1,Math.min(100,+s.prof||90)), sv=svGet();
     const wt=(d.weapons||{})[typeof SLUG!=='undefined'?SLUG:'']||'';
     const types=['Greatsword','Longsword','Dagger','Mace','Bow','Staff','Spellbook','Orb'];
     const wsel=s.slot&&types.includes(s.slot)?s.slot:(wt||'Longsword');
-    let o=`<p class="small">In priority order. Each piece needs <b>3 Artisan's Splendent</b> copies from its ladder (grey → Expert's → Artisan's, 25% Splendent each step), then True Dragon Lord, then the White and Wise upgrades. Numbers are expected values at your proficiency; luck moves them a lot (Screamheart got 24 Splendents from 69 greys, about 1 in 3).</p>
-      <div class="cgbar small"><label>Weapon type <select data-cgslot="1">${types.map(t=>`<option value="${t}"${t===wsel?' selected':''}>${t}${t===wt?' (your class)':''}</option>`).join('')}</select></label></div>`;
+    let o=`<p class="small">The pieces below are in the order to craft them. Each one is a <b>ladder</b>: craft the grey piece until a Splendent comes out, feed it into the Expert's tier, then the Artisan's tier. You need about <b>3 Artisan's Splendent</b> per piece (one each for True, White and Wise Dragon Lord). Numbers are expected values; luck moves them a lot (Screamheart got 24 Splendents from 69 greys, about 1 in 3).</p>
+      <div class="cgbar small cgtool"><label>Weapon type <select data-cgslot="1">${types.map(t=>`<option value="${t}"${t===wsel?' selected':''}>${t}${t===wt?' (your class)':''}</option>`).join('')}</select></label>
+        <label>Your crafting proficiency (1–100) <input class="cgnum" type="number" min="1" max="100" data-cgprof="1" value="${h(s.prof)}"></label><span class="muted">Professional 1–50 counts as 51–100.</span></div>`;
     d.slots.forEach(sl=>{
       if(sl.k==='weapon') o+=slotHTML(Object.assign({},sl,{k:wsel,n:'1. '+sl.n}),P,sv);
       else if(sl.more){o+=slotHTML(Object.assign({},sl,{n:'6. '+sl.n+' (breastplate shown)'}),P,sv);
-        o+=`<details class="cgsub"><summary><b>Other armor pieces</b> <span class="small muted">greaves, helm, pauldrons, boots, gloves, cloak</span></summary>${sl.more.map(k=>slotHTML({k,n:k,why:'Same chain as the breastplate, smaller amounts.',src:sl.src},P,sv)).join('')}</details>`}
+        o+=`<details class="cgsub" id="cg-gear-more"${OPEN.has('cg-gear-more')?' open':''}><summary><b>Other armor pieces</b> <span class="small muted">greaves, helm, pauldrons, boots, gloves, cloak</span></summary>${sl.more.map(k=>slotHTML({k,n:k,why:'Same chain as the breastplate, smaller amounts.',src:sl.src},P,sv)).join('')}</details>`}
       else o+=slotHTML(Object.assign({},sl,{n:(['Guard','Ring','Earrings','Necklace'].indexOf(sl.k)+2)+'. '+sl.n}),P,sv);
     });
-    o+=`<details class="cgsub"><summary><b>Consumables worth crafting</b> <span class="small muted">potions, scrolls, food and stones</span></summary><div class="tablewrap"><table class="cgtab"><thead><tr><th>Item</th><th>Recipe</th><th>Why</th></tr></thead><tbody>${d.consumables.map(x=>{const r=idx()[x.r];return r?`<tr><td class="small">${item(x.r)} <span class="muted">(${h(r.p)} ${r.lv})</span></td><td class="small">${r.parts.map(([pn,pq])=>item(pn,pq)).join(' ')}</td><td class="small">${h(x.why)} <span class="muted">(${srcLinks(x.src)})</span></td></tr>`:''}).join('')}</tbody></table></div></details>`;
-    o+=`<details class="cgsub"><summary><b>Other things people ask about</b> <span class="small muted">Philosopher's Stone, Wrathful materials after 21 Oct, Daevanion crystals, Arcana Transmute</span></summary><ul class="plain small">${d.other.map(x=>`<li><b>${h(x.t)}:</b> ${h(x.d)} <span class="muted">(${srcLinks(x.src)})</span></li>`).join('')}</ul>
-      <p class="small">Dungeon details: <a href="#dungeonguide" data-goto="dungeonguide">Dungeon guides</a>. Where else an item comes from: <a href="#itemfinder" data-goto="itemfinder">Item finder</a>. Upgrade costs after crafting: <a href="#sys-costplan" data-goto="sys-costplan">Upgrade cost planner</a>.</p></details>`;
+    o+=`<details class="cgsub" id="cg-gear-cons"${OPEN.has('cg-gear-cons')?' open':''}><summary><b>Consumables worth crafting</b> <span class="small muted">potions, scrolls, food and stones</span></summary><div class="tablewrap cgstackw"><table class="cgtab cgstack"><thead><tr><th>Item</th><th>Recipe</th><th>Why</th></tr></thead><tbody>${d.consumables.map(x=>{const r=idx()[x.r];return r?`<tr><td class="small">${item(x.r)} <span class="muted">(${h(r.p)} ${r.lv})</span></td><td class="small">${r.parts.map(([pn,pq])=>item(pn,pq)).join(' ')}</td><td class="small">${h(x.why)} <span class="muted">(${srcLinks(x.src)})</span></td></tr>`:''}).join('')}</tbody></table></div></details>`;
+    o+=`<details class="cgsub" id="cg-gear-other"${OPEN.has('cg-gear-other')?' open':''}><summary><b>Other things people ask about</b> <span class="small muted">Philosopher's Stone, Wrathful materials after 21 Oct, Daevanion crystals, Arcana Transmute</span></summary><ul class="plain small">${d.other.map(x=>`<li><b>${h(x.t)}:</b> ${h(x.d)} <span class="muted">(${srcLinks(x.src)})</span></li>`).join('')}</ul>
+      <p class="small">Dungeon details: <a href="#dungeonguide" data-goto="dungeonguide">Dungeon guides</a>. Where else an item comes from: <a href="#itemfinder" data-goto="itemfinder">Item finder</a>. Upgrade costs after crafting (and Screamheart's crafting cost sheet): <a href="#sys-costplan" data-goto="sys-costplan">Upgrade cost planner</a>.</p></details>`;
     return o;
   }
 
   /* ---------- (3) money makers ---------- */
   function moneyHTML(){
     const M=D().money, P=100;
-    const rows=M.picks.map(x=>{const r=idx()[x.r];if(!r)return '';const o=outc(r,P);const exp=o.plain+o.combo*2;
-      return `<tr><td class="small">${item(x.r)} <span class="muted">(${h(r.p)} ${r.lv})</span></td><td class="small">${pc(o.s)}${r.c?` · combo ${r.c}% (${pc(o.p)})`:' · no combo'}<br>about <b>${(Math.round(exp*100)/100)}</b> items a craft</td><td class="small">${h(x.cost)}<br>break-even ${h(x.be)}</td><td class="small">${h(x.seen)}<br><span class="muted">${h(x.note)}</span></td><td class="small">${srcLinks([x.s])}<br><button type="button" class="btn cgmini" data-cgcalc="${h(x.r)}">Open in calculator</button></td></tr>`}).join('');
-    return `<p class="small"><b>The formula.</b> ${h(M.formula)}</p>
-      <div class="tablewrap"><table class="cgtab"><thead><tr><th>Craft</th><th>Odds at Professional 50 (100)</th><th>His cost</th><th>Price he saw</th><th>Video</th></tr></thead><tbody>${rows}</tbody></table></div>
-      <p class="small muted">From GAC Film Room's "Idle Crafting for Profit" series (9–12 Oct). Prices move every day and differ by server: redo the math with today's prices in the calculator. His free recipe sheets: ${srcLinks(['gacbook'])}.</p>
-      <ul class="plain small">${M.tips.map(t=>`<li>${h(t.d)} <span class="muted">(${srcLinks(t.src)})</span></li>`).join('')}</ul>
-      <p class="small pricecheck"><b>Check prices:</b> ${PRICE_LINKS}. Market fees and the daily Kina cap: <a href="#sys-sellcraft" data-goto="sys-sellcraft">Market fees and crafting for profit</a>.</p>${pricePanel('cg-money')}`;
+    const cards=M.picks.map(x=>{const r=idx()[x.r];if(!r)return '';const o=outc(r,P);const exp=o.plain+o.combo*2;
+      return `<li class="cgcard"><div class="cgrtop">${item(x.r)} <span class="muted small">(${h(r.p)} ${r.lv})</span></div>
+        <div class="cgrstats small"><span>success at Professional 50 (100): <b>${pc(o.s)}</b>${r.c?` · great success ${r.c}% (${pc(o.p)})`:' · no great success'}</span><span>about <b>${(Math.round(exp*100)/100)}</b> items a craft</span></div>
+        <div class="small"><span class="muted">His cost:</span> ${h(x.cost)} · <span class="muted">break-even:</span> <b>${h(x.be)}</b></div>
+        <div class="small"><span class="muted">Price he saw:</span> ${h(x.seen)}</div>
+        <div class="small muted">${h(x.note)} ${srcLinks([x.s])}</div>
+        <button type="button" class="btn cgmini" data-cgcalc="${h(x.r)}">Work it out with my prices</button></li>`}).join('');
+    return `<ol class="small cgnumlist"><li>Pick a craft below (they sold for profit in GAC Film Room's tests).</li><li>Put today's prices for your server into <b>Your Market prices</b> (bottom of this part).</li><li>Press <b>Work it out with my prices</b>: craft only if the Market price is above your break-even.</li></ol>
+      <ul class="cgcards">${cards}</ul>
+      <p class="small muted">From GAC Film Room's "Idle Crafting for Profit" series (9–12 Oct). Prices move every day and differ by server: redo the math with today's prices. His free recipe sheets: ${srcLinks(['gacbook'])}.</p>
+      <details class="cgsub" id="cg-money-tips"${OPEN.has('cg-money-tips')?' open':''}><summary><b>Selling tips</b> <span class="small muted">what sells, when, and how to list it</span></summary>
+        <ul class="plain small cgrules">${M.tips.concat(M.sell||[]).map(t=>`<li>${h(t.d)} <span class="muted">(${srcLinks(t.src)})</span></li>`).join('')}</ul></details>
+      <details class="cgsub" id="cg-money-math"${OPEN.has('cg-money-math')?' open':''}><summary><b>How the profit math works</b> <span class="small muted">expected items, cost per item, break-even</span></summary>
+        <p class="small">${h(M.formula)}</p>
+        <p class="small">Market fees and the daily Kina cap: <a href="#sys-sellcraft" data-goto="sys-sellcraft">Market fees and crafting for profit</a> (Kina &amp; market).</p></details>
+      ${pricePanel('cg-money')}`;
   }
 
-  /* ---------- (4) rules ---------- */
+  /* ---------- (4) rules: one line each + why, details on demand ---------- */
   function rulesHTML(){
-    return `<ul class="plain small cgrules">${D().rules.map(r=>`<li><b>${h(r.t)}</b> <span class="tag">${h(r.tag)}</span><br>${h(r.d)} <span class="muted">(${srcLinks(r.src)})</span></li>`).join('')}</ul>`;
+    return `<p class="small">Each of these has cost players materials or Kina. Open one for the details and sources.</p>
+      <ol class="cgrulelist small">${D().rules.map((r,i)=>`<li><details class="cgmore" id="cg-rule-${i}"${OPEN.has('cg-rule-'+i)?' open':''}><summary><b>${h(r.t)}</b>${r.why?`: <span>${h(r.why)}</span>`:''}</summary><p class="small">${h(r.d)} <span class="tag">${h(r.tag)}</span> <span class="muted">(${srcLinks(r.src)})</span></p></details></li>`).join('')}</ol>`;
   }
 
   /* ---------- (5) calculators ---------- */
@@ -7496,7 +7553,7 @@ var A2T=(function(){
     const opts=D().xpr.filter(x=>x.prof.includes(c.prof));
     if(!opts.find(x=>x.r===c.r)) c.r=(opts[0]||{}).r||'';
     const x=opts.find(o=>o.r===c.r)||{}; const b=bulkOf(c.r);
-    return `<h4 class="cgh4">Proficiency: from your level to a target</h4>
+    return `<h4 class="cgh4">How many crafts to reach a level</h4><p class="small muted cgtd">Your profession, a recipe, your level now and the level you want: crafts, materials, Kina and time.</p>
       <div class="cgform small">
         <label>Profession <select data-cg1="prof">${profList().map(p=>`<option${p===c.prof?' selected':''}>${p}</option>`).join('')}</select></label>
         <label>Recipe <select data-cg1="r">${opts.map(o=>`<option value="${h(o.r)}"${o.r===c.r?' selected':''}>${h(dn(o.r))}</option>`).join('')}</select></label>
@@ -7528,7 +7585,7 @@ var A2T=(function(){
     const s=st(), c=Object.assign({r:'Superior Life Serum',n:100,p:100,sell:''},s.c2);
     idx();
     const names=[...new Set(ALLR.map(r=>r.n))].sort();
-    return `<h4 class="cgh4">N crafts of one item: materials, odds, cost and break-even</h4>
+    return `<h4 class="cgh4">What a batch of one item costs and makes</h4><p class="small muted cgtd">Any recipe, how many crafts and your proficiency: the odds, the materials, your cost per item and your break-even price.</p>
       <div class="cgform small">
         <label class="wide">Item <input list="cg2list" data-cg2="r" value="${h(dn(c.r))}" autocomplete="off"></label><datalist id="cg2list">${names.map(n=>`<option value="${h(dn(n))}">`).join('')}</datalist>
         <label>Crafts <input class="cgnum" type="number" min="1" max="9999" data-cg2="n" value="${h(c.n)}"></label>
@@ -7549,12 +7606,13 @@ var A2T=(function(){
     const cost=costOf(acc.raw), per=items?cost.k/items:null, be=per!=null?per/0.88:null, sell=+c.sell||0;
     const comboName=r.c?(gl?(/^Splendent|Dragon Lord/.test(r.n)&&!/^(True|White|Wise)/.test(r.n)?'great success':dn(splName(r.n))):`2× ${dn(r.n)} (great success)`):'';
     box.innerHTML=`<p class="small">${recipeLine(r.n)}</p>
-      <div class="cgcalc small"><span>success <b>${pc(o.s)}</b>${r.lv>P?` <span class="tag">needs ${r.lv}</span>`:''}</span>${r.c?`<span>combo ${r.c}% then ${pc(o.p)}</span>`:''}<span>normal <b>${n1(N*o.plain)}</b></span>${r.c?`<span>${h(comboName)} <b>${n1(N*o.combo)}</b></span>`:''}<span>nothing (failed) <b>${n1(N*o.lost)}</b></span><span>idle time <b>${fmtTime(N*D().secPerCraft)}</b></span></div>
+      <div class="cgcalc small"><span>success <b>${pc(o.s)}</b>${r.lv>P?` <span class="tag">needs ${r.lv}</span>`:''}</span>${r.c?`<span>great success chance ${r.c}%, which then succeeds ${pc(o.p)}</span>`:''}<span>normal <b>${n1(N*o.plain)}</b></span>${r.c?`<span>${h(comboName)} <b>${n1(N*o.combo)}</b></span>`:''}<span>nothing (failed) <b>${n1(N*o.lost)}</b></span><span>idle time <b>${fmtTime(N*D().secPerCraft)}</b></span></div>
       <div class="cgcalc small"><span>cost <b>${num(cost.k)}</b>${cost.miss.length?` <span class="muted">(${cost.miss.length} prices missing)</span>`:''}</span><span>cost per item <b>${num(per)}</b></span><span>break-even <b>${num(be)}</b></span>${sell?`<span>profit at ${num(sell)} <b>${num(items*sell*0.88-cost.k)}</b></span>`:''}</div>
       ${matsTable(acc.raw,'cg2')}${Object.keys(acc._sub).length?`<p class="small muted">Includes ${Object.entries(acc._sub).map(([n,k])=>`${num(Math.ceil(k))} ${h(dn(n))} crafts`).join(', ')}.</p>`:''}
       <p class="small muted">Odds from the Global client's success curves (MetaBot.GG). A failed craft or a failed combo gives nothing and uses the materials. Break-even = cost per item ÷ 0.88.</p>`;
   }
-  function calcHTML(){return pricePanel('cg-calc')+calc1HTML()+'<hr class="cghr">'+calc2HTML()+`<p class="small pricecheck"><b>Prices:</b> type your server's prices into any "Your price" box, or paste a list in "Your Market prices" above; they're saved per server in this browser, with the date, and used everywhere in this guide (crafting calculator, money makers, upgrade cost planner). Check: ${PRICE_LINKS}.</p>`}
+  function calcHTML(){return `<p class="small">Both calculators use your saved prices: fill in <b>Your Market prices</b> below, or type a price into any "Your price" box.</p>
+    <div class="cgtool">${calc1HTML()}</div><div class="cgtool">${calc2HTML()}</div>${pricePanel('cg-calc')}<p class="small pricecheck"><b>Prices:</b> they're saved per server in this browser, with the date, and used everywhere in this guide (crafting calculator, money makers, upgrade cost planner). Check: ${PRICE_LINKS}.</p>`}
 
   /* ---------- (1c) gathering skill tree + point planner (data: CRAFTGUIDE.gtree, gicons, gfamw; numbers: MetaBot.GG gathering = Global client) ---------- */
   const GT=()=>D().gtree;
@@ -7643,7 +7701,7 @@ var A2T=(function(){
     const profs=PROFS.map(n=>`<label class="check"><input type="checkbox" data-cggpprof="${n}"${(p.profs||[]).includes(n)?' checked':''}> ${h(n)}</label>`).join('');
     const famOpt=`<option value="auto"${p.fam2==='auto'?' selected':''}>Automatic</option>`+g.spec.fams.filter(f=>f.k!=='od').map(f=>`<option value="${f.k}"${p.fam2===f.k?' selected':''}>${h(f.n)}</option>`).join('');
     return `<p class="small">Pick your gathering level and what you gather for. The planner spends your points in the best order, respecting the Novice caps and the unlock order, and remembers your choices in this browser.</p>
-      <div class="cgform small">
+      <div class="cgtool"><div class="cgform small">
         <label>Gathering level (1–100) <input class="cgnum" type="number" min="1" max="100" data-cggp="lv" value="${h(p.lv)}"></label>
         <label>Common points <input class="cgnum" type="number" min="0" max="95" data-cggp="cp" placeholder="from level" value="${h(p.cp)}"></label>
         <label>Specialty points <input class="cgnum" type="number" min="0" max="14" data-cggp="sp" placeholder="from level" value="${h(p.sp)}"></label>
@@ -7652,7 +7710,7 @@ var A2T=(function(){
       </div>
       <p class="small muted">Professional 1–50 counts as 51–100. Leave the point boxes empty to use what your level gives.</p>
       <div class="cgbar"><span class="small">Goal:</span> <span class="seg cgseg" role="group" aria-label="Gathering goal">${goals}</span></div>
-      <div class="cgform small" id="cggpprofs"${p.goal==='prof'?'':' hidden'}>${profs}</div>
+      <div class="cgform small" id="cggpprofs"${p.goal==='prof'?'':' hidden'}>${profs}</div></div>
       <div id="cggpout" aria-live="polite"></div>`;
   }
   function gplanOut(){
@@ -7691,31 +7749,203 @@ var A2T=(function(){
 
   /* ---------- render ---------- */
   const SECS=[
-    ['cg-route','Fastest route to level each profession','Level band → what to craft, materials, Kina and time. Tick the steps as you go.',routeHTML],
-    ['cg-gtree','Gathering skill tree','All 21 Essence Extraction skills: cost and effect at every level, unlock order, how you earn points.',gtreeHTML],
-    ['cg-gplan','Gathering point planner','Your gathering level and goal in, the best point split, what to take next and the totals out.',gplanHTML],
-    ['cg-one','One crafter for all your characters','Can one character max every profession and craft for your alts? Yes: what can be shared, the order to max everything, and how to hand items over.',oneHTML],
-    ['cg-gear','What to craft for your gear','IL102 crafts in priority order with full material trees and where each material comes from.',gearHTML],
-    ['cg-money','Money makers','Crafts that sold for profit, the break-even formula, and selling tips.',moneyHTML],
-    ['cg-rules','Rules that cost people materials','Failures, transfers, lost stones, bulk vs single crafts.',rulesHTML],
-    ['cg-calc','Crafting calculator','Materials, Kina and time from your proficiency to a target, or for N crafts of any item.',calcHTML]
+    ['cg-route','Step-by-step leveling route','Pick a profession and tick each step: what to craft, how many, materials, Kina and time.',routeHTML],
+    ['cg-gear','Gear you can craft (up to item level 102)','Which piece to craft first, its tier-by-tier ladder with success odds, and every material grouped by where you get it.',gearHTML],
+    ['cg-money','Make Kina with crafting','Crafts that sold for profit, selling tips, and your prices.',moneyHTML],
+    ['cg-one','One crafter for all your characters','Yes, one character can max every profession: what can be shared, the order, and how to hand gear to alts.',oneHTML],
+    ['cg-gplan','Gathering point planner','Your gathering level and goal in: the best point split and what to take next.',gplanHTML],
+    ['cg-gtree','Gathering skill tree','All 21 gathering skills: cost and effect at every level, unlock order, how you earn points.',gtreeHTML],
+    ['cg-rules','Rules that cost people materials','One line each: failed crafts, upgrade crafts, lost stones, bulk crafts and more.',rulesHTML],
+    ['cg-calc','Crafting calculator and your prices','Crafts, materials, Kina and time to reach a level, or the cost and break-even of any batch.',calcHTML]
   ];
+  /* goals: which parts each goal shows, in this order (the rest is hidden until "Show everything") */
+  const GOALS=[
+    {k:'level',n:'Level my crafting fast',d:'The shortest route to 50, the upgrade quest, then on to 100.',ic:()=>icon("Novice Handicrafter's Magnifying Glass (Bound)"),secs:['cg-route','cg-calc','cg-rules','sys-crafting']},
+    {k:'gear',n:'Craft gear for my character',d:'Which item level 102 pieces to make, in order, and what they cost.',ic:()=>icon('Splendent Wise Dragon Lord Ring'),secs:['cg-gear','cg-route','cg-rules','cg-calc','sys-crafting']},
+    {k:'kina',n:'Make Kina',d:'Crafts that sold for profit, selling tips and your break-even price.',ic:()=>icon("Artisan's Kukuru Fried Meat"),secs:['cg-money','cg-calc','cg-route','cg-rules']},
+    {k:'alts',n:'One character crafts for all my alts',d:'Max every profession on one crafter and hand the gear over.',ic:()=>icon("Professional Blacksmith's Hammer (Bound)"),secs:['cg-one','cg-gear','cg-route','cg-rules','cg-calc','sys-crafting']},
+    {k:'gather',n:'Gathering only',d:'Level gathering (Essence Extraction) and spend your skill points well.',ic:()=>gico('GatherSkill_Od_01',1),secs:['cg-route','cg-gplan','cg-gtree','sys-gathering']}
+  ];
+  const OLDBOX=['sys-crafting','sys-gathering'];
+  const goalOf=s=>GOALS.find(g=>g.k===s.goal)||null;
+  const DEFROUTE={Greatsword:'black',Longsword:'black',Dagger:'black',Mace:'black',Bow:'hand',Staff:'hand',Spellbook:'alch',Orb:'alch'};
+  function classRoute(){try{const wt=(D().weapons||{})[typeof SLUG!=='undefined'?SLUG:'']||'';return DEFROUTE[wt]||'hand'}catch(e){return 'hand'}}
+
+  /* plain-language crafting words: [shown name, words that trigger it, meaning] */
+  const GLOSS=[
+    ['Proficiency',['proficiency','Proficiency','mastery','Mastery'],'Your level in one crafting profession, 1 to 100 (also called mastery). A higher level only raises your success chance; the XP per craft stays the same.'],
+    ['Novice and Professional',['Professional','Novice'],'The two ranks of a profession or of gathering: Novice 1–50, then Professional 1–50 after the upgrade quest at 50. This guide counts Professional 1–50 as 51–100.'],
+    ['Upgrade quest',['upgrade quest','Upgrade quest'],'At 50 your XP stops until you finish the "[Upgrade] … Specialty Skill" quest from that profession\'s Artisan NPC in your home town (it asks for one test item).'],
+    ['Great success',['great success','Great success','combo'],'A bonus roll on some recipes. On gear it gives the Splendent version; on food, potions and scrolls it gives twice the items. A great success can still fail.'],
+    ['Splendent',['Splendent'],'The better copy of a crafted piece, from a great success (about 1 in 4 crafts). It is the ingredient for the next tier, so keep every one.'],
+    ['Ladder',['ladder','Ladder'],'Crafting the same slot three tiers up: grey → Expert\'s → Artisan\'s. Each tier needs the Splendent copy from the tier below.'],
+    ["Artisan's Splendent",["Artisan's Splendent"],'The Splendent result of the last ladder tier. True, White and Wise Dragon Lord each use one, so plan on about 3 per piece.'],
+    ['Dragon Lord gear',['True Dragon Lord','Dragon Lord'],'The crafted gear tiers: True Dragon Lord (item level 62, Splendent 70), White (78, Splendent 86) and Wise (94, Splendent 102).'],
+    ['Upgrade (transfer) craft',['Upgrade (transfer) crafts','transfer crafts','transfer craft','Transfer crafts','Transfer Crafting','upgrade crafts','upgrade craft','Upgrade crafts'],'A recipe that turns your piece into the next tier (Splendent, White, Wise). It never fails and keeps the Soul Binding lines, but removes the stones, and the result can\'t be sold.'],
+    ['Balaur materials',['Balaur materials','Balaur Scales','Balaur Horns','Balaur Scale','Balaur Horn','Balaur Leather'],'Scales, horns and leather made from Balaur\'s Essence (a field-boss drop that is cheap on the Market). They level you from 51 to 80 and go into True Dragon Lord recipes.'],
+    ['Essence Extraction',['Essence Extraction'],'The game\'s name for gathering: ore, gem, log, Odyle, herb and food nodes, with its own level 1–100 and skill points.'],
+    ['Item level',['item level','IL102','IL62'],'The number that sums up how strong a piece is. Splendent Wise Dragon Lord is 102, the highest you can craft.'],
+    ['Wrathful materials',['Wrathful'],'Wrathful Mind, Will and Ego: rare dungeon materials (Krao Cave and Draupnir) that the top crafts need. Usually the most expensive part of a piece.'],
+    ['Break-even',['break-even','Break-even'],'The lowest sale price that doesn\'t lose money: your cost per item ÷ 0.88, because the Market keeps about 12% in fees.'],
+    ['10× (bulk) recipe',['10×','bulk'],'A recipe that makes 10 at once. It gives about half the XP of ten single crafts, so level with single crafts.'],
+    ['Seeker',['Seeker'],'Gathering skill: shows one node family on your minimap.'],
+    ['Plentiful Harvest',['Plentiful Harvest'],'Gathering skill: a chance of extra materials on each successful gather (10 / 20 / 30% by level).'],
+    ['Appraiser',['Appraiser'],'Gathering skill: a chance to reroll the grade (Fine, Pure, Radiant) of what you gathered.'],
+    ['Odyle',['Odyle'],'A gathered material from floating nodes (fly up to them) in four grades. Every profession uses it and it sells well.']
+  ];
+  let GRE=null; const GMAP={};
+  function glossRe(){if(GRE)return GRE;const w=[];GLOSS.forEach((g,i)=>g[1].forEach(x=>{GMAP[x]=i;w.push(x)}));w.sort((a,b)=>b.length-a.length);
+    GRE=new RegExp('(^|[^\\w\'])('+w.map(x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')(?![\\w])','g');return GRE}
+  const GSKIP=/^(A|BUTTON|INPUT|SELECT|OPTION|TEXTAREA|LABEL|SUMMARY|H3|H4|TH|SCRIPT|STYLE)$/;
+  function markGloss(host){
+    const re=glossRe();
+    host.querySelectorAll('[data-cgloss]').forEach(root=>{
+      const seen=new Set(); const nodes=[];
+      const tw=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode(n){
+        for(let p=n.parentNode;p&&p!==root.parentNode;p=p.parentNode){if(p.nodeType===1&&(GSKIP.test(p.tagName)||(p.classList&&(p.classList.contains('cgitem')||p.classList.contains('tag')||p.classList.contains('cgsrc')||p.classList.contains('cgt')||p.classList.contains('a2p')))))return NodeFilter.FILTER_REJECT}
+        re.lastIndex=0;return re.test(n.nodeValue)?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_SKIP}});
+      while(tw.nextNode()) nodes.push(tw.currentNode);
+      nodes.forEach(n=>{
+        const s=n.nodeValue; let last=0, out=null, m; re.lastIndex=0;
+        while((m=re.exec(s))){const gi=GMAP[m[2]]; if(gi==null||seen.has(gi)) continue; seen.add(gi);
+          const at=m.index+m[1].length; out=out||document.createDocumentFragment(); out.appendChild(document.createTextNode(s.slice(last,at)));
+          const sp=document.createElement('span'); sp.className='cgt'; sp.tabIndex=0; sp.dataset.cgt=gi; sp.setAttribute('role','button'); sp.setAttribute('aria-label',m[2]+': show meaning'); sp.textContent=m[2];
+          out.appendChild(sp); last=at+m[2].length;}
+        if(out){out.appendChild(document.createTextNode(s.slice(last))); n.parentNode.replaceChild(out,n)}
+      });
+    });
+  }
+  let tipEl=null, tipFor=null, tipAt=0;
+  function hideCgTip(){if(tipEl) tipEl.hidden=true; tipFor=null}
+  function showCgTip(sp){
+    const g=GLOSS[+sp.dataset.cgt]; if(!g) return;
+    if(!tipEl){tipEl=document.createElement('div'); tipEl.id='cgtip'; tipEl.setAttribute('role','tooltip'); tipEl.hidden=true; document.body.appendChild(tipEl)}
+    tipEl.innerHTML=`<b>${h(g[0])}</b>: ${h(g[2])}`; if(tipFor!==sp) tipAt=Date.now(); tipEl.hidden=false; tipFor=sp;
+    const r=sp.getBoundingClientRect(), sx=window.scrollX||0, sy=window.scrollY||0, W=document.documentElement.clientWidth||360;
+    const w=Math.min(320,W-32); let x=r.left+sx; if(x+w>sx+W-16) x=sx+W-16-w; if(x<sx+16) x=sx+16;
+    tipEl.style.left=x+'px'; tipEl.style.top=(r.bottom+sy+6)+'px';
+  }
+  const wordsHTML=()=>`<details class="cgsub" id="cg-words"${OPEN.has('cg-words')?' open':''}><summary><b>Crafting words in plain English</b> <span class="small muted">proficiency, Splendent, ladder, transfer crafts and more (dotted words in the guide show these too)</span></summary>
+      <dl class="cgwords small">${GLOSS.map(g=>`<dt>${h(g[0])}</dt><dd>${h(g[2])}</dd>`).join('')}</dl></details>`;
+
+  function startHTML(){
+    const s=st(), g=goalOf(s);
+    return `<div class="box cgstart" id="cg-start"><h3>Crafting &amp; gathering: start here</h3>
+      <p class="small" data-cgloss>Every character can learn all five crafting professions (Handicrafting, Blacksmithing, Armorsmithing, Alchemy and Cooking) at a crafting station (<span class="kbd">Alt</span>+<span class="kbd">G</span>), and gathering too. Each profession levels from 1 to 50 by crafting cheap items one at a time (queue hundreds and go AFK), then needs a short upgrade quest before it goes on to 100. With a high proficiency you can craft gear up to item level 102: you craft the same piece until a lucky Splendent copy comes out and use it as the ingredient for the next tier. Gathering has its own level and skill points and supplies every profession.</p>
+      <p class="small cgq"><b>What do you want to do?</b> Pick one: the guide then shows just that path and remembers your choice.</p>
+      <div class="cggoals" role="group" aria-label="Your goal">${GOALS.map(x=>`<button type="button" class="cggoal" data-cggoal="${x.k}" aria-pressed="${s.goal===x.k}">${x.ic()}<span class="cggt"><b>${h(x.n)}</b><span class="small muted">${h(x.d)}</span></span></button>`).join('')}</div>
+      <div class="cgtop small"><button type="button" class="btn cgmini" data-cggoal="all" aria-pressed="${!g}">${g?'Show everything':'Showing everything'}</button>
+        <span>Item names: <span class="seg" role="group" aria-label="Faction names"><button type="button" data-cgfac="e" aria-pressed="${s.fac!=='a'}">Elyos</button><button type="button" data-cgfac="a" aria-pressed="${s.fac==='a'}">Asmodian</button></span></span></div>
+      ${wordsHTML()}</div>`;
+  }
+
+  /* the "Your next step" card: first unticked step of the current list; Done ticks it (same data-sv keys as the lists) */
+  function stepNums(x){
+    if(!x.calc) return null; const cs=Array.isArray(x.calc)?x.calc:[x.calc]; const o={n:0,secs:0,kina:0,raw:{},crafts:{}};
+    cs.forEach(c=>{const r=routeCalc(c);o.n+=r.n;o.secs+=r.secs;o.kina+=r.kina;Object.entries(r.raw).forEach(([k,v])=>o.raw[k]=(o.raw[k]||0)+v);Object.entries(r.crafts).forEach(([k,v])=>o.crafts[k]=(o.crafts[k]||0)+v)});
+    return o.n?o:null;
+  }
+  function whereShort(n){const s=srcOf(n),v=D().vendor[n];return s.t==='gather'?'gathering nodes':v!=null?`an NPC vendor, ${num(v)} Kina each`:s.d}
+  function nextList(s){
+    const d=D();
+    if(s.goal==='alts'&&d.onecrafter) return {name:'One crafter: max every profession',sec:'cg-one',steps:d.onecrafter.order};
+    const R=d.routes.find(r=>r.k===s.route)||d.routes[0];
+    return {name:R.name,sec:'cg-route',steps:R.steps};
+  }
+  function nextHTML(){
+    const s=st(), sv=svGet(), g=goalOf(s), L=nextList(s), d=D(), n=L.steps.length;
+    const i=L.steps.findIndex(x=>!sv[x.id]), done=L.steps.filter(x=>sv[x.id]).length;
+    const undoId=(i>0&&sv[L.steps[i-1].id])?L.steps[i-1].id:(i<0&&n?L.steps[n-1].id:(L.steps.slice().reverse().find(x=>sv[x.id])||{}).id);
+    const undo=undoId?`<button type="button" class="btn cgmini" data-cgundo="${h(undoId)}">Undo the last step</button>`:'';
+    const pick=L.sec==='cg-route'?`<span class="small muted">Profession:</span> <span class="seg cgseg" role="group" aria-label="Profession">${d.routes.map(r=>`<button type="button" data-cgroute="${r.k}" aria-pressed="${r.k===s.route}">${h(r.name.replace(' (Essence Extraction)',''))}</button>`).join('')}</span>`:'';
+    let body='';
+    if(i>=0){
+      const x=L.steps[i], k=stepNums(x);
+      const make=k?Object.entries(k.crafts).map(([rn,c])=>`<span>${item(rn,Math.ceil(c))}</span>`).join(' then '):'';
+      const mats=k?Object.entries(k.raw).sort((a,b)=>b[1]-a[1]).map(([pn,q])=>`<li>${item(pn,Math.ceil(q))} <span class="muted">from ${h(whereShort(pn))}</span></li>`).join(''):'';
+      body=`<div class="cgnt"><span class="cgno">${i+1}</span> <b>${h(x.t)}</b>${x.lv?` <span class="tag gold">${h(x.lv)}</span>`:''}</div>
+        <p class="small" data-cgloss>${h(x.do)}</p>
+        ${make?`<p class="small"><b>Craft:</b> ${make}</p>`:''}
+        ${x.r?`<div class="small"><b>Recipe:</b></div>${recipeLine(x.r)}`:''}
+        ${mats?`<div class="small"><b>You need:</b></div><ul class="small cgnmats">${mats}</ul>`:''}
+        ${k?`<div class="cgcalc small"><span>about <b>${num(k.n)}</b> crafts</span><span>vendor items about <b>${num(k.kina)}</b> Kina</span><span>about <b>${fmtTime(k.secs)}</b> in an AFK queue</span></div>`:''}
+        ${x.gcalc?`<div class="cgcalc small"><span><b>${num(gxp(x.gcalc.from,x.gcalc.to))}</b> gathering XP</span></div>`:''}
+        ${x.tip?`<p class="small muted"><b>Tip:</b> ${h(x.tip)}</p>`:''}
+        <div class="cgnb"><button type="button" class="btn primary" data-cgdone="${h(x.id)}">Done: show the next step</button><button type="button" class="btn cgmini" data-cggo="${L.sec}" data-cgstep="${h(x.id)}-d">See it in the full list</button>${undo}</div>`;
+    } else if(g&&g.k==='gear'){
+      const P=Math.max(1,Math.min(100,+s.prof||90)), types=['Greatsword','Longsword','Dagger','Mace','Bow','Staff','Spellbook','Orb'];
+      const wt=(d.weapons||{})[typeof SLUG!=='undefined'?SLUG:'']||'', wsel=s.slot&&types.includes(s.slot)?s.slot:(wt||'Longsword');
+      const sl=d.slots.map(x=>x.k==='weapon'?Object.assign({},x,{k:wsel}):x).find(x=>!sv['cg-gear-'+x.k.toLowerCase()]);
+      const L2=sl&&line(sl.k);
+      if(L2){const pl=plan(L2,P), c=costOf(pl.acc.raw), id='cg-gear-'+sl.k.toLowerCase();
+        body=`<div class="cgnt"><b>Craft your ${h(sl.n.toLowerCase())}: ${h(dn(L2.swise?L2.swise.n:L2.wise.n))}</b></div>
+          <p class="small">${h(sl.why)}</p>
+          <div class="cgcalc small"><span>about <b>${num(pl.crafts)}</b> crafts at proficiency ${P}</span><span>about <b>${num(c.k)}</b> Kina at vendor and your prices${c.miss.length?` (+${c.miss.length} without a price)`:''}</span><span>about <b>${fmtTime(pl.crafts*d.secPerCraft)}</b> in an AFK queue</span></div>
+          <div class="cgnb"><button type="button" class="btn primary" data-cgdone="${id}">I have this piece</button><button type="button" class="btn cgmini" data-cggo="${id}">See its ladder and materials</button>${undo}</div>`}
+      else body=`<p class="small">Every route step is ticked and you have every piece. Next: the White and Wise upgrades on your alts' pieces, or <a href="#cg-money" data-cggo="cg-money">make Kina</a> with what's left.</p><div class="cgnb">${undo}</div>`;
+    } else body=`<p class="small">All ${n} steps of ${h(L.name)} are ticked. ${L.sec==='cg-route'?'Pick another profession above, or ':''}see <a href="#cg-money" data-cggo="cg-money">Make Kina with crafting</a>.</p><div class="cgnb">${undo}</div>`;
+    return `<div class="box cgnext" id="cg-next"><div class="cgnh"><span class="tag gold cgnbadge">Your next step</span> <span class="small muted">${h(L.name)} · ${done} of ${n} done</span>${bar(done,n)}</div>
+      ${g?'':`<p class="small muted">Pick a goal above to see only what you need. Until then this card follows the ${h(L.name)} route.</p>`}
+      ${pick?`<div class="cgbar small">${pick}</div>`:''}${body}</div>`;
+  }
+
   function css(){
     if(document.getElementById('cgcss')) return;
     const st0=document.createElement('style'); st0.id='cgcss';
     st0.textContent=['#craftguidebox{display:grid;gap:14px;min-width:0}',
+      '#craftguidebox [hidden],#sys-crafting[hidden],#sys-gathering[hidden]{display:none!important}',
       '#craftguidebox details>summary{cursor:pointer}',
       '#craftguidebox .cbody{grid-template-columns:minmax(0,1fr)}',
       '#craftguidebox .cbody>*,#craftguidebox .cgsub>*{min-width:0;max-width:100%}',
+      '#craftguidebox .cgst{font-size:17px}',
       '#craftguidebox .cgsub{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:10px 0;min-width:0}',
       '#craftguidebox .cgsub[open]>summary{margin-bottom:8px}',
       '#craftguidebox .cgbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:4px 0 10px}',
       '#craftguidebox .cgseg{flex-wrap:wrap}',
       '#craftguidebox .cgseg button{padding:7px 10px}',
-      '#craftguidebox .cgsteps{display:grid;gap:10px;padding-left:0;list-style:none;margin:0}',
-      '#craftguidebox .cgstep{border-left:3px solid var(--line);padding:4px 0 4px 12px}',
+      /* start box + goal picker */
+      '#craftguidebox .cgstart{border-left:3px solid var(--wind)}',
+      '#craftguidebox .cggoals{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:6px 0 10px}',
+      '#craftguidebox .cggoal{display:flex;gap:10px;align-items:center;text-align:left;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer;font:inherit;min-height:64px;min-width:0}',
+      '#craftguidebox .cggoal:hover{border-color:var(--wind)}',
+      '#craftguidebox .cggoal[aria-pressed="true"]{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}',
+      '#craftguidebox .cggoal .cgico,#craftguidebox .cggoal .cggico{width:34px;height:34px;flex:none;border-radius:6px}',
+      '#craftguidebox .cggt{display:flex;flex-direction:column;gap:2px;min-width:0}',
+      '#craftguidebox .cggt b{font-size:15px}',
+      '#craftguidebox .cgq{margin:10px 0 2px}',
+      '#craftguidebox .cgwords{display:grid;grid-template-columns:minmax(120px,max-content) 1fr;gap:4px 12px;margin:0}',
+      '#craftguidebox .cgwords dt{font-weight:700;color:var(--gold)}#craftguidebox .cgwords dd{margin:0}',
+      '#craftguidebox .cghidden{text-align:center;margin:0}',
+      /* next-step card */
+      '#craftguidebox .cgnext{border:1px solid var(--gold);border-left:4px solid var(--gold)}',
+      '#craftguidebox .cgnh{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-bottom:6px}',
+      '#craftguidebox .cgnh .cgpbar{flex:1 1 120px;max-width:260px}',
+      '#craftguidebox .cgnbadge{font-size:13px}',
+      '#craftguidebox .cgnt{font-size:17px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0}',
+      '#craftguidebox .cgnmats{display:grid;gap:4px;margin:4px 0 6px}',
+      '#craftguidebox .cgnb{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}',
+      /* progress, steps */
+      '#craftguidebox .cgpbar{display:inline-block;height:8px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);overflow:hidden;min-width:60px;vertical-align:middle}',
+      '#craftguidebox .cgpbar>i{display:block;height:100%;background:var(--wind)}',
+      '#craftguidebox .cgprog{display:flex;gap:10px;align-items:center;margin:6px 0 10px}#craftguidebox .cgprog .cgpbar{flex:1 1 auto;max-width:360px}',
+      '#craftguidebox .cgpgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin:6px 0 10px}',
+      '#craftguidebox .cgpbtn{display:grid;grid-template-columns:1fr auto;gap:4px 6px;align-items:center;text-align:left;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:7px 9px;cursor:pointer;font:inherit;min-width:0}',
+      '#craftguidebox .cgpbtn .cgpbar{grid-column:1/-1;width:100%}',
+      '#craftguidebox .cgpbtn[aria-pressed="true"]{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}',
+      '#craftguidebox .cgpname{font-weight:700;font-size:14px;min-width:0}',
+      '#craftguidebox .cgsrow label.check{background:none;border:0;padding:2px 0;grid-template-columns:22px auto;gap:8px}',
+      '#craftguidebox .cgnmats{list-style:none;padding-left:0}',
+      '#craftguidebox .cgrhead{margin:4px 0}',
+      '#craftguidebox .cgsteps{display:grid;gap:6px;padding-left:0;list-style:none;margin:0}',
+      '#craftguidebox .cgstep{border:1px solid var(--line);border-left:3px solid var(--line);border-radius:8px;padding:6px 10px}',
+      '#craftguidebox .cgstep.done{border-left-color:var(--wind)}#craftguidebox .cgstep.done .what b{text-decoration:line-through;opacity:.7}',
+      '#craftguidebox .cgsrow{display:flex;flex-wrap:wrap;gap:2px 10px;align-items:center}',
+      '#craftguidebox .cgmeta{margin-left:auto}',
+      '#craftguidebox .cgmore>summary{color:var(--wind);margin-top:2px}',
+      '#craftguidebox .cgmore[open]>summary{margin-bottom:4px}',
       '#craftguidebox .cgstep p{margin:4px 0}',
-      '#craftguidebox .cgno{display:inline-block;font:700 12px var(--f-body);padding:2px 7px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);margin-right:2px}',
+      '#craftguidebox .cglbl{margin-top:6px;font-weight:700}',
+      '#craftguidebox .cgno{display:inline-grid;place-items:center;min-width:22px;height:22px;font:700 12px var(--f-body);padding:0 6px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);margin-right:2px}',
       '#craftguidebox .cgnumlist{padding-left:22px;margin:4px 0;display:grid;gap:6px}',
       '#craftguidebox .tag.warn{border-color:var(--warn);color:var(--warn)}',
       '#craftguidebox .cgcalc{display:flex;flex-wrap:wrap;gap:6px 14px;margin:6px 0;padding:8px 10px;background:var(--panel2);border-radius:8px}',
@@ -7723,10 +7953,32 @@ var A2T=(function(){
       '#craftguidebox .cgitem{display:inline-flex;align-items:center;gap:4px;white-space:normal}',
       '#craftguidebox .cgico{width:20px;height:20px;flex:none}',
       '#craftguidebox .cgrec{margin:4px 0;line-height:1.9}',
+      /* gear ladder */
+      '#craftguidebox .cgphase{margin:10px 0}',
+      '#craftguidebox .cgphh{margin-bottom:6px}',
+      '#craftguidebox .cgladder{list-style:none;margin:0;padding:0;display:grid;gap:0}',
+      '#craftguidebox .cgrung,#craftguidebox .cgcard{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:grid;gap:4px;min-width:0}',
+      '#craftguidebox .cgrung.lock{opacity:.8;border-style:dashed}',
+      '#craftguidebox .cgladder>li+li{margin-top:22px;position:relative}',
+      '#craftguidebox .cgladder>li+li::before{content:"\\2193";position:absolute;top:-21px;left:18px;color:var(--gold);font-weight:700}',
+      '#craftguidebox .cgrtop{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}',
+      '#craftguidebox .cgrstats{display:flex;flex-wrap:wrap;gap:4px 14px}',
+      '#craftguidebox .cgcards{list-style:none;margin:8px 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}',
+      '#craftguidebox .cgcard .cgmini{justify-self:start}',
+      /* materials table grouped by source */
+      '#craftguidebox .cgmt tr.cggrp th{background:var(--panel2);text-align:left;font:700 13.5px var(--f-body);text-transform:none;letter-spacing:0;color:var(--gold)}',
+      '#craftguidebox .cggnote{font-weight:400;margin-top:2px;color:var(--muted)}',
+      /* tools: calculator, planner, price panel share one frame */
+      '#craftguidebox .cgtool{border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:10px;padding:10px 12px;margin:8px 0 12px;min-width:0}',
+      '#craftguidebox .cgtool .cgh4{margin-top:0}',
+      '#craftguidebox .cgtd{margin:0 0 6px}',
+      '#craftguidebox .cgrulelist{margin:6px 0;padding-left:24px;display:grid;gap:6px}',
+      '#craftguidebox .cgrulelist summary{color:var(--fg)}#craftguidebox .cgrulelist summary span{color:var(--muted)}',
       '#craftguidebox .cgform{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:flex-end;margin:6px 0}',
       '#craftguidebox .cgform label{display:flex;flex-direction:column;gap:3px;min-width:0}',
       '#craftguidebox .cgform label.check{flex-direction:row;align-items:center}',
       '#craftguidebox .cgform label.wide{flex:1 1 240px}',
+      '#craftguidebox .cgbar label{display:flex;flex-direction:column;gap:3px}',
       '#craftguidebox select,#craftguidebox input[type=number],#craftguidebox input[list]{background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:600 14px var(--f-body);max-width:100%;min-width:0}',
       '#craftguidebox .cgnum{width:110px}',
       '#craftguidebox .cgtab td{vertical-align:top}',
@@ -7736,7 +7988,7 @@ var A2T=(function(){
       '#craftguidebox .cgmini{padding:4px 8px;font-size:12px;margin-top:4px}',
       '#craftguidebox .cgrules li{margin-bottom:10px}',
       '#craftguidebox .cgsrc{margin:4px 0 0}',
-      '#craftguidebox .cgtop{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}',
+      '#craftguidebox .cgtop{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:6px}',
       '#craftguidebox .cggico{width:20px;height:20px;flex:none;border-radius:4px;vertical-align:middle}',
       '#craftguidebox .cggico.big{width:28px;height:28px}',
       '#craftguidebox summary .cggico{margin-right:2px}',
@@ -7751,47 +8003,84 @@ var A2T=(function(){
       '#craftguidebox .cggnode>div{min-width:0}',
       '#craftguidebox .cggarrow{align-self:center;color:var(--muted)}',
       '#craftguidebox .cggchip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:2px 8px}',
-      '@media (max-width:560px){#craftguidebox .cggarrow{display:none}#craftguidebox .cggnode{flex-basis:100%}}',
+      /* glossary words */
+      '#craftguidebox .cgt{border-bottom:1px dotted var(--wind);cursor:help}#craftguidebox .cgt:focus{outline:1px solid var(--wind);outline-offset:1px}',
+      '#cgtip{position:absolute;z-index:60;max-width:min(320px,calc(100vw - 32px));background:var(--panel2);color:var(--fg);border:1px solid var(--wind);border-radius:9px;padding:8px 11px;font-size:13.5px;line-height:1.45;box-shadow:0 6px 20px rgba(0,0,0,.4)}',
+      '#cgtip b{color:var(--gold)}',
+      /* older reference boxes shown as drop-downs */
+      '#sys-crafting>details>summary,#sys-gathering>details>summary{cursor:pointer}',
+      '#sys-crafting>details>summary h3,#sys-gathering>details>summary h3{display:inline;margin:0}',
+      '#sys-crafting>details[open]>summary,#sys-gathering>details[open]>summary{margin-bottom:10px}',
+      '@media (max-width:560px){#craftguidebox .cggarrow{display:none}#craftguidebox .cggnode{flex-basis:100%}',
+      '#craftguidebox .cggoals{grid-template-columns:1fr}#craftguidebox .cgmeta{margin-left:0;flex-basis:100%}',
+      '#craftguidebox .cgwords{grid-template-columns:1fr}#craftguidebox .cgwords dd{margin-bottom:6px}',
+      '#craftguidebox .cgmtw{overflow:visible}#craftguidebox .cgmt thead{display:none}',
+      '#craftguidebox .cgmt tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;padding:6px 0;border-bottom:1px solid var(--line)}',
+      '#craftguidebox .cgmt tr.cggrp{display:block}#craftguidebox .cgmt td,#craftguidebox .cgmt th{border:0!important;padding:2px 4px!important;min-width:0}',
+      '#craftguidebox .cgmt .cgmw,#craftguidebox .cgmt .cgmp{grid-column:1/-1}',
+      '#craftguidebox .cgmt .cgmp::before{content:"Your price ";color:var(--muted)}',
+      '#craftguidebox .cgstackw{overflow:visible}#craftguidebox .cgstack thead{display:none}#craftguidebox .cgstack tr{display:block;padding:6px 0;border-bottom:1px solid var(--line)}#craftguidebox .cgstack td{display:block;border:0!important;padding:2px 4px!important}',
+      '#craftguidebox .cgcards{grid-template-columns:1fr}#craftguidebox .cgpgrid{grid-template-columns:repeat(2,minmax(0,1fr))}#craftguidebox .cgpname{font-size:13px;overflow-wrap:anywhere}}',
       '.cglink{margin:8px 0 12px}'].join('\n');
     document.head.appendChild(st0);
   }
   let OPEN=new Set();
   function rememberOpen(host){OPEN=new Set([...host.querySelectorAll('details[id]')].filter(d=>d.open).map(d=>d.id))}
+  function oldBoxes(g){OLDBOX.forEach(id=>{const e=document.getElementById(id);if(e)e.hidden=!!(g&&!g.secs.includes(id))})}
   function render(){
     const host=document.getElementById('craftguidebox'); if(!host||!D()) return;
-    css(); rememberOpen(host);
-    const s=st();
-    let o=`<div class="box"><h3>Fastest way to craft everything</h3>
-      <p class="small">A step-by-step plan for every profession, the IL102 crafts that matter with full material trees, money makers, the rules that cost people materials, and a calculator. Global client data (MetaBot.GG) plus creators' tests, linked in each part.</p>
-      <div class="cgtop small"><span>Item names: <span class="seg" role="group" aria-label="Faction names"><button type="button" data-cgfac="e" aria-pressed="${s.fac!=='a'}">Elyos</button><button type="button" data-cgfac="a" aria-pressed="${s.fac==='a'}">Asmodian</button></span></span>
-      <label>Your crafting proficiency (1–100) <input class="cgnum" type="number" min="1" max="100" data-cgprof="1" value="${h(s.prof)}"></label><span class="muted">Professional 1–50 counts as 51–100 here.</span></div></div>`;
-    SECS.forEach(([id,t,sum,fn])=>{let body='';try{body=fn()}catch(e){console.error(e);body='<p class="small callout">This part could not load. Please report it with the feedback link.</p>'}
-      o+=`<details class="box cbox" id="${id}"${OPEN.has(id)?' open':''}><summary><b style="font-size:17px">${h(t)}</b> <span class="small muted">${h(sum)} Click to open.</span></summary><div class="cbody">${body}</div></details>`});
-    o+=`<details class="box cbox" id="cg-src"${OPEN.has('cg-src')?' open':''}><summary><b style="font-size:17px">Sources and credits</b> <span class="small muted">who found what. Click to open.</span></summary><div class="cbody"><ul class="plain small">${Object.values(D().src).map(x=>`<li>${x.u?`<a href="${h(x.u)}" target="_blank" rel="noopener noreferrer">${h(x.n)}</a>`:h(x.n)}: <span class="muted">${h(x.w)}</span></li>`).join('')}</ul>
+    css(); rememberOpen(host); hideCgTip();
+    const s=st(), g=goalOf(s);
+    const ids=SECS.map(x=>x[0]), order=g?[...g.secs.filter(id=>ids.includes(id)),...ids.filter(id=>!g.secs.includes(id))]:ids;
+    let o='';
+    try{o+=startHTML()}catch(e){console.error(e)}
+    try{o+=nextHTML()}catch(e){console.error(e)}
+    order.forEach(id=>{const [,t,sum,fn]=SECS.find(x=>x[0]===id);let body='';try{body=fn()}catch(e){console.error(e);body='<p class="small callout">This part could not load. Please report it with the feedback link.</p>'}
+      const hide=g&&!g.secs.includes(id);
+      o+=`<details class="box cbox" id="${id}"${OPEN.has(id)?' open':''}${hide?' hidden':''}><summary><b class="cgst">${h(t)}</b> <span class="small muted">${h(sum)}</span></summary><div class="cbody" data-cgloss>${body}</div></details>`});
+    if(g){const nh=[...ids,...OLDBOX].filter(id=>!g.secs.includes(id)).length;
+      o+=`<p class="small muted cghidden">Showing the parts for <b>${h(g.n)}</b>; ${nh} other parts are hidden. <button type="button" class="btn cgmini" data-cggoal="all">Show everything</button></p>`}
+    o+=`<details class="box cbox" id="cg-src"${OPEN.has('cg-src')?' open':''}><summary><b class="cgst">Sources and credits</b> <span class="small muted">who found what</span></summary><div class="cbody"><ul class="plain small">${Object.values(D().src).map(x=>`<li>${x.u?`<a href="${h(x.u)}" target="_blank" rel="noopener noreferrer">${h(x.n)}</a>`:h(x.n)}: <span class="muted">${h(x.w)}</span></li>`).join('')}</ul>
       <p class="small muted">${h(D().credit)} ${h(D().vendorNote)} Checked ${h(D().v)}. Korean-only numbers are marked; Global client data is used first.</p></div></details>`;
     host.innerHTML=o;
     OPEN.forEach(id=>{const e=document.getElementById(id);if(e&&e.tagName==='DETAILS')e.open=true});
-    calc1Out(); calc2Out(); gplanOut();
+    calc1Out(); calc2Out(); gplanOut(); oldBoxes(g);
+    try{markGloss(host)}catch(e){console.error(e)}
   }
   function rerender(keepScroll){const y=window.scrollY;render();if(keepScroll)window.scrollTo(0,y)}
   window.renderCraftGuide=render;
 
   /* ---------- events ---------- */
+  function go(id,stepId){const d=document.getElementById(id);if(!d)return;if(d.hidden)d.hidden=false;let p=d.parentNode;while(p&&p.closest){const dd=p.closest('details');if(!dd)break;dd.open=true;if(dd.hidden)dd.hidden=false;p=dd.parentNode}
+    if(d.tagName==='DETAILS')d.open=true;let tgt=d;if(stepId){const sd=document.getElementById(stepId);if(sd){sd.open=true;tgt=sd.closest('.cgstep')||sd}}if(tgt.scrollIntoView)tgt.scrollIntoView({block:'start'})}
   document.addEventListener('click',e=>{
-    const t=e.target.closest&&e.target.closest('[data-cgroute],[data-cgfac],[data-cgcalc],[data-cggo],[data-cggpgoal]'); if(!t||!t.closest('#craftguidebox')) return;
+    const sp=e.target.closest&&e.target.closest('.cgt');
+    if(sp&&sp.closest('#craftguidebox')){e.preventDefault();(tipFor===sp&&Date.now()-tipAt>400)?hideCgTip():showCgTip(sp);return}
+    if(tipEl&&!tipEl.contains(e.target))hideCgTip();
+    const t=e.target.closest&&e.target.closest('[data-cgroute],[data-cgfac],[data-cgcalc],[data-cggo],[data-cggpgoal],[data-cggoal],[data-cgdone],[data-cgundo]'); if(!t||!t.closest('#craftguidebox,#sys-crafting,#sys-gathering')) return;
+    if(t.dataset.cggoal){const k=t.dataset.cggoal==='all'?'':t.dataset.cggoal;const s=st(),o={goal:k};if(k==='gather')o.route='gath';else if(k&&s.route==='gath')o.route=classRoute();
+      save(o);rerender(true);if(k){const nx=document.getElementById('cg-next');if(nx&&nx.scrollIntoView)nx.scrollIntoView({block:'nearest'})}return}
+    if(t.dataset.cgdone){svSet(t.dataset.cgdone,true);rerender(true);return}
+    if(t.dataset.cgundo){svSet(t.dataset.cgundo,false);rerender(true);return}
     if(t.dataset.cggpgoal){gpSave({goal:t.dataset.cggpgoal});t.parentNode.querySelectorAll('[data-cggpgoal]').forEach(b=>b.setAttribute('aria-pressed',String(b===t)));const pf=document.getElementById('cggpprofs');if(pf)pf.hidden=t.dataset.cggpgoal!=='prof';gplanOut();return}
     if(t.dataset.cgroute){save({route:t.dataset.cgroute});rerender(true);return}
     if(t.dataset.cgfac){save({fac:t.dataset.cgfac});rerender(true);return}
-    if(t.dataset.cggo){e.preventDefault();const d=document.getElementById(t.dataset.cggo);if(d){d.open=true;d.scrollIntoView({block:'start'})}return}
-    if(t.dataset.cgcalc){const s=st();save({c2:Object.assign({},s.c2,{r:t.dataset.cgcalc,p:s.prof||100})});rerender(true);const d=document.getElementById('cg-calc');if(d){d.open=true;setTimeout(()=>{const x=document.getElementById('cg2out');(x||d).scrollIntoView({block:'center'})},30)}}
+    if(t.dataset.cggo){e.preventDefault();go(t.dataset.cggo,t.dataset.cgstep);return}
+    if(t.dataset.cgcalc){const s=st();save({c2:Object.assign({},s.c2,{r:t.dataset.cgcalc,p:s.prof||100})});rerender(true);const d=document.getElementById('cg-calc');if(d){d.hidden=false;d.open=true;setTimeout(()=>{const x=document.getElementById('cg2out');(x||d).scrollIntoView({block:'center'})},30)}}
   });
+  document.addEventListener('mouseover',e=>{const sp=e.target.closest&&e.target.closest('#craftguidebox .cgt');if(sp&&sp!==tipFor)showCgTip(sp)});
+  document.addEventListener('mouseout',e=>{const sp=e.target.closest&&e.target.closest('#craftguidebox .cgt');if(sp&&!(e.relatedTarget&&tipEl&&tipEl.contains(e.relatedTarget)))hideCgTip()});
+  document.addEventListener('focusin',e=>{const sp=e.target.closest&&e.target.closest('#craftguidebox .cgt');if(sp)showCgTip(sp)});
+  document.addEventListener('focusout',e=>{if(e.target.closest&&e.target.closest('#craftguidebox .cgt'))setTimeout(()=>{if(!(tipEl&&tipEl.contains(document.activeElement)))hideCgTip()},0)});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')hideCgTip();const sp=e.target.closest&&e.target.closest('#craftguidebox .cgt');if(sp&&(e.key==='Enter'||e.key===' ')){e.preventDefault();tipFor===sp?hideCgTip():showCgTip(sp)}});
+  window.addEventListener('resize',hideCgTip);
   let tmr=0;
   function later(fn){clearTimeout(tmr);tmr=setTimeout(fn,250)}
   document.addEventListener('input',e=>{
     const t=e.target; if(!t.closest||!t.closest('#craftguidebox')) return;
     if(t.dataset.cgprice!=null){setPrice(t.dataset.cgprice,t.value);later(()=>{calc1Out();calc2Out()});return}
     if(t.dataset.cggp&&t.tagName!=='SELECT'){gpSave({[t.dataset.cggp]:t.value});later(gplanOut);return}
-    if(t.dataset.cg2){const s=st();const v=t.dataset.cg2==='r'?t.value:t.value;save({c2:Object.assign({},s.c2,{[t.dataset.cg2]:v})});later(calc2Out);return}
+    if(t.dataset.cg2){const s=st();save({c2:Object.assign({},s.c2,{[t.dataset.cg2]:t.value})});later(calc2Out);return}
     if(t.dataset.cg1&&t.type!=='checkbox'&&t.tagName!=='SELECT'){const s=st();save({c1:Object.assign({},s.c1,{[t.dataset.cg1]:t.value})});later(calc1Out);return}
   });
   document.addEventListener('change',e=>{
@@ -7802,10 +8091,11 @@ var A2T=(function(){
       if(t.dataset.cgprof){save({prof:Math.max(1,Math.min(100,+t.value||90))});rerender(true);return}
       if(t.dataset.cgslot){save({slot:t.value});rerender(true);return}
       if(t.dataset.cg1){const s=st();const k=t.dataset.cg1;const v=t.type==='checkbox'?(t.checked?1:0):t.value;const c1=Object.assign({},s.c1,{[k]:v});if(k==='prof'){c1.r='';c1.xp=''}if(k==='r'){c1.xp='';c1.bulk=0}save({c1});
-        if(k==='prof'||k==='r'){const sec=document.getElementById('cg-calc');if(sec){const b=sec.querySelector('.cbody');const y=window.scrollY;b.innerHTML=calcHTML();calc1Out();calc2Out();window.scrollTo(0,y)}}else calc1Out();return}
-      if(t.dataset.cgprice!=null){const y=window.scrollY;const id=document.activeElement&&document.activeElement.dataset&&document.activeElement.dataset.cgprice;if(!id){rerender(true);window.scrollTo(0,y)}return}
+        if(k==='prof'||k==='r'){const sec=document.getElementById('cg-calc');if(sec){const b=sec.querySelector('.cbody');const y=window.scrollY;b.innerHTML=calcHTML();calc1Out();calc2Out();try{markGloss(sec)}catch(err){}window.scrollTo(0,y)}}else calc1Out();return}
+      if(t.dataset.cgprice!=null){const id=document.activeElement&&document.activeElement.dataset&&document.activeElement.dataset.cgprice;if(!id)rerender(true);return}
     }
-    const k=t.dataset&&t.dataset.sv; if(k&&k.startsWith('cg-')&&document.getElementById('craftguidebox')) setTimeout(()=>{const R=document.getElementById('cg-route');if(R){const b=R.querySelector('.cbody');if(b){b.innerHTML=routeHTML()}}},0);
+    // a tick (data-sv) is saved by gear_fn.js's handler first; then redraw so the next-step card and progress bars follow
+    const k=t.dataset&&t.dataset.sv; if(k&&k.startsWith('cg-')&&document.getElementById('craftguidebox')) setTimeout(()=>rerender(true),0);
   });
   {const _ap=window.applyStore; if(typeof _ap==='function') window.applyStore=function(){const r=_ap.apply(this,arguments);try{render()}catch(err){}return r}}
   // shared price store changed (prices_fn.js): recalculate while a box is being typed in, otherwise re-render
@@ -7818,10 +8108,10 @@ var A2T=(function(){
 
   /* ---------- links from other tabs ---------- */
   const LINKS=[
-    ['gear','Want a slot that won\'t drop? Crafted IL102 pieces, their full material trees and costs are in <a href="#craftguidebox" data-goto="craftguidebox">Fastest way to craft everything</a> (Crafting &amp; gathering).'],
-    ['upgrades','Crafting a piece instead? The chain, success odds and materials for every IL102 craft are in <a href="#craftguidebox" data-goto="craftguidebox">Fastest way to craft everything</a>. Remember: upgrade crafts remove Manastones and Theostones.'],
-    ['itemfinder','Crafting materials (Wrathful Mind, Will, Ego, refining stones, Balaur\'s Essence): full trees and where each comes from in <a href="#craftguidebox" data-goto="craftguidebox">Fastest way to craft everything</a>.'],
-    ['farming','Farming for crafting? Which materials each IL102 craft needs and where they drop: <a href="#craftguidebox" data-goto="craftguidebox">Fastest way to craft everything</a>.']
+    ['gear','Want a slot that won\'t drop? Crafted item level 102 pieces, their ladders and full material lists are in the <a href="#craftguidebox" data-goto="craftguidebox">crafting guide</a> (Crafting &amp; gathering: pick "Craft gear for my character").'],
+    ['upgrades','Crafting a piece instead? The chain, success odds and materials for every item level 102 craft are in the <a href="#craftguidebox" data-goto="craftguidebox">crafting guide</a>. Remember: upgrade crafts remove Manastones and Theostones.'],
+    ['itemfinder','Crafting materials (Wrathful Mind, Will, Ego, refining stones, Balaur\'s Essence): full lists and where each comes from in the <a href="#craftguidebox" data-goto="craftguidebox">crafting guide</a>.'],
+    ['farming','Farming for crafting? Which materials each item level 102 craft needs and where they drop: <a href="#craftguidebox" data-goto="craftguidebox">crafting guide</a>.']
   ];
   function addLinks(){
     LINKS.forEach(([tab,html])=>{
