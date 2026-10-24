@@ -1,4 +1,4 @@
-var SIMSRC="data/sim.js?v=1792804567";
+var SIMSRC="data/sim.js?v=1792807169";
 const P=ALL[SLUG];
 document.getElementById('app').innerHTML=P.body;
 document.title=P.cls+' Guide · AION 2 Global Field Manual (Unofficial Fan Guide)';
@@ -7117,7 +7117,7 @@ var A2T=(function(){
     const r=idx()[n]; if(!r) return '';
     return `<div class="cgrec small">${item(n)} <span class="muted">(${h(r.p)} ${r.lv})</span> = ${r.parts.map(([pn,pq])=>item(pn,pq)).join(' + ')}</div>`;
   }
-  function stepHTML(st0,sv){
+  function stepHTML(st0,sv,i){
     let calc='';
     if(st0.calc){
       const c=routeCalc(st0.calc);
@@ -7129,7 +7129,7 @@ var A2T=(function(){
     const rec=st0.r?recipeLine(st0.r):'';
     if(st0.tdl){const t=(lv,k)=>[lv,70,85,100].filter((x,i,a)=>a.indexOf(x)===i&&x>=lv).map(P=>`${P}: <b>${pc(curveAt(k,P-lv))}</b>`).join(' · ');
       calc+=`<div class="cgcalc small"><span>True Dragon Lord success (opens at 55): ${t(55,'c1')}</span><span>(opens at 60): ${t(60,'c6')}</span></div>`;}
-    return `<li class="cgstep"><label class="check"><input type="checkbox" data-sv="${h(st0.id)}"${sv[st0.id]?' checked':''}><span class="what"><span class="tag gold">${h(st0.lv)}</span> <b>${h(st0.t)}</b></span></label>
+    return `<li class="cgstep"><label class="check"><input type="checkbox" data-sv="${h(st0.id)}"${sv[st0.id]?' checked':''}><span class="what"><span class="cgno">Step ${(i||0)+1}</span> <span class="tag gold">${h(st0.lv)}</span> <b>${h(st0.t)}</b></span></label>
       <p class="small">${h(st0.do)}</p>${rec}${calc}${st0.tip?`<p class="small muted"><b>Tip:</b> ${h(st0.tip)}</p>`:''}${st0.ladder?`<p class="small muted">Expected crafts for your slot are worked out in <a href="#cg-gear" data-cggo="cg-gear">What to craft for your gear</a>.</p>`:''}${srcLine(st0.src)}</li>`;
   }
   function routeHTML(){
@@ -7140,7 +7140,7 @@ var A2T=(function(){
     const V=d.video;
     return `<div class="cgbar"><span class="seg cgseg" role="group" aria-label="Profession">${btns}</span></div>
       <p class="small"><span class="tag wind">${h(R.pick)}</span> ${h(R.why)} <span class="muted">${done}/${R.steps.length} steps ticked.</span></p>
-      <ol class="cgsteps">${R.steps.map(x=>stepHTML(x,sv)).join('')}</ol>
+      <ol class="cgsteps">${R.steps.map((x,i)=>stepHTML(x,sv,i)).join('')}</ol>
       <p class="small muted">${h(d.xpRules)} Crafts take about ${d.secPerCraft} s each in an AFK queue (GAC Film Room measured 76 in about 7 minutes); queues of 999 have run overnight (Duky). Estimates use Korean-measured XP per craft where Global has no number.</p>
       <details class="cgsub"><summary><b>How this route differs from Screamheart's video</b> <span class="small muted">what we kept and what we changed, and why</span></summary>
         <p class="small">${h(V.intro)} ${srcLinks([V.s])}</p>
@@ -7148,6 +7148,38 @@ var A2T=(function(){
       <details class="cgsub"><summary><b>Achievements and titles that pay you for crafting</b> <span class="small muted">refining stones, Ultimate stones and titles</span></summary>
         <ul class="plain small">${d.ach.map(a=>`<li><b>${h(a.n)}</b>: ${h(a.g)}. <span class="muted">${h(a.r)}</span></li>`).join('')}</ul>
         <p class="small">Tick them on <a href="#achfarm" data-goto="achfarm">Achievement farming</a>. Levelling a second profession to 50 just for its 2 Artisan's Refining Stones and 2 Ultimate stones is worth it (Screamheart).</p>${srcLine(d.achSrc)}</details>`;
+  }
+
+  /* ---------- (1b) one crafter for all your characters (data: CRAFTGUIDE.onecrafter) ---------- */
+  const tagOf=t=>`<span class="tag${/Unconfirmed/i.test(t)?' warn':''}">${h(t)}</span>`;
+  function oneHTML(){
+    const d=D(), O=d.onecrafter; if(!O) return '';
+    const sv=(S.get?S.get('sv',{}):{})||{};
+    const tot={xp:0,n:0,kina:0,secs:0,raw:{}}, gx={v:0};
+    const steps=O.order.map((st0,i)=>{
+      let calc='';
+      if(st0.calc){
+        const parts=st0.calc.map(c=>{const r=routeCalc(c);tot.xp+=r.xp;tot.n+=r.n;tot.kina+=r.kina;tot.secs+=r.secs;Object.entries(r.raw).forEach(([pn,q])=>tot.raw[pn]=(tot.raw[pn]||0)+q);
+          return `<span>${st0.calc.length>1?(c.p?h(c.p)+' ':'')+c.from+'–'+c.to+': ':''}<b>${num(r.n)}</b> crafts, ${num(r.kina)} vendor Kina, ${fmtTime(r.secs)}</span>`});
+        calc=`<div class="cgcalc small">${parts.join('')}</div>`;
+      }
+      if(st0.gcalc){const v=gxp(st0.gcalc.from,st0.gcalc.to);gx.v+=v;calc=`<div class="cgcalc small"><span><b>${num(v)}</b> gathering XP</span></div>`}
+      return `<li class="cgstep"><label class="check"><input type="checkbox" data-sv="${h(st0.id)}"${sv[st0.id]?' checked':''}><span class="what"><span class="cgno">Step ${i+1}</span> <b>${h(st0.t)}</b></span></label>
+        <p class="small">${h(st0.do)}</p>${calc}${srcLine(st0.src)}</li>`}).join('');
+    const ess=tot.raw["Balaur's Essence"]||0, c=costOf(tot.raw);
+    return `<p class="small callout ok"><b>Short answer:</b> ${h(O.verdict)}</p>${srcLine(O.verdictSrc)}
+      <ul class="plain small cgrules">${O.facts.map(x=>`<li><b>${h(x.t)}</b> ${tagOf(x.tag)}<br>${h(x.d)} <span class="muted">(${srcLinks(x.src)})</span></li>`).join('')}</ul>
+      <details class="cgsub" id="cg-one-share"${OPEN.has('cg-one-share')?' open':''}><summary><b>What your crafter can send to alts, and what each alt does itself</b> <span class="small muted">by item type, from the item tooltips</span></summary>
+        <div class="tablewrap"><table class="cgtab"><thead><tr><th>Item</th><th>Can it go to an alt?</th><th>How</th></tr></thead><tbody>${O.share.map(x=>`<tr><td class="small">${h(x.w)}</td><td class="small"><b>${h(x.a)}</b></td><td class="small">${h(x.how)} <span class="muted">(${srcLinks(x.src)})</span></td></tr>`).join('')}</tbody></table></div></details>
+      <details class="cgsub" id="cg-one-order"${OPEN.has('cg-one-order')?' open':''}><summary><b>Step by step: max every profession on one character</b> <span class="small muted">cheapest order, shared materials, time and Kina</span></summary>
+        <p class="small">Each profession's own route (with tips) is under <a href="#cg-route" data-cggo="cg-route">Fastest route to level each profession</a>; this is the order to run them in on one character.</p>
+        <ol class="cgsteps">${steps}</ol>
+        <div class="cgcalc small"><span>Total for four professions to 100: <b>${num(tot.n)}</b> crafts</span><span>about <b>${fmtTime(tot.secs)}</b> of AFK queue</span><span>vendor Kina about <b>${num(tot.kina)}</b></span><span><b>${num(Math.ceil(ess))}</b> Balaur's Essence</span><span>at your prices <b>${num(c.k)}</b>${c.miss.length?` <span class="muted">(no price yet for ${c.miss.map(n=>h(dn(n))).join(', ')}: type it in any Your price box)</span>`:''}</span><span><b>${num(gx.v)}</b> gathering XP</span></div>
+        <p class="small muted">Cooking isn't counted (no measured XP per craft), nor the upgrade quests, the gear ladders or gathering time. XP per Balaur craft is a rough Korean number, so treat the 51–100 part as an estimate. 80–100 is optional.</p></details>
+      <details class="cgsub" id="cg-one-hand"${OPEN.has('cg-one-hand')?' open':''}><summary><b>How to hand an IL102 piece to an alt</b> <span class="small muted">Server Storage, then the alt runs the upgrades</span></summary>
+        <ol class="small cgnumlist">${O.handoff.map(x=>`<li>${h(x)}</li>`).join('')}</ol>${srcLine(O.handoffSrc)}</details>
+      <details class="cgsub" id="cg-one-limits"${OPEN.has('cg-one-limits')?' open':''}><summary><b>Limits</b> <span class="small muted">other servers, other faction, mail</span></summary>
+        <ul class="plain small cgrules">${O.limits.map(x=>`<li><b>${h(x.t)}</b> ${tagOf(x.tag)}<br>${h(x.d)} <span class="muted">(${srcLinks(x.src)})</span></li>`).join('')}</ul></details>`;
   }
 
   /* ---------- (2) what to craft for your gear ---------- */
@@ -7307,6 +7339,7 @@ var A2T=(function(){
   /* ---------- render ---------- */
   const SECS=[
     ['cg-route','Fastest route to level each profession','Level band → what to craft, materials, Kina and time. Tick the steps as you go.',routeHTML],
+    ['cg-one','One crafter for all your characters','Can one character max every profession and craft for your alts? Yes: what can be shared, the order to max everything, and how to hand items over.',oneHTML],
     ['cg-gear','What to craft for your gear','IL102 crafts in priority order with full material trees and where each material comes from.',gearHTML],
     ['cg-money','Money makers','Crafts that sold for profit, the break-even formula, and selling tips.',moneyHTML],
     ['cg-rules','Rules that cost people materials','Failures, transfers, lost stones, bulk vs single crafts.',rulesHTML],
@@ -7327,6 +7360,9 @@ var A2T=(function(){
       '#craftguidebox .cgsteps{display:grid;gap:10px;padding-left:0;list-style:none;margin:0}',
       '#craftguidebox .cgstep{border-left:3px solid var(--line);padding:4px 0 4px 12px}',
       '#craftguidebox .cgstep p{margin:4px 0}',
+      '#craftguidebox .cgno{display:inline-block;font:700 12px var(--f-body);padding:2px 7px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);margin-right:2px}',
+      '#craftguidebox .cgnumlist{padding-left:22px;margin:4px 0;display:grid;gap:6px}',
+      '#craftguidebox .tag.warn{border-color:var(--warn);color:var(--warn)}',
       '#craftguidebox .cgcalc{display:flex;flex-wrap:wrap;gap:6px 14px;margin:6px 0;padding:8px 10px;background:var(--panel2);border-radius:8px}',
       '#craftguidebox .cgmats{display:flex;flex-wrap:wrap;gap:6px 12px;margin:4px 0}',
       '#craftguidebox .cgitem{display:inline-flex;align-items:center;gap:4px;white-space:normal}',
