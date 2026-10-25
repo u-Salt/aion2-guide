@@ -1,4 +1,4 @@
-var SIMSRC="data/sim.js?v=1792941729";
+var SIMSRC="data/sim.js?v=1792945100";
 const P=ALL[SLUG];
 document.getElementById('app').innerHTML=P.body;
 document.title=P.cls+' Guide · AION 2 Global Field Manual (Unofficial Fan Guide)';
@@ -365,11 +365,11 @@ function renderMacro(){
     return h+`<div class="qnote">${!s.rows.length?'free slot':s.held?'hold down':s.man?'press by hand':'in macro'}</div></div>`;
   }).join('')||(CB?`<p class="small muted" style="margin:0">${esc(CB.barText||'No skill bar was published for this build.')}</p>`:'');
   $('stepkeys').textContent=steps.length?steps.map(k=>KEYN[k]||k).join(', '):(CB&&CB.stepsText)||'';
-  const stack=rows=>`<div class="stack">${rows.map((s,i)=>`<div class="sl">${ic(s)}<span>${s}</span>${rows.length>1?`<span class="ord">row ${i}${i===0?' · first':''}</span>`:''}</div>`).join('')}</div>`;
+  const stack=rows=>`<div class="stack">${rows.map((s,i)=>s?`<div class="sl">${ic(s)}<span>${s}</span>${rows.length>1?`<span class="ord">row ${i}${i===0?' · first':''}</span>`:''}</div>`:`<div class="sl"><span class="muted">(empty)</span><span class="ord">row ${i}</span></div>`).join('')}</div>`;
   let html=`<div class="mwin"><div class="mhead"><b>Skill Macro 1</b><span style="display:flex;gap:6px;flex-wrap:wrap"><span class="keychip" title="In-game macros can have at most 20 steps">${steps.length} / 20 steps</span><span class="keychip">Hold: ${esc(CB?(CB.hold||'macro key'):(C.macroHold||'side button / R'))}</span></span></div><div class="mbody">`+
     steps.map((k,i)=>{const s=bar.find(x=>x.k===k);return `<div class="mstep"><div><div class="no">Step ${i+1}</div><div class="small">Slot ${KEYN[k]||k}</div></div>${stack(s.rows)}<div class="delay">Delay <span class="v">${(CB&&CB.delay)||10}</span> ms</div></div>`}).join('')+
     `<div class="addrow">+ Add Macro</div></div></div>`;
-  const manual=bar.filter(b=>b.man).flatMap(b=>b.rows.map(n=>({n,k:b.k})));
+  const manual=bar.filter(b=>b.man).flatMap(b=>b.rows.filter(Boolean).map(n=>({n,k:b.k})));  // rows may hold null = empty stack row (creator bars)
   const notes=Object.fromEntries(((CB&&CB.manual)||(macroChoice()==='alt'&&C.macroAlt.manual)||C.macro.manual||[]).map(m=>[m.name,m.note]));
   if(!CB)(C.macroExclude||[]).forEach(n=>{if(!notes[n]) notes[n]='toggle or heal: press by hand'});
   html+=`<div class="mwin"><div class="mhead"><b>Pressed by hand</b><span class="keychip">Manual</span></div><div class="mbody"><div class="mannotes">`+
@@ -9150,6 +9150,106 @@ try{render();wire()}catch(e){console.error(e)}
   }
   try{addLinks()}catch(err){console.error(err)}
   try{render()}catch(err){console.error(err);const d=document.getElementById('craftguidebox');if(d)d.innerHTML='<p class="callout small">This section could not load. Please report it with the feedback link.</p>'}
+})();
+
+/* ---------- Soul Binding: every line each slot can roll, ranked for this class (Gear & stats > Soul Binding by slot) ----------
+   Data: SBFULL (audit/r28/soulbind_full.json, built by audit/r28/build_sbfull.py from metabot.gg item pages + the simulator weights).
+   Keeps the short "best picks" line per slot (rolls.json via rolls_fn.js) and adds a closed drop-down per slot with the full list.
+   Loaded after rolls_fn.js: wraps renderGear and rewrites #soultable. Also adds a "which slot rolls which damage line" box to the Soul Binding tab. */
+(function(){
+  if(typeof SBFULL==='undefined'||!SBFULL||!SBFULL.slots)return;
+  const H=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const KEYMAP={weapon:'weapon',guard:'guard',helmet:'helmet',shoulders:'shoulders',chest:'chest',gloves:'gloves',legs:'legs',boots:'boots',cloak:'cloak',necklace:'necklace',ear1:'earring',ring1:'ring',bracelet:'bracelet'};
+  const SAME={ear2:'Earring 1',ring2:'Ring 1'};
+  const UTIL={'Defiance':'Breaks stuns, knockdowns and grabs (PvP)'};
+  const open=new Set();let last='';
+  const pct=v=>'+'+(v<1?v.toFixed(2):v.toFixed(1))+'%';
+  function css(){
+    if(document.getElementById('sbfull-css'))return;
+    const st=document.createElement('style');st.id='sbfull-css';
+    st.textContent=`details.sbfull>summary{cursor:pointer;color:var(--wind);font-size:13px}
+#soultable tr.sbfrow>td{padding-top:0}
+table.sbft{width:100%;border-collapse:collapse;margin-top:6px;font-size:13px;display:block}
+table.sbft thead{display:none}table.sbft tbody{display:block}
+table.sbft tr{display:grid;grid-template-columns:2.2em minmax(0,1fr) auto;column-gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
+table.sbft td{border:0;padding:1px 0;text-align:left}
+table.sbft td.rk{grid-row:1/span 3;font:600 14px var(--f-mono);color:var(--gold)}
+table.sbft td.ln{grid-column:2}table.sbft td.dps{grid-column:3;grid-row:1;text-align:right;white-space:nowrap;font-family:var(--f-mono)}
+table.sbft td.rg{grid-column:2/span 2}table.sbft td.nt{grid-column:2/span 2}table.sbft td.nt:empty{display:none}
+table.sbft tr.best td.ln b{color:var(--wind)}
+table.sbft tr.nod td{color:var(--muted)}
+table.sbft .tg{display:inline-block;font:600 12px var(--f-mono);border:1px solid var(--line);border-radius:6px;padding:0 4px;margin:0 4px 2px 0}
+table.sbft .tg.pvp{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 50%,transparent)}
+table.sbft .tg.ex{color:var(--gold);border-color:color-mix(in srgb,var(--gold) 50%,transparent)}
+.sbfmeta{margin:6px 0 0;font-size:13px}`;
+    document.head.appendChild(st);
+  }
+  function lines(slot){ // [{n,r,r86,c,x,t,p,v,skill}] for this class
+    const S0=SBFULL.slots[slot];if(!S0)return null;
+    const cls=SLUG,rk=(SBFULL.rank||{})[cls],vals=rk&&rk[slot];
+    const out=S0.rows.map((r,i)=>Object.assign({},r,{v:vals?vals[i]:null}));
+    const sk=S0.skill&&(SBFULL.skills||{})[cls]&&SBFULL.skills[cls][S0.skill];
+    if(sk)sk.forEach((n,j)=>out.push({n:'+1 '+n,r:'+1 skill level',r86:'',c:'1 of '+sk.length+' skills',skill:1,v:vals?vals[S0.rows.length+j]:null,p:UTIL[n]?1:0,t:UTIL[n]||''}));
+    return {S0,out,ranked:!!vals,sk:!!sk};
+  }
+  function table(slot,best){
+    const L=lines(slot);if(!L)return '';
+    const {S0,out,ranked}=L;
+    const bestSet=new Set((best||[]).map(b=>String(b).split(' / ')[0].replace(/\s*\(.*$/,'').trim().toLowerCase()));
+    const dmg=out.filter(r=>r.v!=null&&r.v>=0.01).sort((a,b)=>b.v-a.v);
+    let rank=0,prev=null;dmg.forEach((r,i)=>{if(r.v!==prev){rank=i+1;prev=r.v}r.rk=rank});
+    const rest=out.filter(r=>!(r.v!=null&&r.v>=0.01)).sort((a,b)=>(b.p||0)-(a.p||0));
+    const rows=(ranked?dmg.concat(rest):out).map(r=>{
+      const acc=/^accuracy$/i.test(r.n),isB=bestSet.has(r.n.toLowerCase());
+      const tags=(r.x?`<span class="tg ex">${H(r.x)}</span>`:'')+(r.p&&!(r.v>=0.01)?'<span class="tg pvp">PvP</span>':'');
+      let note=r.t||'';
+      if(r.skill&&ranked&&!(r.v>=0.01)&&!note)note='No damage in the simulator (utility or defensive skill)';
+      if(!r.skill&&ranked&&!(r.v>=0.01)&&!note&&!acc)note='No damage';
+      if(/^combat speed$/i.test(r.n)&&r.v>=0.01)note=(note?note+'. ':'')+'Upper estimate: if only half of each animation speeds up, it is worth about half (the best picks allow for that)';
+      if(isB)note=(note?note+'. ':'')+'In the best picks above';
+      const dps=r.v>=0.01?pct(r.v):acc?'until target':'—';
+      const chance=r.skill?r.c:(r.c?r.c+' of stat rolls':'');
+      return `<tr class="${isB?'best':''}${!(r.v>=0.01)&&ranked&&!acc?' nod':''}"><td class="rk">${r.rk||'—'}</td><td class="ln"><b>${H(r.n)}</b> <span class="small muted">${H(chance)}</span></td><td class="rg small">${H(r.r)}${r.skill?'':' <span class="muted">(IL102)</span>'}${r.r86?` <span class="muted">· IL86 ${H(r.r86)}</span>`:''}</td><td class="dps">${dps}</td><td class="nt small">${tags}${H(note)}</td></tr>`;
+    }).join('');
+    const cant=(S0.cant||[]).length?`<p class="sbfmeta small muted">Can't roll: ${H(S0.cant.join(', '))}.</p>`:'';
+    const noRank=ranked?'':`<p class="sbfmeta small muted">${H((typeof P!=='undefined'&&P.cls)||'This class')} has no Global simulator or skill data yet, so lines are listed without a rank${L.sk?'':' and the class skill +1 options are not listed'}.</p>`;
+    const n=out.length;
+    return `<details class="sbfull" data-sbf="${slot}"${open.has(slot)?' open':''}><summary>All ${n} lines this slot can roll</summary>
+<p class="sbfmeta small">${H(S0.lines)}</p>${cant}${noRank}
+<div class="tablewrap"><table class="sbft"><thead><tr><th>#</th><th>Line</th><th>Roll (IL102)</th><th>≈ DPS</th><th>Note</th></tr></thead><tbody>${rows}</tbody></table></div></details>`;
+  }
+  function render(){
+    const t=document.getElementById('soultable');if(!t||typeof GEARSLOTS==='undefined')return;
+    css();
+    const R=typeof rollsFor==='function'?rollsFor('pve'):null;
+    const html=GEARSLOTS.pve.map(s=>{
+      const r=R&&(R[s.k]||R[s.k.replace(/\d$/,'1')]);
+      let best=r&&r.best&&r.best.length?r.best.join(' › '):'';
+      if(!best&&typeof soulFor==='function')try{best=soulFor(s)}catch(e){}
+      const k=KEYMAP[s.k];
+      if(s.t==='none')return `<tr><td><b>${H(s.n)}</b></td><td class="small muted">No Soul Binding on this slot</td></tr>`;
+      const extra=k?table(k,r&&r.best):SAME[s.k]?`<div class="small muted" style="margin-top:4px">Same lines as ${H(SAME[s.k])}.</div>`:'';
+      return `<tr><td><b>${H(s.n)}</b></td><td class="small">${H(best)}${k?'':extra}</td></tr>`+(k&&extra?`<tr class="sbfrow"><td colspan="2">${extra}</td></tr>`:'');
+    }).join('')+`<tr><td colspan="2" class="small"><details class="sbfull" data-sbf="_how"${open.has('_how')?' open':''}><summary>How to read these lists, and sources</summary><ul class="plain small">${(SBFULL.how||[]).map(x=>`<li>${H(x)}</li>`).join('')}</ul><p class="small muted" style="margin:4px 0 0">Sources: ${(SBFULL.src||[]).map(s=>s[1]?`<a href="${H(s[1])}" target="_blank" rel="noopener">${H(s[0])}</a>`:H(s[0])).join('; ')}.</p></details></td></tr>`;
+    if(html===last&&t.querySelector('details.sbfull'))return;
+    last=html;t.innerHTML=html;
+  }
+  document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.classList&&d.classList.contains('sbfull')){const k=d.dataset.sbf;if(d.open)open.add(k);else open.delete(k)}},true);
+  {const o=window.renderGear;if(typeof o==='function')window.renderGear=function(){const r=o.apply(this,arguments);try{render()}catch(e){}return r}}
+  // Soul Binding tab: which slot rolls which damage line (class-independent)
+  function tabBox(){
+    const odds=document.getElementById('sys-soulbind-odds');if(!odds||document.getElementById('sys-sbfull'))return;
+    const LBL=Object.fromEntries(Object.entries(SBFULL.slots).map(([k,v])=>[k,v.label]));
+    const big=['Damage Boost','Weapon Damage Boost','Combat Speed','Critical Damage Boost','Double Chance','Attack Increase','Multi-hit Chance','Perfect Chance','Attack','Critical Hit','Might','Precision','Move Speed','Endurance','Damage Tolerance'];
+    const where=n=>Object.keys(SBFULL.slots).filter(k=>k!=='bracelet'&&SBFULL.slots[k].rows.some(r=>r.n.toLowerCase()===n.toLowerCase())).map(k=>LBL[k]);
+    const box=document.createElement('details');box.className='box';box.id='sys-sbfull';
+    box.innerHTML=`<summary><b>Which slot can roll which line</b></summary><p class="small">Global client data (MetaBot.GG item pages). Your class's full list per slot, ranked by the simulator, is under <a href="#gear" data-goto="gear">Gear &amp; stats</a> › Soul Binding by slot.</p>
+<div class="tablewrap"><table><thead><tr><th>Line</th><th>Slots that can roll it</th></tr></thead><tbody>${big.map(n=>`<tr><td><b>${H(n)}</b></td><td class="small">${H(where(n).join(', ')||'none')}</td></tr>`).join('')}
+<tr><td><b>+1 class active skill</b></td><td class="small">Weapon, guard, rings (1 of 12 skills)</td></tr><tr><td><b>+1 class passive skill</b></td><td class="small">Helmet, shoulders, chest, gloves, legs, boots, cloak, necklace, earrings (1 of 10 skills)</td></tr></tbody></table></div>
+<p class="small muted" style="margin:6px 0 0">All 8 weapon types share one pool. Every armor piece also rolls the same 17 basic lines (Attack, Critical Hit, Accuracy, HP, Defense and so on) plus Status Effect Resist.</p>`;
+    odds.insertAdjacentElement('afterend',box);
+  }
+  try{tabBox()}catch(e){}
 })();
 
 /* ---------- "Our builds on questlog.gg": the ONE place to paste the guide's questlog.gg build links ----------
