@@ -481,6 +481,17 @@ details.tabsrc .tabsrcbody p{margin:0}
 .sitefoot .btn{font-size:13px}
 .qrow{grid-template-columns:12px 1fr}
 .tabsum{border-left:3px solid var(--wind);background:color-mix(in srgb,var(--wind) 8%,var(--panel));padding:10px 14px;border-radius:0 10px 10px 0;font-weight:600;font-size:15px}
+/* creator builds on Rotation & macro (app.js picker, builds_fn.js renderCreatorView) */
+.rpbox{padding:10px 14px}.rpbox .seg{flex-wrap:wrap}
+.crtop{display:grid;gap:6px;border-color:var(--gold)}
+.crtop .crwatch{justify-self:start;white-space:normal;text-align:left;line-height:1.35;text-decoration:none}
+.callout.warn{border-color:#e0a030;background:color-mix(in srgb,#e0a030 12%,var(--panel))}
+#creatorpic{display:grid;gap:8px}
+.crpic{margin:0;display:grid;gap:4px}.crpic img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px;display:block}
+.crcard{display:grid;gap:14px}.crcard h3{margin:0}
+.crdet{border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:6px 0}.crdet>summary{cursor:pointer}.crdetb{margin-top:8px;display:grid;gap:6px}
+.crlist{display:grid;gap:6px;padding-left:18px;margin:0}
+@media (max-width:600px){table.crdps thead{display:none}table.crdps,table.crdps tbody,table.crdps tr,table.crdps td{display:block;width:auto}table.crdps tr{border-bottom:1px solid var(--line);padding:8px 10px}table.crdps td{border:0;padding:2px 0}table.crdps td[data-l]::before{content:attr(data-l) ': ';font-weight:600;color:var(--muted)}}
 </style>
 <div class="topbar"><div class="in"><span class="brand">AION 2 Field Manual</span><label for="classpick" class="clslab">Class <select id="classpick"></select></label><span class="modelab" id="modelab">Build for <span class="seg" id="modepickTop" role="group" aria-labelledby="modelab" title="PvE shows the raid, mode and simulator tabs; PvP swaps them for the PvP build. Your ticks are kept for both."><button type="button" data-m="pve">PvE</button><button type="button" data-m="pvp">PvP</button></span></span><a class="donate" data-donate hidden aria-label="Tip the author (optional)" title="Everything in this guide is free. A tip is optional and changes nothing."><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1 1 1.5 1 2.5M12 3.5c0 1 1 1.5 1 2.5"/></svg><span>Tip the author (optional)</span></a></div></div>
 <div id="app"></div>
@@ -531,5 +542,5 @@ const ALL={};const _CL={"ranger":"Ranger","gladiator":"Gladiator","templar":"Tem
 const _h=location.hash.slice(1);
 const SLUG=ALL[_h]?_h:(ALL[S.gget('cls','ranger')]?S.gget('cls','ranger'):'ranger');
 document.getElementById('app').innerHTML='<p class="muted" style="padding:24px">Loading the '+ALL[SLUG].cls+' guide…</p>';
-['data/common.js','data/'+SLUG+'.js','app.js'].forEach(function(src){var s=document.createElement('script');s.src=src+'?v=1792906049';s.async=false;s.onerror=function(){var d=document.getElementById('app');d.innerHTML='<p style="padding:24px">Could not load '+src+'. Please tell Claude.</p>'};document.body.appendChild(s)});
+['data/common.js','data/'+SLUG+'.js','app.js'].forEach(function(src){var s=document.createElement('script');s.src=src+'?v=1792941729';s.async=false;s.onerror=function(){var d=document.getElementById('app');d.innerHTML='<p style="padding:24px">Could not load '+src+'. Please tell Claude.</p>'};document.body.appendChild(s)});
 </script>

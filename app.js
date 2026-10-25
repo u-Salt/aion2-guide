@@ -1,4 +1,4 @@
-var SIMSRC="data/sim.js?v=1792906049";
+var SIMSRC="data/sim.js?v=1792941729";
 const P=ALL[SLUG];
 document.getElementById('app').innerHTML=P.body;
 document.title=P.cls+' Guide · AION 2 Global Field Manual (Unofficial Fan Guide)';
@@ -322,34 +322,56 @@ function buildBar(){
   return {bar,steps:order};
 }
 const KEYN={LMB:'Left click',RMB:'Right click',Space:'Space'};
+/* Build picker at the top of Rotation & macro: Guide main | Alternative (C.macroAlt) | Creator builds (C.creatorBuilds, audit/r26/make_creator_cards.py).
+   'macroOpt' (cur/alt) stays the store key the rest of the guide reads (Build for my character, Share & compare); 'rotPick' only remembers a creator pick. */
+function creatorList(){return Array.isArray(C.creatorBuilds)?C.creatorBuilds.filter(b=>b&&b.id):[]}
+function rotChoice(){const p=S.get('rotPick',null);if(p&&/^creator/.test(p)&&creatorList().some(b=>b.id===p))return p;return macroChoice()}
+function curCreator(){const p=rotChoice();return /^creator/.test(p)?creatorList().find(b=>b.id===p)||null:null}
 function renderMacroOpt(){
-  const mo=$('macroopt'); if(!mo) return;
-  if(!C.macroAlt){mo.hidden=true;mo.innerHTML='';return}
-  const A=C.macroAlt, ch=macroChoice(), g=A.sim||{}, gain=g.gainPct!=null?`+${g.gainPct}%`:'';
+  const mo=$('macroopt'), rp=$('rotpick'), CL=creatorList(), A=C.macroAlt, ch=rotChoice();
+  if(rp){
+    if(!A&&!CL.length){rp.hidden=true;rp.innerHTML=''}
+    else{
+      const g=(A&&A.sim)||{}, gain=g.gainPct!=null?` +${g.gainPct}%`:'';
+      const btn=(v,t)=>`<button type="button" data-rpick="${esc(v)}" aria-pressed="${ch===v}">${esc(t)}</button>`;
+      rp.hidden=false;
+      rp.innerHTML=`<div class="box rpbox"><div class="small muted" style="margin:0 0 6px">Show the skill bar and macro of:</div><div class="seg" role="group" aria-label="Build">`+
+        btn('cur',(A&&A.btnCur)||'Guide main')+(A?btn('alt',A.btnAlt||('Alternative'+gain)):'')+CL.map(b=>btn(b.id,b.label)).join('')+`</div></div>`;
+      rp.querySelectorAll('[data-rpick]').forEach(b=>b.addEventListener('click',()=>{const v=b.dataset.rpick;
+        if(/^creator/.test(v))S.set('rotPick',v);else{S.set('macroOpt',v);S.set('rotPick',null)}
+        renderMacro()}));
+    }
+  }
+  if(!mo) return;
+  if(/^creator/.test(ch)){const CB=curCreator();mo.hidden=false;mo.innerHTML=`<p class="small" style="margin:0">Showing <b>${esc(CB.short)}</b>'s skill bar and macro${CB.reconstructed?' (rebuilt: no video of their bar)':''}. Our own build is one click away: <b>${esc((A&&A.btnCur)||'Guide main')}</b> at the top of this tab.</p>`;return}
+  if(!A){mo.hidden=true;mo.innerHTML='';return}
+  const g=A.sim||{}, gain=g.gainPct!=null?`+${g.gainPct}%`:'';
   const range=g.min!=null&&g.max!=null?` (${g.min>0?'+':''}${g.min}% to +${g.max}% across tests)`:'';
   mo.hidden=false;
-  mo.innerHTML=`<div class="seg" role="group" aria-label="Macro version"><button type="button" data-mopt="cur" aria-pressed="${ch==='cur'}">Current macro</button><button type="button" data-mopt="alt" aria-pressed="${ch==='alt'}">New option${gain?' '+gain:''}</button></div>`+
-    `<p class="small" style="margin:8px 0 0">${ch==='alt'?`<b>${esc(A.name)}</b>: ${esc(A.summary||'')} Simulator: ${gain}${range}. ${g.note?esc(g.note):''} Your current macro is one click away if you prefer it.`:`This is the macro you already have. The new option, <b>${esc(A.name)}</b>, tested ${gain}${range} in the simulator: switch to it to see its skill bar and steps.`}</p>`;
-  mo.querySelectorAll('[data-mopt]').forEach(b=>b.addEventListener('click',()=>{S.set('macroOpt',b.dataset.mopt);renderMacro()}));
+  // optional per-class wording (A.btnCur, A.btnAlt, A.curText, A.altText), e.g. when the alternative is the previous main macro
+  mo.innerHTML=`<p class="small" style="margin:0">${ch==='alt'?`<b>${esc(A.name)}</b>: ${esc(A.summary||'')} ${A.altText!=null?esc(A.altText):`Simulator: ${gain}${range}. ${g.note?esc(g.note):''} Your current macro is one click away (top of this tab) if you prefer it.`}`:(A.curText!=null?esc(A.curText):`This is the macro you already have. The alternative, <b>${esc(A.name)}</b>, tested ${gain}${range} in the simulator: pick it at the top of this tab to see its skill bar and steps.`)}</p>`;
 }
 function renderMacro(){
   renderMacroOpt();
-  const {bar,steps}=buildBar();
+  const CB=curCreator();
+  const {bar,steps}=CB?{bar:CB.bar||[],steps:CB.steps||[]}:buildBar();
+  try{['bossflow','aoeflow'].forEach(id=>{const x=$(id),bx=x&&x.closest('.box');if(bx)bx.style.display=CB?'none':''})}catch(e){}
+  try{if(typeof renderCreatorView==='function')renderCreatorView(CB)}catch(e){console.error(e)}
   const cell=n=>n?`<div class="qc">${ic(n)}<span>${n}</span></div>`:`<div class="qc empty"></div>`;
   $('qbar').innerHTML=bar.map(s=>{
     let h=`<div class="qcol${s.man?' man':''}"><div class="qk">${KEYN[s.k]||s.k}${s.k==='Space'?' <span class="muted">(default)</span>':''}</div>`;
     const n=Math.max(1,Math.min(4,s.rows.length));
     for(let r=n-1;r>=0;r--) h+=`<div class="qrow"><i>${r}</i>${cell(s.rows[r])}</div>`;
-    return h+`<div class="qnote">${!s.rows.length?'free slot':s.man?'press by hand':'in macro'}</div></div>`;
-  }).join('');
-  $('stepkeys').textContent=steps.map(k=>KEYN[k]||k).join(', ');
+    return h+`<div class="qnote">${!s.rows.length?'free slot':s.held?'hold down':s.man?'press by hand':'in macro'}</div></div>`;
+  }).join('')||(CB?`<p class="small muted" style="margin:0">${esc(CB.barText||'No skill bar was published for this build.')}</p>`:'');
+  $('stepkeys').textContent=steps.length?steps.map(k=>KEYN[k]||k).join(', '):(CB&&CB.stepsText)||'';
   const stack=rows=>`<div class="stack">${rows.map((s,i)=>`<div class="sl">${ic(s)}<span>${s}</span>${rows.length>1?`<span class="ord">row ${i}${i===0?' · first':''}</span>`:''}</div>`).join('')}</div>`;
-  let html=`<div class="mwin"><div class="mhead"><b>Skill Macro 1</b><span style="display:flex;gap:6px;flex-wrap:wrap"><span class="keychip" title="In-game macros can have at most 20 steps">${steps.length} / 20 steps</span><span class="keychip">Hold: side button / R</span></span></div><div class="mbody">`+
-    steps.map((k,i)=>{const s=bar.find(x=>x.k===k);return `<div class="mstep"><div><div class="no">Step ${i+1}</div><div class="small">Slot ${KEYN[k]||k}</div></div>${stack(s.rows)}<div class="delay">Delay <span class="v">10</span> ms</div></div>`}).join('')+
+  let html=`<div class="mwin"><div class="mhead"><b>Skill Macro 1</b><span style="display:flex;gap:6px;flex-wrap:wrap"><span class="keychip" title="In-game macros can have at most 20 steps">${steps.length} / 20 steps</span><span class="keychip">Hold: ${esc(CB?(CB.hold||'macro key'):(C.macroHold||'side button / R'))}</span></span></div><div class="mbody">`+
+    steps.map((k,i)=>{const s=bar.find(x=>x.k===k);return `<div class="mstep"><div><div class="no">Step ${i+1}</div><div class="small">Slot ${KEYN[k]||k}</div></div>${stack(s.rows)}<div class="delay">Delay <span class="v">${(CB&&CB.delay)||10}</span> ms</div></div>`}).join('')+
     `<div class="addrow">+ Add Macro</div></div></div>`;
   const manual=bar.filter(b=>b.man).flatMap(b=>b.rows.map(n=>({n,k:b.k})));
-  const notes=Object.fromEntries((C.macro.manual||[]).map(m=>[m.name,m.note]));
-  (C.macroExclude||[]).forEach(n=>{if(!notes[n]) notes[n]='toggle or heal: press by hand'});
+  const notes=Object.fromEntries(((CB&&CB.manual)||(macroChoice()==='alt'&&C.macroAlt.manual)||C.macro.manual||[]).map(m=>[m.name,m.note]));
+  if(!CB)(C.macroExclude||[]).forEach(n=>{if(!notes[n]) notes[n]='toggle or heal: press by hand'});
   html+=`<div class="mwin"><div class="mhead"><b>Pressed by hand</b><span class="keychip">Manual</span></div><div class="mbody"><div class="mannotes">`+
     manual.map(m=>`<div class="mrow">${ic(m.n,'sm')}<div><b>${m.n}</b> <span class="kbd">${KEYN[m.k]||m.k}</span><br><span class="small muted">${m.n==='Defiance'?'Break stuns and CC':(notes[m.n]?esc(notes[m.n]):'')}</span></div></div>`).join('')+`</div></div></div>`;
   $('macrowins').innerHTML=html;
@@ -357,10 +379,10 @@ function renderMacro(){
   const hasStack=bar.some(b=>b.rows.length>1&&!b.man);
   const mi=steps.findIndex(k=>k==='LMB'||k==='RMB'), fillersLast=mi<0||steps.slice(mi).every(k=>k==='LMB'||k==='RMB');
   // how steps loop and the 10 ms delay are already in the setup text and step 3 above, so they are not repeated here
-  const gen=['Macros can have at most 20 steps (this one has '+steps.length+').','Charged skills, toggles and heals are pressed by hand, never in the macro'+(/brawler/i.test(C['class']||'')?' (Brawler is the exception inside Rampage, see below).':'.'),...(fillersLast?['No-cooldown fillers go last so they never block a cooldown skill.']:[])];
+  const gen=['Macros can have at most 20 steps (this one has '+steps.length+').',(CB?'This is how the creator sets it up: the by-hand list below says what they press themselves.':'Charged skills, toggles and heals are pressed by hand, never in the macro'+(/brawler/i.test(C['class']||'')?' (Brawler is the exception inside Rampage, see below).':'.')),...(fillersLast?['No-cooldown fillers go last so they never block a cooldown skill.']:[])];
   if(hasStack) gen.push('A step fires its whole stack: the bottom skill first when it is ready, otherwise the next one up.');
-  $('macrorules').innerHTML=gen.concat((macroChoice()==='alt'?C.macroAlt.rules:C.macro.rules)||[]).map(s=>`<li>${esc(s)}</li>`).join('');
-  $('macrofallback').innerHTML=['Skip any skill you have not unlocked yet; add its step when you do.'].concat(C.macro.fallback||[]).map(s=>`<li>${esc(s)}</li>`).join('');
+  $('macrorules').innerHTML=gen.concat((CB?CB.rules:(macroChoice()==='alt'?C.macroAlt.rules:C.macro.rules))||[]).map(s=>`<li>${esc(s)}</li>`).join('');
+  $('macrofallback').innerHTML=['Skip any skill you have not unlocked yet; add its step when you do.'].concat((CB?CB.fallback:((macroChoice()==='alt'&&C.macroAlt.fallback)||C.macro.fallback))||[]).map(s=>`<li>${esc(s)}</li>`).join('');
 }
 
 /* ---------- gear planner (per item, PvE and PvP, saved) ---------- */
@@ -3225,7 +3247,8 @@ function onShow(){
       (M.krVsGlobal?`<p class="small muted">${h(M.krVsGlobal)}</p>`:'')+
       (src.length?`<ul class="plain small">${src.map(li).join('')}</ul>`:'')+`</details>`;
   }
-  const barLi=b=>`<li class="msrow msbar"><span class="msic kbd">${h(b.slot)}</span><div><strong>Skill bar</strong> · slot ${h(b.slot)}${b.row!=null?', row '+h(b.row):''}<div><b>${h(b.from||'empty')}</b> <span class="arrow">→</span> <b>${h(b.to||'empty')}</b></div></div></li>`;
+  const KNM={LMB:'Left click',RMB:'Right click'}, kn=k=>KNM[k]||k;
+  const barLi=b=>`<li class="msrow msbar"><span class="msic kbd">${h(b.slot==='LMB'?'LMB':b.slot==='RMB'?'RMB':b.slot)}</span><div><strong>Skill bar</strong> · ${/^[0-9]+$/.test(String(b.slot))?'slot ':'key '}${h(kn(b.slot))}${b.row!=null?', row '+h(b.row):''}<div><b>${h(b.from||'empty')}</b> <span class="arrow">→</span> <b>${h(b.to||'empty')}</b></div></div></li>`;
   const macLi=t=>`<li class="msrow"><span class="msic kbd">M</span><div><strong>Macro</strong><div>${h(t)}</div></div></li>`;
   // optional better-testing bar/macro for this mode; the card's own setup above stays valid
   function altSec(A){
@@ -3748,7 +3771,14 @@ function onShow(){
     }).join('')+`</div></div>`;
   }
   const list=(t,a,fn)=>a&&a.length?`<div class="mssec"><h4>${t}</h4><ul class="plain small">${a.map(fn||(x=>`<li>${h(x)}</li>`)).join('')}</ul></div>`:'';
+  /* short link card for a creator build (full view lives on Rotation & macro: C.creatorBuilds, app.js picker) */
+  function refCard(B){
+    return `<article class="box mscard" data-build="${h(B.id)}"><header class="mshead"><div><span class="eyebrow">Top creator build</span><h3>${h(C['class'])}: ${h(B.name)}</h3></div><span class="tag gold">Confidence: ${h(B.confidence||'?')}</span></header>`+
+      `<p class="mssum">${h(B.summary)}</p>${B.healerNote?`<p class="small muted"><b>Healer note:</b> ${h(B.healerNote)}</p>`:''}`+
+      `<p><button type="button" class="btn primary" data-crgo="${h(B.creatorRef)}">Open it on Rotation &amp; macro</button></p></article>`;
+  }
   function card(B){
+    if(B.creatorRef) return refCard(B);
     const g=B.sim||{};
     const perks=(B.perks||[]).map(p=>`<li class="msrow"><span class="msic">${ic(p.skill,'sm')}</span><div><strong>${h(p.skill)}</strong><div class="msperks">${(p.perks||[]).map((t,i)=>`<span class="msperk"><i>${i+1}</i>${h(t)}</span>`).join('')}</div>${p.note?`<div class="small muted">${h(p.note)}</div>`:''}</div></li>`).join('');
     const stig=(B.stigmas||[]).map(n=>`<span class="mschip">${ic(n,'sm')}${h(n)}</span>`).join('');
@@ -3780,6 +3810,7 @@ function onShow(){
     const main=C.mainBuildName||'Main build';
     host.innerHTML=`<div class="seg" role="group" aria-label="Build"><button type="button" data-bpick="main" aria-pressed="false">${h(main)} (Rotation &amp; macro)</button>`+
       L.map(b=>`<button type="button" data-bpick="${h(b.id)}" aria-pressed="${b===cur}">${h(b.name)}</button>`).join('')+`</div>`+card(cur);
+    host.querySelectorAll('[data-crgo]').forEach(b=>b.addEventListener('click',()=>{S.set('rotPick',b.dataset.crgo);try{if(typeof renderMacro==='function')renderMacro()}catch(e){}const t=document.querySelector('nav.tabs button[data-tab="rotation"]');if(t)t.click()}));
     host.querySelectorAll('[data-bpick]').forEach(b=>b.addEventListener('click',()=>{
       if(b.dataset.bpick==='main'){const t=document.querySelector('nav.tabs button[data-tab="rotation"]'); if(t) t.click(); return}
       S.set('buildPick',b.dataset.bpick); renderBuilds();
@@ -3787,6 +3818,65 @@ function onShow(){
     if(typeof decorate==='function') decorate(host);
   }
   window.renderBuilds=renderBuilds;
+
+  /* ---------- creator build view on Rotation & macro (renderMacro in app.js calls this with the picked C.creatorBuilds entry, or null) ---------- */
+  const A_=(u,t,cls)=>/^https?:/.test(u||'')?`<a href="${h(u)}" target="_blank" rel="noopener noreferrer"${cls?` class="${cls}"`:''}>${t}</a>`:t;
+  const det=(t,body,open)=>body?`<details class="crdet"${open?' open':''}><summary><b>${t}</b></summary><div class="crdetb">${body}</div></details>`:'';
+  const para=x=>x?`<p class="small">${h(x)}</p>`:'';
+  function dpsTable(rows){
+    if(!rows||!rows.length) return '<p class="small muted">No measured number was found for this player.</p>';
+    return `<div class="tablewrap"><table class="crdps"><thead><tr><th>DPS</th><th>Target</th><th>Fight</th><th>CP</th><th>Solo / party</th><th>Meter and scale</th><th>Date</th><th>Source</th></tr></thead><tbody>`+
+      rows.map(r=>`<tr><td data-l="DPS"><b>${h(r.value)}</b></td><td data-l="Target">${h(r.target)}</td><td data-l="Fight">${h(r.length)}</td><td data-l="CP">${h(r.cp)}</td><td data-l="Solo / party" class="small">${h(r.buffs)}</td><td data-l="Meter"><span class="tag">${h(r.meter)}</span> ${h(r.scale)}</td><td data-l="Date" class="small">${h(r.date)}</td><td data-l="Source" class="small">${(r.src||[]).map(x=>A_(x.url,h(x.label))).join(', ')}${r.srcText?`<div class="muted">${h(r.srcText)}</div>`:''}${r.ts&&r.ts!==r.date?`<div class="muted">${h(r.ts)}</div>`:''}</td></tr>`).join('')+
+      `</tbody></table></div><p class="small muted">Only compare numbers on the same meter and scale: a NotMeter 60 s solo dummy run, an AionFlex party boss parse and an in-game Combat Analysis run use different CP scales, fight lengths and buffs.</p>`;
+  }
+  function buildDetail(CB){
+    const chips=(CB.stigmaChips||[]).map(x=>`<span class="mschip">${ic(x.name,'sm')}${h(x.name)}${x.level!=null?` <b>${h(x.level)}</b>`:''}</span>`).join('');
+    const chipNotes=(CB.stigmaChips||[]).filter(x=>x.note).map(x=>`<li>${h(x.name)}: ${h(x.note)}</li>`).join('');
+    const stig=(chips?`<div class="mschips">${chips}</div>`:'')+(chipNotes?`<ul class="plain small">${chipNotes}</ul>`:'')+(CB.stigmaText||[]).map(para).join('');
+    const perks=(CB.perks||[]).length?`<div class="tablewrap"><table><thead><tr><th>Skill (rank)</th><th>Perks they take</th></tr></thead><tbody>${CB.perks.map(p=>`<tr><td data-l="Skill">${p.skill?`${ic(p.skill,'sm')} ${h(p.skill)}${p.rank?` ${h(p.rank)}`:''}`:''}${p.raw?`<div class="small muted">${h(p.raw)}</div>`:''}</td><td data-l="Perks" class="small">${h(p.text)}</td></tr>`).join('')}</tbody></table></div>`:'';
+    const notes=[].concat(CB.macroNotes||[],CB.manualText||[]).map(x=>`<li>${h(x)}</li>`).join('');
+    return det('Stigmas and levels',stig)+det('Perks per skill',perks)+
+      det('Macro notes (delays, held keys, by-hand presses)',(notes?`<ul class="plain small">${notes}</ul>`:'')+para(CB.barDetail))+
+      det('Stats and passives',para(CB.passives)+para(CB.stats))+det('Gear, Arcana and Soul Binding',para(CB.gear))+det('Other modes',para(CB.modeNotes));
+  }
+  function renderCreatorView(CB){
+    const top=document.getElementById('creatortop'), pic=document.getElementById('creatorpic'), cc=document.getElementById('creatorcard');
+    if(!top||!pic||!cc) return;
+    if(!CB){[top,pic,cc].forEach(x=>{x.hidden=true;x.innerHTML=''});return}
+    const T=CB.top||{}, v=T.video, W=(C.creatorBuilds||[])[0]||CB, WC=W.card||{}, c=CB.card||{};
+    let t='';
+    if(v) t+=`<a class="btn primary crwatch" href="${h(v.url)}" target="_blank" rel="noopener">&#9654; Watch ${h(CB.short)}'s build video: ${h(v.title)}${v.date?` (${h(v.date)})`:''}${v.t?` &middot; starts at ${h(v.t)}`:''}</a>`+
+      `<div class="small muted">${v.author?`Video by ${h(v.author)}. `:''}${T.channel?A_(T.channel.url,h(T.channel.label)):''}${T.profile?` &middot; ${A_(T.profile.url,h(T.profile.label))}`:''}</div>`;
+    else if(T.profile) t+=`<a class="btn primary crwatch" href="${h(T.profile.url)}" target="_blank" rel="noopener">${h(T.profile.label)}</a><div class="small muted">${h(CB.short)} has no video of this build: this is their public parse and profile page.</div>`;
+    (T.related||[]).forEach(r=>{t+=`<div class="small">${/youtube\.com|youtu\.be/.test(r.url)?'Related video':'See also'}: ${A_(r.url,h(r.title))}${r.author?` by ${h(r.author)}`:''}${r.date?` (${h(r.date)})`:''}${r.note?`: ${h(r.note)}`:''}</div>`});
+    const kind=CB.isCreator?'Content creator':'Top player (not a content creator)';
+    t+=`<p class="small" style="margin:6px 0 0"><b>${h(CB.short)}</b>${CB.server?` &middot; ${h(CB.server)}`:''} &middot; ${kind} &middot; <span class="tag gold">Confidence: ${h(c.confLevel||WC.confLevel||'?')}</span></p>`;
+    if(c.alert) t+=`<div class="callout warn small" style="margin-top:8px"><b>Read this first.</b> ${h(c.alert)}</div>`;
+    t+=`<p class="small muted" style="margin:6px 0 0">The skill bar, macro and by-hand list below are ${h(CB.short)}'s. Our boss rotation boxes are hidden while a creator build is picked; the evidence and how it differs from our build are under the macro.</p>`;
+    top.innerHTML=`<div class="box crtop">${t}</div>`; top.hidden=false;
+    let p='';
+    (CB.pics||[]).forEach(x=>{p+=`<figure class="crpic"><a href="${h(x.link||'#')}" target="_blank" rel="noopener noreferrer"><img src="${x.src}" alt="${h(x.caption)}" loading="lazy"></a><figcaption class="small muted">${x.link?A_(x.link,h(x.caption)):h(x.caption)}</figcaption></figure>`});
+    if(!(CB.pics||[]).length||CB.reconstructed) p+=`<p class="small muted" style="margin:0">${h(CB.picNote||'')}</p>`;
+    if(CB.barNote) p+=`<p class="small muted" style="margin:0">${h(CB.barNote)}</p>`;
+    pic.innerHTML=p; pic.hidden=!p;
+    let x=`<div class="box crcard"><h3>${h(String(CB.label||'').replace(/^Creator: /,'Top creator build: '))}</h3>`;
+    x+=`<div class="mssec"><h4>DPS evidence</h4>${dpsTable(c.dps)}${para(CB.dpsSummary)}</div>`;
+    x+=`<div class="mssec"><h4>Why this build was picked</h4>${para(CB.why)}${para(CB.caveat)}</div>`;
+    x+=`<div class="mssec"><h4>The full build</h4>${buildDetail(CB)}</div>`;
+    if(CB.role==='winner'&&c.runnerUp){const R=c.runnerUp;x+=`<div class="mssec"><h4>Runner-up: ${h(R.short)}${R.server?` (${h(R.server)})`:''}</h4>${para(R.dps)}${para(R.why)}${det('Runner-up DPS evidence',c.ruDps&&c.ruDps.length?dpsTable(c.ruDps):'')}${(R.links||[]).length?`<p class="small">${R.links.map(l=>A_(l.url,h(l.label))).join(' &middot; ')}</p>`:''}</div>`}
+    if(c.healer) x+=`<div class="mssec"><h4>Healer note</h4><p class="small"><b>${h(c.healer.who)}</b> (confidence ${h(c.healer.confidence||'?')}): ${h(c.healer.evidence)}</p>${(c.healer.links||[]).length?`<p class="small">${c.healer.links.map(l=>A_(l.url,h(l.label))).join(' &middot; ')}</p>`:''}</div>`;
+    const diffs=(WC.diffs||[]).map(d=>d.text!=null?`<li>${h(d.text)}</li>`:`<li><b>${h(d.topic)}</b>: ours: ${h(d.guide)}. ${h(W.short)}: ${h(d.creator)}.${d.evidence?` ${h(d.evidence)}`:''}${d.verdict?` <i>Verdict: ${h(d.verdict)}.</i>`:''}</li>`).join('');
+    x+=`<div class="mssec"><h4>How it differs from our main build</h4>${CB.role!=='winner'?`<p class="small muted">Compared for ${h(W.short)}'s build (the top pick); ${h(CB.short)}'s bar and macro are shown above.</p>`:''}${diffs?det('All differences ('+(WC.diffs||[]).length+')',`<ul class="small crlist">${diffs}</ul>`,true):'<p class="small muted">None listed.</p>'}</div>`;
+    x+=`<div class="mssec"><h4>What our simulator says</h4><p class="small">The simulator can't model held keys or animation cancels, and many of these builds rely on both. Real 60 s parses outrank it, so read its numbers as a rough check only.</p>${det('Simulator details',(WC.sim||[]).map(para).join('')+para(WC.recommendation))}</div>`;
+    const tip=c.test||WC.test;
+    x+=`<div class="mssec"><h4>Test it yourself</h4><ol class="small"><li>Use the Training Scarecrow and the in-game Combat Analysis (<span class="kbd">Ctrl</span>+<span class="kbd">X</span>), same food and scrolls each time.</li><li>Do at least 3 pulls of 60 s with our main build and 3 or more with this one; compare the average DPS, not the best pull.</li>${tip?`<li>${h(tip)}</li>`:''}<li>Keep whichever wins on your character and save the other in a spare skill preset.</li></ol></div>`;
+    x+=`<div class="mssec"><h4>Confidence</h4><p class="small"><span class="tag gold">${h(c.confLevel||WC.confLevel||'?')}</span> ${h(WC.confidence||'')}</p></div>`;
+    const links=(CB.links||[]).map(l=>A_(l.url,h(l.label))).join(' &middot; ');
+    if(links) x+=`<p class="small muted">Credit: ${h(CB.short)}. Sources: ${links}</p>`;
+    cc.innerHTML=x+`</div>`; cc.hidden=false;
+  }
+  window.renderCreatorView=renderCreatorView;
+
   try{renderBuilds()}catch(e){console.error(e)}
   {const o=window.applyStore;if(typeof o==='function')window.applyStore=function(){const r=o.apply(this,arguments);try{renderBuilds()}catch(e){}return r}}
   {const o=window.renderModeBits;if(typeof o==='function')window.renderModeBits=function(){const r=o.apply(this,arguments);try{hideTab()}catch(e){}return r}}
@@ -6916,7 +7006,7 @@ var A2T=(function(){
   function applyState(st,label){
     S.set('bcundo',snapshot(label));
     const L=lists();
-    S.set('ptmode',st.pt); S.set('phase',st.ph); S.set('macroOpt',st.mo);
+    S.set('ptmode',st.pt); S.set('phase',st.ph); S.set('macroOpt',st.mo); S.set('rotPick',null);
     if(L.builds.length) S.set('buildPick',st.bp);
     const sp=Object.assign({},S.get('spent',{})||{}); L.spent.forEach(k=>delete sp[k]); Object.assign(sp,st.spent); S.set('spent',sp);
     S.set('checks',Object.assign({},st.checks)); S.set('pchecks',Object.assign({},st.pchecks));
@@ -6952,7 +7042,7 @@ var A2T=(function(){
       if(miss.length||extra.length) diff.push({area:`Perks: ${r.skill}`,you:extra.map(i=>perkText(r.skill,i)).join('; ')||'(fewer picks)',guide:miss.map(i=>perkText(r.skill,i)).join('; ')||'—'});
     });
     if(rows.length&&!filled) info.push('Perks: not filled in yet. Use "Copy the guide\'s picks" or "Fill from My character" below.');
-    if(Cc.macroAlt){const g=(Cc.macroAlt.sim||{}).gainPct; info.push(st.mo==='alt'?`Macro: you use the new option "${Cc.macroAlt.name}"${g!=null?` (+${g}% in our tests)`:''}.`:`Macro: you use the current macro. The guide also offers "${Cc.macroAlt.name}"${g!=null?`, +${g}% in our tests`:''} (Rotation & macro tab).`)}
+    if(Cc.macroAlt){const g=(Cc.macroAlt.sim||{}).gainPct; info.push(st.mo==='alt'?`Macro: you use the ${Cc.macroAlt.btnAlt?'alternative':'new option'} "${Cc.macroAlt.name}"${g!=null?` (+${g}% in our tests)`:''}.`:`Macro: you use the ${Cc.macroAlt.btnCur?'main':'current'} macro. The guide also offers "${Cc.macroAlt.name}"${g!=null?`, +${g}% in our tests`:''} (Rotation & macro tab).`)}
     if(L.ptm.length>1&&st.pt!==L.ptm[0]) diff.push({area:'Skill-point table',you:`"${st.pt}" plan`,guide:`"${L.ptm[0]}" plan`});
     if(st.bp&&(Cc.builds||[]).length){const b=(Cc.builds||[]).find(x=>x.id===st.bp); if(b) info.push(`Other build picked: ${b.name} (Other builds tab).`)}
     // progress against the guide's plan
@@ -7657,8 +7747,10 @@ function macroOnly(d,rot){
 function rotOptions(d,hands){
   const out=[],g=d.rotations&&d.rotations.guide;if(!g)return out;
   const A=CC().macroAlt;
-  out.push({id:'guide',label:"the guide's macro",rot:g,keys:'cur'});
-  if(A&&Array.isArray(A.barSteps)&&A.barSteps.length<=20&&Array.isArray(A.bar)){const r=convRot(d,A.bar,A.barSteps,g,'guide New option');if(r.steps.length)out.push({id:'alt',label:'the "New option" macro: '+(A.name||''),rot:r,keys:'alt'})}
+  // C.simGuideIsAlt: the simulator's guide rotation is the guide's alternative macro (e.g. Gladiator: the main is a held-key macro the simulator can't model), so show that bar and skip the duplicate
+  if(CC().simGuideIsAlt&&A&&Array.isArray(A.bar)&&Array.isArray(A.barSteps))out.push({id:'alt',label:CC().simGuideIsAlt===true?"the guide's alternative macro: "+(A.name||''):String(CC().simGuideIsAlt),rot:g,keys:'alt'});
+  else out.push({id:'guide',label:"the guide's macro",rot:g,keys:'cur'});
+  if(!CC().simGuideIsAlt&&A&&Array.isArray(A.barSteps)&&A.barSteps.length<=20&&Array.isArray(A.bar)){const r=convRot(d,A.bar,A.barSteps,g,'guide New option');if(r.steps.length)out.push({id:'alt',label:'the "New option" macro: '+(A.name||''),rot:r,keys:'alt'})}
   const res=out.map(o=>hands==='macro'?Object.assign({},o,{id:o.id+'-mo',label:o.label+', macro only',rot:macroOnly(d,o.rot),mo:true}):o);
   return res.filter(o=>o.rot.steps.length<=20).map(o=>Object.assign(o,{steps:o.rot.steps.length}));
 }
@@ -7947,7 +8039,7 @@ function saveBuild(){
   p.pve=res.raw.stigmas.slice(0,4).map(n=>({n,l:Math.min(20,res.raw.levels[n]||1)}));
   const rows=((CC().perks&&CC().perks.rows)||[]).map(r=>r.skill);p.perks=Object.assign({},p.perks||{});
   rows.forEach(sk=>{const a=res.raw.perks[sk];if(Array.isArray(a)&&a.length)p.perks[sk]=a.map(k=>amb(sk,k)).slice(0,3);else if(a)delete p.perks[sk]});
-  try{S.set('bcplan',p);S.set('macroOpt',/^alt/.test(res.raw.rot)?'alt':'cur')}catch(e){}
+  try{S.set('bcplan',p);S.set('macroOpt',/^alt/.test(res.raw.rot)?'alt':'cur');S.set('rotPick',null)}catch(e){}
   try{if(typeof window.renderBuildCode==='function')window.renderBuildCode()}catch(e){}
   ui.msg='Saved: your Stigmas, perks and macro choice are now in <a href="#buildshare" data-goto="buildshare">Share &amp; compare</a> (press Share my build there for a code).';ui.bad=false;
 }
