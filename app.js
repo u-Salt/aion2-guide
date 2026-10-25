@@ -1,4 +1,4 @@
-var SIMSRC="data/sim.js?v=1792954240";
+var SIMSRC="data/sim.js?v=1792961984";
 const P=ALL[SLUG];
 document.getElementById('app').innerHTML=P.body;
 document.title=P.cls+' Guide · AION 2 Global Field Manual (Unofficial Fan Guide)';
@@ -351,29 +351,42 @@ function renderMacroOpt(){
   // optional per-class wording (A.btnCur, A.btnAlt, A.curText, A.altText), e.g. when the alternative is the previous main macro
   mo.innerHTML=`<p class="small" style="margin:0">${ch==='alt'?`<b>${esc(A.name)}</b>: ${esc(A.summary||'')} ${A.altText!=null?esc(A.altText):`Simulator: ${gain}${range}. ${g.note?esc(g.note):''} Your current macro is one click away (top of this tab) if you prefer it.`}`:(A.curText!=null?esc(A.curText):`This is the macro you already have. The alternative, <b>${esc(A.name)}</b>, tested ${gain}${range} in the simulator: pick it at the top of this tab to see its skill bar and steps.`)}</p>`;
 }
+/* shared skill-bar / macro window renderers (Rotation & macro and the PvP build tab, pvpbuild_fn.js).
+   bar = [{k, rows:[skill|null], man, held}], steps = slot keys in macro order. */
+function qbarHTML(bar){
+  const cell=n=>n?`<div class="qc">${ic(n)}<span>${n}</span></div>`:`<div class="qc empty"></div>`;
+  return bar.map(s=>{
+    let h=`<div class="qcol${s.man?' man':''}"><div class="qk">${KEYN[s.k]||s.k}${s.k==='Space'?' <span class="muted">(default)</span>':''}</div>`;
+    const n=Math.max(1,Math.min(4,s.rows.length));
+    for(let r=n-1;r>=0;r--) h+=`<div class="qrow"><i>${r}</i>${cell(s.rows[r])}</div>`;
+    return h+`<div class="qnote">${s.mkey?'macro key':!s.rows.length?'free slot':s.held?'hold down':s.man?'press by hand':'in macro'}</div></div>`;
+  }).join('');
+}
+function mstackHTML(rows){return `<div class="stack">${rows.map((s,i)=>s?`<div class="sl">${ic(s)}<span>${s}</span>${rows.length>1?`<span class="ord">row ${i}${i===0?' · first':''}</span>`:''}</div>`:`<div class="sl"><span class="muted">(empty)</span><span class="ord">row ${i}</span></div>`).join('')}</div>`}
+function macroWinHTML(bar,steps,o){
+  o=o||{};
+  return `<div class="mwin"><div class="mhead"><b>${o.title||'Skill Macro 1'}</b><span style="display:flex;gap:6px;flex-wrap:wrap"><span class="keychip" title="In-game macros can have at most 20 steps">${steps.length} / 20 steps</span><span class="keychip">Hold: ${esc(o.hold||'macro key')}</span></span></div><div class="mbody">`+
+    steps.map((k,i)=>{const s=bar.find(x=>x.k===k)||{rows:[]};return `<div class="mstep"><div><div class="no">Step ${i+1}</div><div class="small">Slot ${KEYN[k]||k}</div></div>${mstackHTML(s.rows)}<div class="delay">Delay <span class="v">${o.delay||10}</span> ms</div></div>`}).join('')+
+    `<div class="addrow">+ Add Macro</div></div></div>`;
+}
+/* items = [{n: skill name (icon), k: key, note: html-safe text, label: optional display name}] */
+function manualWinHTML(items,title){
+  return `<div class="mwin"><div class="mhead"><b>${title||'Pressed by hand'}</b><span class="keychip">Manual</span></div><div class="mbody"><div class="mannotes">`+
+    items.map(m=>`<div class="mrow">${ic(m.n,'sm')}<div><b>${m.label||m.n}</b> <span class="kbd">${KEYN[m.k]||m.k}</span><br><span class="small muted">${m.note||''}</span></div></div>`).join('')+`</div></div></div>`;
+}
 function renderMacro(){
   renderMacroOpt();
   const CB=curCreator();
   const {bar,steps}=CB?{bar:CB.bar||[],steps:CB.steps||[]}:buildBar();
   try{['bossflow','aoeflow'].forEach(id=>{const x=$(id),bx=x&&x.closest('.box');if(bx)bx.style.display=CB?'none':''})}catch(e){}
   try{if(typeof renderCreatorView==='function')renderCreatorView(CB)}catch(e){console.error(e)}
-  const cell=n=>n?`<div class="qc">${ic(n)}<span>${n}</span></div>`:`<div class="qc empty"></div>`;
-  $('qbar').innerHTML=bar.map(s=>{
-    let h=`<div class="qcol${s.man?' man':''}"><div class="qk">${KEYN[s.k]||s.k}${s.k==='Space'?' <span class="muted">(default)</span>':''}</div>`;
-    const n=Math.max(1,Math.min(4,s.rows.length));
-    for(let r=n-1;r>=0;r--) h+=`<div class="qrow"><i>${r}</i>${cell(s.rows[r])}</div>`;
-    return h+`<div class="qnote">${!s.rows.length?'free slot':s.held?'hold down':s.man?'press by hand':'in macro'}</div></div>`;
-  }).join('')||(CB?`<p class="small muted" style="margin:0">${esc(CB.barText||'No skill bar was published for this build.')}</p>`:'');
+  $('qbar').innerHTML=qbarHTML(bar)||(CB?`<p class="small muted" style="margin:0">${esc(CB.barText||'No skill bar was published for this build.')}</p>`:'');
   $('stepkeys').textContent=steps.length?steps.map(k=>KEYN[k]||k).join(', '):(CB&&CB.stepsText)||'';
-  const stack=rows=>`<div class="stack">${rows.map((s,i)=>s?`<div class="sl">${ic(s)}<span>${s}</span>${rows.length>1?`<span class="ord">row ${i}${i===0?' · first':''}</span>`:''}</div>`:`<div class="sl"><span class="muted">(empty)</span><span class="ord">row ${i}</span></div>`).join('')}</div>`;
-  let html=`<div class="mwin"><div class="mhead"><b>Skill Macro 1</b><span style="display:flex;gap:6px;flex-wrap:wrap"><span class="keychip" title="In-game macros can have at most 20 steps">${steps.length} / 20 steps</span><span class="keychip">Hold: ${esc(CB?(CB.hold||'macro key'):(C.macroHold||'side button / R'))}</span></span></div><div class="mbody">`+
-    steps.map((k,i)=>{const s=bar.find(x=>x.k===k);return `<div class="mstep"><div><div class="no">Step ${i+1}</div><div class="small">Slot ${KEYN[k]||k}</div></div>${stack(s.rows)}<div class="delay">Delay <span class="v">${(CB&&CB.delay)||10}</span> ms</div></div>`}).join('')+
-    `<div class="addrow">+ Add Macro</div></div></div>`;
+  let html=macroWinHTML(bar,steps,{hold:CB?(CB.hold||'macro key'):(C.macroHold||'side button / R'),delay:(CB&&CB.delay)||10});
   const manual=bar.filter(b=>b.man).flatMap(b=>b.rows.filter(Boolean).map(n=>({n,k:b.k})));  // rows may hold null = empty stack row (creator bars)
   const notes=Object.fromEntries(((CB&&CB.manual)||(macroChoice()==='alt'&&C.macroAlt.manual)||C.macro.manual||[]).map(m=>[m.name,m.note]));
   if(!CB)(C.macroExclude||[]).forEach(n=>{if(!notes[n]) notes[n]='toggle or heal: press by hand'});
-  html+=`<div class="mwin"><div class="mhead"><b>Pressed by hand</b><span class="keychip">Manual</span></div><div class="mbody"><div class="mannotes">`+
-    manual.map(m=>`<div class="mrow">${ic(m.n,'sm')}<div><b>${m.n}</b> <span class="kbd">${KEYN[m.k]||m.k}</span><br><span class="small muted">${m.n==='Defiance'?'Break stuns and CC':(notes[m.n]?esc(notes[m.n]):'')}</span></div></div>`).join('')+`</div></div></div>`;
+  html+=manualWinHTML(manual.map(m=>({n:m.n,k:m.k,note:m.n==='Defiance'?'Break stuns and CC':(notes[m.n]?esc(notes[m.n]):'')})));
   $('macrowins').innerHTML=html;
   // rules: generic, plus class-specific ones that match this layout
   const hasStack=bar.some(b=>b.rows.length>1&&!b.man);
@@ -3362,7 +3375,7 @@ function onShow(){
     const list=(t,arr,fn)=>arr&&arr.length?`<div class="mssec"><h4>${t}</h4><ul class="plain small">${arr.map(fn||(x=>`<li>${h(x)}</li>`)).join('')}</ul></div>`:'';
     const s=M.sim||{}; const hasSim=!!(M.sim&&(M.sim.raid!=null||M.sim.note));
     const chgSec=`<div class="mssec"><h4>What to change from your raid setup</h4>${ch.length?`<ul class="mschg">${ch.join('')}</ul>`:'<p class="small muted">Nothing: keep your raid setup.</p>'}</div>`;
-    const stigSec=`<div class="mssec"><h4>Stigmas</h4><div class="mschips">${stig}</div>${M.stigmaNote?`<p class="small muted">${h(M.stigmaNote)}</p>`:''}${!M.barChanges||!M.barChanges.length?'<p class="small muted">Skill bar and macro: no changes.</p>':(M.macroSteps?'':'<p class="small muted">Macro steps: unchanged.</p>')}</div>`;
+    const stigSec=`<div class="mssec"><h4>Stigmas</h4><div class="mschips">${stig}</div>${M.stigmaNote?`<p class="small muted">${h(M.stigmaNote)}</p>`:''}${M.barOnPvpTab?'<p class="small muted">Skill bar and macro: a separate PvP preset, drawn on the <a href="#pvp" data-goto="pvp">PvP build</a> tab.</p>':!M.barChanges||!M.barChanges.length?'<p class="small muted">Skill bar and macro: no changes.</p>':(M.macroSteps?'':'<p class="small muted">Macro steps: unchanged.</p>')}</div>`;
     const conf=`<span class="tag gold">${h(CONF[String(M.confidence||'').toLowerCase()]||'Confidence: '+(M.confidence||'?'))}</span>`;
     // one plain verdict line stays visible; the simulator numbers move into a closed "How we tested"
     const g0=typeof s.gainPct==='number'?s.gainPct:null, tm=/time/i.test(String(s.metric||''));
@@ -8151,6 +8164,181 @@ window.MyBuild={run,render,buildJob:(o)=>{const I=readForm(inp());return buildJo
 {const o=window.renderMyChar;if(typeof o==='function')window.renderMyChar=function(){const r=o.apply(this,arguments);try{onShow()}catch(e){}return r}}
 {const o=window.setMode;if(typeof o==='function')window.setMode=function(){const r=o.apply(this,arguments);try{onShow()}catch(e){}return r}}
 try{render();wire()}catch(e){console.error(e)}
+})();
+
+/* ---------- PvP build tab: the full PvP setup per class (data: C.pvpBuild, written by audit/r30/apply_pvp.py) ----------
+   Top: setup picker (when a class has a second bar, e.g. Cleric Duel | Healer), then the same skill-bar view and macro windows
+   as Rotation & macro (qbarHTML / macroWinHTML / manualWinHTML in app.js), then burst combos. Long sections are closed drop-downs.
+   Brawler (KR only) has no pvpBuild: the tab stays as it was. */
+(function(){
+  const PB=C.pvpBuild; const sec=document.getElementById('pvp');
+  if(!PB||!sec||typeof qbarHTML!=='function') return;
+  const h=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const K=k=>(typeof KEYN!=='undefined'&&KEYN[k])||k;
+  const A=x=>Array.isArray(x)?x:[];
+  const stripNum=s=>String(s).replace(/^\d+\.\s*/,'');
+  // best icon for a label like "Aerial Snare -> Forced Fall" or "Overhead Slam x2-3"
+  function iconName(t){
+    const s=String(t||'').replace(/\s+x\d[\d-]*\b/g,'').trim();
+    if(findImg(s)) return s;
+    for(const p of s.split(/\s*(?:->|>|\/|\+|,|:|\(|\))\s*/)){const q=p.trim();if(q&&findImg(q)) return q}
+    return '';
+  }
+  const icon=(t,cls)=>{const n=iconName(t);return n?ic(n,cls||'sm'):''};
+  // a slot whose only row is "(PvP macro)" is the key the macro is bound to
+  const normBar=bar=>A(bar).map(b=>{const r=A(b.rows);return r.length===1&&/^\(.*macro.*\)$/i.test(r[0])?Object.assign({},b,{rows:[],mkey:1,held:1}):b});
+  const T=PB.modes&&PB.modes.tactics;
+  const L=A(PB.setupLabels);
+  const SETUPS=[{id:'main',label:L[0]||'1v1 arena',bar:normBar(PB.bar),steps:A(PB.steps),delay:PB.delayMs||10,hold:PB.hold||'',manual:A(PB.manual),notes:A(PB.barNotes),why:A(PB.macroWhy),delayNote:PB.delayNote||''}];
+  if(T&&typeof T==='object'&&A(T.bar).length&&A(T.steps).length)
+    SETUPS.push({id:'team',label:L[1]||'Team arena',bar:normBar(T.bar),steps:T.steps,delay:T.delayMs||PB.delayMs||10,hold:T.hold&&!/^none$/i.test(T.hold)?T.hold:'',manual:null,notes:[T.setup].concat(A(T.notes)).filter(Boolean),why:[],intro:T.name||''});
+  const cur=()=>{const v=S.get('pvpSetup','main');return SETUPS.find(s=>s.id===v)||SETUPS[0]};
+
+  function manualItems(st){
+    if(st.manual) return st.manual.map(m=>({n:iconName(m.name)||m.name,label:h(m.name),k:m.key,note:h(m.note||'')}));
+    const notes={}; A(PB.manual).forEach(m=>{notes[m.name]=m.note});
+    return st.bar.filter(b=>b.man).flatMap(b=>A(b.rows).filter(Boolean).map(n=>({n,k:b.k,note:h(b.note||notes[n]||(n==='Defiance'?'Break stuns and CC':''))})));
+  }
+  function setupHTML(st){
+    const held=st.bar.filter(b=>b.held&&!b.man&&!b.mkey).map(b=>K(b.k)), mk=st.bar.find(b=>b.mkey);
+    const holdChip=(mk?K(mk.k)+' (macro key)':'macro key')+(held.length?' + '+held.join(' + '):'');
+    const hasStack=st.bar.some(b=>A(b.rows).length>1&&!b.man);
+    const slotNotes=st.bar.filter(b=>b.note&&!/^macro$/i.test(b.note));
+    const rules=['Macros can have at most 20 steps (this one has '+st.steps.length+').',
+      'Keep this on its own skill preset: presets 1–3 each keep their own skill bar, macro, Stigmas and perks, so your raid setup stays as it is. Switch preset before you queue.',
+      'A step whose skill isn\'t ready is skipped at once, so repeated steps never stall the macro.',
+      ...(hasStack?['A step fires its whole stack: the bottom skill first when it is ready, otherwise the next one up.']:[]),
+      'Use only the in-game macro: macro software and mouse or keyboard macro apps get accounts permanently banned.']
+      .concat(st.why.filter(x=>!/^In-game macro only/i.test(x)));
+    return (st.intro?`<p class="small" style="margin:0"><b>${h(st.intro)}</b></p>`:'')+
+      `<h3 style="font-size:18px;margin:4px 0 0">1. Set up your PvP skill bar</h3>`+
+      `<p class="small muted" style="margin:0">Switch to a free skill preset and place skills exactly like this. Row 0 is the bottom row and fires first. Gold-outlined slots are pressed by hand; "hold down" slots are held (charge skills, or held together with the macro key).</p>`+
+      `<div class="tablewrap" style="border:0"><div class="qbar">${qbarHTML(st.bar)}</div></div>`+
+      (slotNotes.length||st.notes.length?`<details class="pvpmini"><summary class="small"><b>Why each slot is set up this way</b> (${slotNotes.length+st.notes.length})</summary><ul class="plain small">${slotNotes.map(b=>`<li><span class="kbd">${h(K(b.k))}</span> ${icon(A(b.rows)[0])}<strong>${h(A(b.rows).filter(Boolean).join(' / '))}</strong>: ${h(b.note)}</li>`).join('')}${st.notes.map(x=>`<li>${h(x)}</li>`).join('')}</ul></details>`:'')+
+      `<h3 style="font-size:18px;margin:4px 0 0">2. Build the PvP macro</h3>`+
+      `<ol class="steps small"><li>Press <span class="kbd">K</span>, click <b>Macro</b>, then <b>Add Macro</b> once per step, picking the slots in exactly this order: <b>${h(st.steps.map(K).join(', '))}</b>.</li>`+
+      `<li>Set every delay to <b>${h(st.delay)} ms</b>.${st.delayNote?' '+h(st.delayNote):' If steps get skipped or your ping is about 80 ms or more, try 20 ms.'}</li>`+
+      (st.hold?`<li><b>How to hold it:</b> ${h(st.hold)}</li>`:'')+`</ol>`+
+      `<div class="grid2">${macroWinHTML(st.bar,st.steps,{hold:holdChip,delay:st.delay,title:'Skill Macro 1 (PvP preset)'})}${manualWinHTML(manualItems(st))}</div>`+
+      `<div class="small"><b>Rules that make it work</b><ul class="plain" style="margin-top:6px">${rules.map(x=>`<li>${h(x)}</li>`).join('')}</ul></div>`;
+  }
+  // "Snare Shot (1)", "Marking Shot (E, dash away)", "[macro] Judgment", "Chain of Torment (macro 5)" -> numbered step
+  const KEYRX=/^(?:macro\s+)?(\d|Q|E|R|T|F|Z|X|C|V|LMB|RMB|Space|Left click|Right click)(?![\w'])\s*(?:again\b)?[,:]?\s*(.*)$/i;
+  function keyOf(name){
+    const b=SETUPS[0].bar.find(x=>A(x.rows).includes(name)); return b?b.k:'';
+  }
+  function seqStep(raw,i){
+    let s=String(raw).trim(), mac=false;
+    if(/^\[macro\]\s*/i.test(s)){mac=true;s=s.replace(/^\[macro\]\s*/i,'')}
+    if(/^macro:\s*/i.test(s)){mac=true;s=s.replace(/^macro:\s*/i,'')}
+    if(!s||/^macro$/i.test(s)){mac=true;s='Hold the macro key'}
+    let name=s, key='', rest='';
+    const m=s.match(/^(.*?)\s*\(([^)]*)\)\s*(.*)$/);
+    if(m&&m[1]){name=m[1];const km=m[2].match(KEYRX);
+      if(km){key=km[1];rest=[km[2],m[3]].filter(Boolean).join(' ');if(/^macro\s/i.test(m[2]))mac=true}
+      else rest=[m[2],m[3]].filter(Boolean).join(' ')}
+    if(/from macro/i.test(rest)){mac=true;rest=rest.replace(/,?\s*from macro/i,'').trim()}
+    const icn=iconName(name);
+    if(!key&&icn) key=keyOf(icn);
+    return `<li><span class="pvpn">${i+1}</span>${icn?ic(icn,'sm'):''}<span><strong>${h(name)}</strong>${key?` <span class="kbd">${h(K(key))}</span>`:''}${mac?' <span class="tag wind">macro</span>':''}${rest?` <span class="small muted">${h(rest)}</span>`:''}</span></li>`;
+  }
+  const burstHTML=()=>A(PB.burst).map(b=>`<div class="pvpburst"><h4>${h(b.name)}</h4>${b.when?`<p class="small muted" style="margin:0">${h(b.when)}</p>`:''}<ol class="pvpseq">${A(b.sequence).map(seqStep).join('')}</ol></div>`).join('');
+  const ul=arr=>`<ul class="plain small">${A(arr).map(x=>`<li>${h(stripNum(x))}</li>`).join('')}</ul>`;
+  const det=(id,title,hint,body)=>body?`<details class="box pvpdet" data-pvpd="${id}"><summary><b class="pvpdt">${h(title)}</b> <span class="small muted">${h(hint)}</span></summary><div class="pvpdb">${body}</div></details>`:'';
+  // perks: [12-15, 16-19, 20] columns (byRank, or "12-15: ..." strings); plain lists show as one pick order
+  function perkRow(p){
+    const items=A(p.perks), ic0=ic(p.skill,'sm');
+    let cells='';
+    const col=(lab,v)=>`<td data-l="Rank ${lab}">${v}</td>`;
+    if(p.byRank){cells=['12-15','16-19','20'].map(r=>col(r.replace('-','–'),h(A(p.byRank[r]).join(' · ')||'—'))).join('')}
+    else if(items.some(x=>/^(Duel\s+)?\d+(-\d+)?\+?:/.test(x))){
+      const g={'12-15':[],'16-19':[],'20':[]};
+      items.forEach(x=>{const m=x.match(/^(?:Duel\s+|Healer\s*)?(\d+)(?:-(\d+))?\+?:\s*(.*)$/);
+        if(!m){g['20'].push(x);return} const a=+m[1]; (a>=20?g['20']:a>=16?g['16-19']:g['12-15']).push(m[3])});
+      cells=['12-15','16-19','20'].map(r=>col(r.replace('-','–'),h(g[r].join(' · ')||'—'))).join('');
+    }
+    else if(!items.length) cells=`<td colspan="3" data-l="Perks" class="muted">Not used in PvP</td>`;
+    else cells=`<td colspan="3" data-l="Pick order">${items.map((x,i)=>`<span class="pvppk"><i>${i+1}</i>${h(x)}</span>`).join(' ')}</td>`;
+    return `<tr><td><span class="inl">${ic0}<strong>${h(p.skill)}</strong></span></td>${cells}<td class="small muted" data-l="Why">${h(p.note||'')}</td></tr>`;
+  }
+  const perksHTML=()=>`<p class="small muted" style="margin:0">Perk slots open at skill rank 8, 12 and 20 (the rank on the icon, Daevanion bonuses included), and each perk needs the rank in brackets. Columns show what to run at each rank; "pick order" rows list the perks best first.</p><div class="tablewrap"><table class="pvpperks"><thead><tr><th>Skill</th><th>Rank 12–15</th><th>Rank 16–19</th><th>Rank 20</th><th>Why</th></tr></thead><tbody>${A(PB.perks).map(perkRow).join('')}</tbody></table></div>`;
+  const stigHTML=()=>`<div class="tablewrap"><table class="pvptbl"><thead><tr><th>Stigma</th><th>Level</th><th>Why</th></tr></thead><tbody>${A(PB.stigmas).map(s=>`<tr><td><span class="inl">${ic(s.name,'sm')}<strong>${h(s.name)}</strong></span></td><td data-l="Level">${h(s.level)}</td><td class="small" data-l="Why">${h(s.why)}</td></tr>`).join('')}</tbody></table></div>`+
+    (A(PB.stigmaShardOrder).length?`<h4>Shard order</h4><ol class="steps small">${PB.stigmaShardOrder.map(x=>`<li>${h(x)}</li>`).join('')}</ol>`:'')+
+    (A(PB.stigmaSwaps).length?`<h4>Swaps by matchup</h4><div class="tablewrap"><table class="pvptbl"><thead><tr><th>When / against</th><th>Swap</th></tr></thead><tbody>${PB.stigmaSwaps.map(w=>`<tr><td><b>${h(w.vs)}</b></td><td class="small" data-l="Swap">${h(w.swap)}</td></tr>`).join('')}</tbody></table></div>`:'');
+  const BN=PB.blockNote;
+  const statsHTML=()=>`<ol class="steps small">${A(PB.stats).filter(x=>/^\d+\./.test(x)).map(x=>`<li>${h(stripNum(x))}</li>`).join('')}</ol>`+ul(A(PB.stats).filter(x=>!/^\d+\./.test(x)))+
+    (BN?`<div class="callout warn small pvpblock"><b><span class="tag gold">Your call</span> ${h(BN.title)}</b><p style="margin:6px 0">${h(BN.text||'')}</p>${ul(BN.details)}</div>`:'');
+  const gearHTML=()=>`<p class="callout small" style="margin:0"><b>Global has no PvP armor or accessories.</b> Decanus and Centurion are cosmetic skins (small PvP stats on the skin). The real PvP swaps are the <b>Fierce Battle Amulet</b> (+20% PvP Damage Boost), PvP titles and wings, and the <b>Azphel board</b>.</p>`+ul(PB.gear);
+  function modeBlock(title,v,extra){
+    if(!v) return '';
+    const body=typeof v==='string'?`<p class="small" style="margin:0">${h(v)}</p>`:`${v.name?`<p class="small" style="margin:0"><b>${h(v.name)}</b></p>`:''}${v.setup?`<p class="small" style="margin:0">${h(v.setup)}</p>`:''}${ul(v.notes)}`;
+    return `<div class="pvpmode"><h4>${h(title)}</h4>${extra?`<p class="small muted" style="margin:0">${extra}</p>`:''}${body}</div>`;
+  }
+  const M=PB.modes||{};
+  const modesHTML=()=>modeBlock('Arena of Solitude (1v1)',M.arena1v1,'Your own gear and skill ranks count.')+
+    modeBlock('Arena of Tactics (10v10) and team arenas',M.tactics,'Arena of Tactics evens out everyone\'s stats, so Stigma levels, perks and play matter more than gear. Keep it on its own skill preset.'+(SETUPS.length>1?' The team bar and macro are under <b>'+h(SETUPS[1].label)+'</b> at the top of this tab.':''))+
+    modeBlock('Open world, Abyss and rifts',M.openWorld,'Outside the Abyss, only players who both have War Mode on can fight each other. Your full gear counts.');
+  const matchHTML=()=>`<div class="tablewrap"><table class="pvptbl"><thead><tr><th>Against</th><th>Plan</th></tr></thead><tbody>${A(PB.matchups).map(m=>`<tr><td><b>${h(m.vs)}</b></td><td class="small" data-l="Plan">${h(m.plan)}</td></tr>`).join('')}</tbody></table></div>`;
+  const okUrl=u=>/^https:\/\/[^\s"<>]+$/.test(u||'');
+  const srcHTML=()=>`<ul class="plain small pvpsrc">${A(PB.sources).map(s=>{const u=(String(s.url||'').match(/^https?:\/\/\S+/)||[''])[0];
+      const lab=h(s.creator||u);return `<li>${okUrl(u)?`<a href="${h(u)}" target="_blank" rel="${/metabot\.gg/i.test(u)?'noopener':'noopener noreferrer'}">${lab}</a>`:lab}${s.date?` · ${h(s.date)}`:''}${s.timestamp?` · <span class="muted">${h(s.timestamp)}</span>`:''}</li>`}).join('')}</ul>`;
+  const chgHTML=()=>ul(PB.changesFromGuide)+(A(PB.patchApplicability).length?`<h4>Which patches apply on Global</h4>${ul(PB.patchApplicability)}`:'');
+  const CHECKS=['Hold the PvP macro on a training dummy for about 20 seconds and check that every step fires, the stacked ones too (Combat Analysis, Ctrl+X, lists every skill that fired).','Make sure the PvP preset has its own Stigmas and perks saved before you queue: the macro presses slots, so a wrong preset fires the wrong skills.'];
+  const conf=String(PB.confidence||''), confLvl=(conf.match(/^[\w-]+/)||[''])[0];
+  const confHTML=()=>`<p class="small" style="margin:0"><span class="tag gold">Confidence: ${h(confLvl||'?')}</span> ${h(conf.replace(/^[\w-]+\.?\s*/,''))}</p><p class="callout small" style="margin:8px 0 0"><b>Nothing here is simulated.</b> PvP can't be simulated (players move, dodge, block, heal and break CC), so this build comes from what top players run and test, checked against Global skill data.</p>`;
+  const checkHTML=()=>`<ul class="plain small">${CHECKS.concat(A(PB.checkInGame)).map(x=>`<li><span class="pnum">☐</span> ${h(x)}</li>`).join('')}</ul>`;
+  function stigChips(){return A(PB.stigmas).map(s=>{const lv=(String(s.level==null?'':s.level).match(/^\d+/)||[''])[0];return `<span class="mschip">${ic(s.name,'sm')}${h(s.name)}${lv?` <em>Lv${h(lv)}</em>`:''}</span>`}).join('')}
+
+  // long summaries: first two sentences stay visible, the rest is a drop-down so the bar stays near the top
+  function summaryHTML(){const all=String(PB.summary||''), parts=all.split(/(?<=[.!?])\s+/);
+    if(all.length<=420||parts.length<=2) return `<p class="small" style="margin:0">${h(all)}</p>`;
+    return `<p class="small" style="margin:0">${h(parts.slice(0,2).join(' '))}</p><details class="pvpmini"><summary class="small"><b>Read the full overview</b></summary><p class="small" style="margin:8px 0 0">${h(parts.slice(2).join(' '))}</p></details>`}
+  function render(){
+    const st=cur();
+    const pick=SETUPS.length>1?`<div class="seg" role="group" aria-label="PvP setup" id="pvpsetpick">${SETUPS.map(s=>`<button type="button" data-pvps="${s.id}" aria-pressed="${s.id===st.id}">${h(s.label)}</button>`).join('')}</div>`:'';
+    host.innerHTML=
+      `<div class="box pvptop" style="display:grid;gap:12px">`+
+        `<h3 style="margin:0">Your PvP setup</h3>`+
+        (pick?`<div><div class="small muted" style="margin:0 0 6px">Show the skill bar and macro for:</div>${pick}</div>`:'')+
+        summaryHTML()+
+        `<div><div class="small muted" style="margin:0 0 6px">PvP Stigmas${st.id==='team'?' (1v1; the team set is in the slot notes below)':''}:</div><div class="mschips">${stigChips()}</div></div>`+
+        `<p class="small muted" style="margin:0"><span class="tag gold">Not simulated</span> Built from top players' PvP setups, not from our simulator. Confidence: ${h(confLvl||'?')}.</p>`+
+        `<div id="pvpsetup" style="display:grid;gap:12px">${setupHTML(st)}</div>`+
+      `</div>`+
+      (A(PB.opener).length?`<div class="box"><h3>Opener</h3><ol class="steps small">${PB.opener.map(x=>`<li>${h(x)}</li>`).join('')}</ol></div>`:'')+
+      (A(PB.burst).length?`<div class="box" style="display:grid;gap:14px"><h3 style="margin:0">Burst combos</h3><p class="small muted" style="margin:0">Press in this order. The key is the slot on your PvP skill bar above; <span class="tag wind">macro</span> steps fire from the held macro.</p>${burstHTML()}</div>`:'')+
+      det('cc','CC chains','which crowd control to chain, and in what order',A(PB.ccChains).length?ul(PB.ccChains):'')+
+      det('ccbreak','When to break CC (Defiance)','what Defiance removes and what to save it for',A(PB.ccBreak).length?ul(PB.ccBreak):'')+
+      det('def','Defensives','shields, immunities, self-heals and escapes',A(PB.defensives).length?ul(PB.defensives):'')+
+      det('move','Movement and kiting','range, dodges and line of sight',A(PB.movement).length?ul(PB.movement):'')+
+      det('heals','Heals','what each heal is for and when to press it',A(PB.heals).length?`<ul class="plain small">${PB.heals.map(x=>`<li>${icon(x.name)}<strong>${h(x.name)}</strong>: ${h(x.note)}</li>`).join('')}</ul>`:'')+
+      det('perks','Perks per skill','rank 12–15, 16–19 and 20',A(PB.perks).length?perksHTML():'')+
+      det('stig','Stigmas, levels and swaps','levels to aim for, shard order and swaps by matchup',A(PB.stigmas).length?stigHTML():'')+
+      det('stats','Stats','PvP stat priority'+(BN?' (and the Block note)':''),A(PB.stats).length?statsHTML():'')+
+      det('gear','Gear','what actually changes for PvP on Global',A(PB.gear).length?gearHTML():'')+
+      det('arcana','Arcana for PvP','which card sets and stats work in PvP',A(PB.arcana).length?ul(PB.arcana):'')+
+      det('modes','Arena, Tactics and open world','what changes in each PvP mode',modesHTML())+
+      det('match','Matchups','how to fight each class',A(PB.matchups).length?matchHTML():'')+
+      det('check','Check in game','things to confirm on the dummy or in your first matches',checkHTML())+
+      det('chg','What changed from the old PvP section','and which Korean patches apply on Global',A(PB.changesFromGuide).length?chgHTML():'')+
+      det('src','Sources','videos (with timestamps) and sites this build comes from',A(PB.sources).length?srcHTML():'')+
+      det('conf','Confidence','how sure we are, and why nothing here is simulated',confHTML());
+    host.querySelectorAll('[data-pvps]').forEach(b=>b.addEventListener('click',()=>{S.set('pvpSetup',b.dataset.pvps);render()}));
+  }
+  // place it at the top of the PvP tab; the old Stigmas / combos / matchups / stats boxes are replaced by the sections above
+  let host=document.getElementById('pvpbuildbox');
+  if(!host){host=document.createElement('div');host.id='pvpbuildbox';const first=sec.querySelector(':scope > div');if(first)first.insertAdjacentElement('afterend',host);else sec.prepend(host)}
+  host.style.display='grid'; host.style.gap='14px';
+  try{
+    const hide=el=>{if(el)el.hidden=true};
+    const sg=document.getElementById('pvpstig'); hide(sg&&sg.closest('.grid2'));
+    const cb=document.getElementById('pvpcombos'); hide(cb&&cb.closest('.box'));
+    const mt=document.getElementById('pvpmatch'); hide(mt&&mt.closest('.tablewrap')&&mt.closest('.tablewrap').parentElement);
+    const ps=document.getElementById('pvpstats'); const psb=ps&&ps.closest('.box'); hide(psb); if(psb&&psb.parentElement&&psb.parentElement.classList.contains('grid2'))psb.parentElement.style.gridTemplateColumns='minmax(0,1fr)';
+    const pi=document.getElementById('pvpintro'); if(pi) pi.textContent='Your full '+C['class']+' PvP setup: skill bar, macro and burst combos first, then everything else in drop-downs. Your PvE build is not touched.';
+  }catch(e){console.error(e)}
+  render();
+  window.renderPvpBuild=render;
 })();
 
 /* ---------- Achievement farming (data: global ACHFARM = audit/r8/achfarm.json; achievement names, goals and rewards

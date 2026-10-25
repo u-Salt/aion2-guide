@@ -511,6 +511,20 @@ details.tabsrc .tabsrcbody p{margin:0}
 .crcard{display:grid;gap:14px}.crcard h3{margin:0}
 .crdet{border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:6px 0}.crdet>summary{cursor:pointer}.crdetb{margin-top:8px;display:grid;gap:6px}
 .crlist{display:grid;gap:6px;padding-left:18px;margin:0}
+/* PvP build tab (pvpbuild_fn.js) */
+#pvpbuildbox{display:grid;gap:14px;min-width:0}#pvpbuildbox>*{min-width:0}
+.pvpburst{display:grid;gap:6px}.pvpburst h4{margin:0;font-size:16px}
+ol.pvpseq{list-style:none;margin:0;padding:0;display:grid;gap:6px;counter-reset:none}
+ol.pvpseq li{display:flex;gap:8px;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 10px;min-width:0;overflow-wrap:anywhere}
+ol.pvpseq li .ico{flex:0 0 auto}
+.pvpn{flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:var(--gold);color:var(--bg);font:700 12px var(--f-mono);display:inline-flex;align-items:center;justify-content:center}
+details.pvpdet>summary{padding:2px 0}details.pvpdet[open]>summary{margin-bottom:10px}.pvpdt{font-family:var(--f-display);font-size:18px}
+.pvpdb{display:grid;gap:10px}.pvpdb h4{margin:6px 0 0}
+details.pvpmini>summary{cursor:pointer}details.pvpmini ul{margin-top:8px}
+.pvpmode{display:grid;gap:4px;border-left:3px solid var(--wind);padding-left:10px}.pvpmode h4{margin:0}
+.pvppk{display:inline-flex;gap:4px;align-items:baseline;margin:0 8px 2px 0}.pvppk i{font-style:normal;color:var(--wind);font:700 12px var(--f-mono)}
+#pvpsetpick{flex-wrap:wrap}
+@media (max-width:600px){table.pvpperks thead,table.pvptbl thead{display:none}table.pvpperks,table.pvpperks tbody,table.pvpperks tr,table.pvpperks td,table.pvptbl,table.pvptbl tbody,table.pvptbl tr,table.pvptbl td{display:block;width:auto}table.pvpperks tr,table.pvptbl tr{border-bottom:1px solid var(--line);padding:8px 10px}table.pvpperks td,table.pvptbl td{border:0;padding:2px 0}table.pvpperks td[data-l]::before,table.pvptbl td[data-l]::before{content:attr(data-l) ': ';font-weight:600;color:var(--muted)}}
 @media (max-width:600px){table.crdps thead{display:none}table.crdps,table.crdps tbody,table.crdps tr,table.crdps td{display:block;width:auto}table.crdps tr{border-bottom:1px solid var(--line);padding:8px 10px}table.crdps td{border:0;padding:2px 0}table.crdps td[data-l]::before{content:attr(data-l) ': ';font-weight:600;color:var(--muted)}}
 </style>
 <div class="topbar"><div class="in"><span class="brand">AION 2 Field Manual</span><label for="classpick" class="clslab">Class <select id="classpick"></select></label><span class="modelab" id="modelab">Build for <span class="seg" id="modepickTop" role="group" aria-labelledby="modelab" title="PvE shows the raid, mode and simulator tabs; PvP swaps them for the PvP build. Your ticks are kept for both."><button type="button" data-m="pve">PvE</button><button type="button" data-m="pvp">PvP</button></span></span><a class="donate" data-donate hidden aria-label="Tip the author (optional)" title="Everything in this guide is free. A tip is optional and changes nothing."><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1 1 1.5 1 2.5M12 3.5c0 1 1 1.5 1 2.5"/></svg><span>Tip the author (optional)</span></a></div></div>
@@ -562,5 +576,5 @@ const ALL={};const _CL={"ranger":"Ranger","gladiator":"Gladiator","templar":"Tem
 const _h=location.hash.slice(1);
 const SLUG=ALL[_h]?_h:(ALL[S.gget('cls','ranger')]?S.gget('cls','ranger'):'ranger');
 document.getElementById('app').innerHTML='<p class="muted" style="padding:24px">Loading the '+ALL[SLUG].cls+' guide…</p>';
-['data/common.js','data/'+SLUG+'.js','app.js'].forEach(function(src){var s=document.createElement('script');s.src=src+'?v=1792954240';s.async=false;s.onerror=function(){var d=document.getElementById('app');d.innerHTML='<p style="padding:24px">Could not load '+src+'. Please tell Claude.</p>'};document.body.appendChild(s)});
+['data/common.js','data/'+SLUG+'.js','app.js'].forEach(function(src){var s=document.createElement('script');s.src=src+'?v=1792961984';s.async=false;s.onerror=function(){var d=document.getElementById('app');d.innerHTML='<p style="padding:24px">Could not load '+src+'. Please tell Claude.</p>'};document.body.appendChild(s)});
 </script>
