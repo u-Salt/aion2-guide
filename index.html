@@ -200,6 +200,26 @@ td.num,th.num{text-align:center;font-family:var(--f-mono);font-variant-numeric:t
 .gchk{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border:1px solid var(--line);border-radius:7px;background:var(--panel2);font-size:13px;cursor:pointer;white-space:nowrap}
 .gchk input{width:16px;height:16px;margin:0;accent-color:var(--wind)}
 .gchk:has(input:checked){border-color:color-mix(in srgb,var(--wind) 60%,transparent);color:var(--wind)}
+.gsb{display:grid;gap:6px;min-width:210px}
+.sblist{margin:0;padding-left:1.6em;font-size:13px;line-height:1.35}
+.sblist li{margin:0 0 2px;padding-left:2px}
+.sblist li::marker{font:600 12px var(--f-mono);color:var(--gold)}
+.sblist .sbr{font:12px var(--f-mono);color:var(--muted);white-space:nowrap}
+.sblist .sbr-veryrare{color:var(--warn)}
+.sblist .sbr-rare{color:var(--gold)}
+.sblist .sbx{font:600 12px var(--f-mono);border:1px solid color-mix(in srgb,var(--gold) 50%,transparent);color:var(--gold);border-radius:5px;padding:0 3px;white-space:nowrap}
+.gsb .sbhead{font-size:12px}
+.gsb .gchk{white-space:normal;justify-self:start}
+a.sball{white-space:nowrap}
+@media (max-width:620px){
+  .geartable thead{display:none}
+  .geartable,.geartable tbody,.geartable tr,.geartable td{display:block;width:auto}
+  .geartable tr{padding:10px 12px;border-bottom:1px solid var(--line)}
+  .geartable td{border:0;padding:3px 0}
+  .geartable td[data-l]:not(:first-child)::before{content:attr(data-l);display:block;font:600 12px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:4px 0 3px}
+  .geartable .gchk{white-space:normal}
+  .gsb{min-width:0}
+}
 .phase li.phasehead{display:block;background:var(--panel2);border-style:dashed}
 .farmgrid{display:grid;gap:8px}
 .farmcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
@@ -542,5 +562,5 @@ const ALL={};const _CL={"ranger":"Ranger","gladiator":"Gladiator","templar":"Tem
 const _h=location.hash.slice(1);
 const SLUG=ALL[_h]?_h:(ALL[S.gget('cls','ranger')]?S.gget('cls','ranger'):'ranger');
 document.getElementById('app').innerHTML='<p class="muted" style="padding:24px">Loading the '+ALL[SLUG].cls+' guide…</p>';
-['data/common.js','data/'+SLUG+'.js','app.js'].forEach(function(src){var s=document.createElement('script');s.src=src+'?v=1792949732';s.async=false;s.onerror=function(){var d=document.getElementById('app');d.innerHTML='<p style="padding:24px">Could not load '+src+'. Please tell Claude.</p>'};document.body.appendChild(s)});
+['data/common.js','data/'+SLUG+'.js','app.js'].forEach(function(src){var s=document.createElement('script');s.src=src+'?v=1792954240';s.async=false;s.onerror=function(){var d=document.getElementById('app');d.innerHTML='<p style="padding:24px">Could not load '+src+'. Please tell Claude.</p>'};document.body.appendChild(s)});
 </script>

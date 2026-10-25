@@ -1,4 +1,4 @@
-var SIMSRC="data/sim.js?v=1792949732";
+var SIMSRC="data/sim.js?v=1792954240";
 const P=ALL[SLUG];
 document.getElementById('app').innerHTML=P.body;
 document.title=P.cls+' Guide · AION 2 Global Field Manual (Unofficial Fan Guide)';
@@ -448,6 +448,75 @@ function soulFor(slot){
   const v=hit?hit[1]:(slot.t==='none'?'—':'Best available line');
   return /^perfect$/i.test(v.trim())?'Perfect (weak: take Attack, Crit or a damage-boost line if offered)':v;
 }
+/* ---------- Soul Binding: ranked best-in-slot line list per slot (gear planner column) ----------
+   Numbered 1..N, best first, N = lines the BEST ITEM gets (crafted Splendent/Wise Dragon Lord 5, IL86 drop 4,
+   dropped weapon/guard 3, Abyssal Bracelet 4 fixed). PvE order: class research picks, rolls.json best, SBFULL simulator
+   ranks, rolls.json keep. PvP order: rolls.json PvP best, PvP keep, SBFULL PvP-flagged lines. Only lines the slot can
+   roll on Global (SBFULL pools; skill +1 checked against the slot's active/passive pool). Each line shows its share of
+   rolls (SBFULL "c"; a given skill +1 is about 1 line in 5 split over 12 active / 10 passive skills) as a rarity hint.
+   No extra ticks: the single per-slot tick (g-<slot>-x / gv-<slot>-x) is unchanged. */
+const SBKEY={weapon:'weapon',guard:'guard',helmet:'helmet',shoulders:'shoulders',chest:'chest',gloves:'gloves',legs:'legs',boots:'boots',cloak:'cloak',necklace:'necklace',ear1:'earring',ear2:'earring',ring1:'ring',ring2:'ring',bracelet:'bracelet'};
+function sbPool(s){const F=(typeof SBFULL!=='undefined'&&SBFULL&&SBFULL.slots)?SBFULL:null,k=SBKEY[s.k];return F&&k&&F.slots[k]?{F,k,P:F.slots[k]}:null}
+function sbCount(s,P){
+  const pv=(GEARSLOTS.pve.find(x=>x.k===s.k)||s),craft=(P&&parseInt(P.nLines,10))||5;
+  if(s.k==='bracelet')return {n:(P&&parseInt(P.nLines,10))||4,lab:'4 lines, fixed when the Abyssal Bracelet drops'};
+  if(/splendent|craft/i.test(pv.item||''))return {n:craft,lab:`${craft} lines on the craft (${s.t==='weapon'?'dropped weapon: 3':'IL86 drop: 4'})`};
+  if(s.t==='weapon')return {n:3,lab:'3 lines on a dropped one (a crafted guard has 5)'};
+  return {n:4,lab:'4 lines on an IL86 drop (a craft has 5)'};
+}
+function sbResearch(s){ // this class's research pick text for the slot, split into line names
+  const sb=(typeof C!=='undefined'&&C&&C.soulBinding)||[],n=s.n.toLowerCase().split(' ')[0],w=((typeof C!=='undefined'&&C&&C.weapon)||'').toLowerCase().split(' ')[0];
+  const hit=sb.find(r=>{const t=String(r[0]).toLowerCase();return (s.k==='guard'&&t.includes('guard'))||(s.k==='weapon'&&(t.includes('weapon')||(w&&t.includes(w))))||(s.k.startsWith('ring')&&t.includes('ring'))||(s.k.startsWith('ear')&&t.includes('ear'))||(s.k!=='weapon'&&s.k!=='guard'&&t.includes(n))});
+  if(!hit)return [];
+  const slotWord=s.k.startsWith('ear')?'ear':s.k.startsWith('ring')?'ring':n,out=[];
+  String(hit[1]).replace(/\([^)]*\)/g,'').split(/\.\s+/).forEach(se=>{const m=se.match(/^\s*([A-Za-z /]+):\s*(.*)$/);let body=se;
+    if(m){if(!m[1].toLowerCase().includes(slotWord))return;body=m[2]}
+    body.split(/,|;|>|\bthen\b|\belse\b|\bor\b/).forEach(t=>{t=t.replace(/^\s*(keep|aim for|take)\s+/i,'').replace(/\s+if it rolls.*$/i,'').replace(/\s+(until|first|last|once)\b.*$/i,'').replace(/[.\s]+$/,'').trim();if(t)out.push(t)})});
+  return out;
+}
+function sbLines(mode,s){
+  if(s.t==='none')return null;
+  const Q=sbPool(s),R=typeof rollSlot==='function'?rollSlot(mode,s.k):null;if(!Q&&!R)return null;
+  const P=Q&&Q.P,cnt=sbCount(s,P),lc=x=>String(x).toLowerCase().trim();
+  const rows=P?P.rows:[],byName=new Map(rows.map(r=>[lc(r.n),r]));
+  const skills=(P&&P.skill&&Q.F.skills&&Q.F.skills[SLUG]&&Q.F.skills[SLUG][P.skill])||null;
+  const vals=(P&&Q.F.rank&&Q.F.rank[SLUG]&&Q.F.rank[SLUG][Q.k])||null;
+  const out=[],seen=new Set();
+  const valid=nm=>{if(/^\+1 /.test(nm)){const sk=nm.slice(3).trim();return !P||!skills||skills.some(x=>lc(x)===lc(sk))?nm:null}
+    if(byName.has(lc(nm)))return byName.get(lc(nm)).n;if(!P)return nm;
+    const sk=skills&&skills.find(x=>lc(x)===lc(nm));return sk?'+1 '+sk:null};
+  const add=raw=>{
+    if(out.length>=cnt.n)return;let t=String(raw||'').trim();
+    if(!t||/^(any|other)\b|damage (passive|active)/i.test(t))return;
+    let note='';const m=t.match(/\s*\(([^)]*)\)\s*$/);if(m){note=m[1];t=t.slice(0,m.index).trim()}
+    const ok=t.split(/\s+\/\s+/).map(valid).filter(Boolean);if(!ok.length)return;
+    if(ok.length===1&&/^(front|back) attack$/i.test(ok[0])){const o2=/^front/i.test(ok[0])?'Back Attack':'Front Attack';if(byName.has(lc(o2)))ok.splice(0,1,'Front Attack','Back Attack')}
+    const label=ok.join(' or ');if(seen.has(lc(label))||ok.some(o=>seen.has(lc(o))))return;
+    seen.add(lc(label));ok.forEach(o=>seen.add(lc(o)));
+    if(mode!=='pvp'&&/^accuracy$/i.test(label)&&!note)note='until target';
+    const rs=ok.map(o=>byName.get(lc(o))).filter(Boolean);
+    let pc=null,ex='',range='';
+    if(rs.length){pc=rs.reduce((a,r)=>a+(parseFloat(r.c)||0),0);ex=rs[0].x||'';range=rs.length===1?rs[0].r:''}
+    else if(/^\+1 /.test(label)&&P&&P.skill){pc=20/(P.skill==='active'?12:10);range='+1 skill level'}
+    out.push({n:label,note,range,pc,ex,skill:/^\+1 /.test(label)});
+  };
+  const ranked=()=>{if(!vals){const RK=(P&&Q.F.rank)||{},cl=Object.keys(RK).filter(x=>RK[x][Q.k]);if(!cl.length)return []; // no data for this class (Brawler): average of the other classes, stat lines only
+      return rows.map((r,i)=>({n:r.n,v:cl.reduce((a,x)=>a+(RK[x][Q.k][i]||0),0)/cl.length})).filter(x=>x.v>=0.01).sort((a,b)=>b.v-a.v).map(x=>x.n)}const L=rows.map((r,i)=>({n:r.n,v:vals[i]}));if(skills)skills.forEach((n,j)=>L.push({n:'+1 '+n,v:vals[rows.length+j]}));return L.filter(x=>x.v!=null&&x.v>=0.01).sort((a,b)=>b.v-a.v).map(x=>x.n)};
+  if(mode==='pvp'){(R&&R.best||[]).forEach(add);(R&&R.keep||[]).forEach(add);rows.filter(r=>r.p).forEach(r=>add(r.n));ranked().forEach(add)}
+  else{sbResearch(s).forEach(add);(R&&R.best||[]).forEach(add);ranked().forEach(add);(R&&R.keep||[]).forEach(add)}
+  if(!out.length)return null;
+  return {n:cnt.n,lab:cnt.lab,lines:out,key:Q?Q.k:null};
+}
+function sbRare(pc){return pc==null?'':pc<=1.5?'very rare':pc<=3?'rare':pc<=5?'uncommon':'common'}
+function sbListHtml(mode,L){
+  const fmt=v=>(v<10&&v%1?v.toFixed(1).replace(/\.0$/,''):Math.round(v))+'%';
+  const li=L.lines.map(ln=>{const rr=sbRare(ln.pc);
+    const hint=ln.pc!=null?`<span class="sbr sbr-${rr.replace(' ','')}">${ln.skill?'≈':''}${fmt(ln.pc)} · ${rr}</span>`:'';
+    const tip=[ln.range?`Roll (IL102): ${ln.range}`:'',ln.pc!=null?(ln.skill?'This exact skill: about 1 line in 5 is a skill +1, split evenly over the class skills':'Share of stat rolls on this slot'):'',ln.ex,ln.note&&ln.note.length>16?ln.note:''].filter(Boolean).join('. ');
+    return `<li${tip?` title="${esc(tip)}"`:''}><b>${esc(ln.n)}</b>${ln.note&&ln.note.length<=16?` <span class="muted">(${esc(ln.note)})</span>`:''}${ln.ex?' <span class="sbx">only here</span>':''} ${hint}</li>`}).join('');
+  const link=L.key&&typeof SBFULL!=='undefined'&&SBFULL?` <a href="#soultable" class="sball" data-sbfgo="${L.key}">all lines ▸</a>`:'';
+  return `<ol class="sblist">${li}</ol><div class="small muted sbhead">${esc(L.lab)}${mode==='pvp'?' · PvP order':''}.${link}</div>`;
+}
 function renderGear(){
   const host=$('gearplan'); if(!host) return;
   const mode=S.get('gearmode','pve'), P2=mode==='pvp'?'gv-':'g-';
@@ -461,19 +530,29 @@ function renderGear(){
     keys.forEach(k=>{total++; if(sv[k]) done++});
     const soul=(s.t==='acc'||s.t==='brace');
     const stoneHtml=stones.length?(soul?'<span class="small muted" style="width:100%">Soulstones:</span>':'')+stones.map((st,i)=>box(`${P2}${s.k}-m${i}`,st)).join(''):'<span class="muted small">No stone slots</span>';
-    return `<tr><td><b>${s.n}</b></td><td class="small">${s.item}</td><td>${box(`${P2}${s.k}-got`,'Got it')}</td><td>${box(`${P2}${s.k}-enh`,s.enh)}</td><td>${third?box(`${P2}${s.k}-x`,third):'<span class="muted small">—</span>'}</td><td><div class="gstones">${stoneHtml}</div></td></tr>`;
+    let sbCell='<span class="muted small">—</span>';
+    if(third){const L=sbLines(mode,s);
+      sbCell=L?`<div class="gsb">${sbListHtml(mode,L)}${box(`${P2}${s.k}-x`,mode==='pvp'?s.pot:'Got my target lines')}</div>`:box(`${P2}${s.k}-x`,third)}
+    const thirdL=mode==='pvp'?'Soul Binding (PvP) / Potential':'Soul Binding';
+    return `<tr><td data-l="Slot"><b>${s.n}</b></td><td class="small" data-l="Best item (where)">${s.item}</td><td data-l="Have">${box(`${P2}${s.k}-got`,'Got it')}</td><td data-l="Enhance">${box(`${P2}${s.k}-enh`,s.enh)}</td><td data-l="${thirdL}">${sbCell}</td><td data-l="${soul?'Soulstones':'Manastones'}"><div class="gstones">${stoneHtml}</div></td></tr>`;
   }).join('');
-  const third=mode==='pvp'?'Potential':'Soul Binding';
+  const third=mode==='pvp'?'Soul Binding (PvP) / Potential':'Soul Binding';
   const pvpNote=mode==='pvp'?' Potential always succeeds: each step costs 100k Abyss Points plus Potential Stones (full +4 is 400k AP and 10 stones per item). Potential only works on Soul Bound Unique gear. The upgrade window lists enhancement, manastones, Theostones and Soul Binding as carried over but doesn\'t mention Potential, so assume it may not carry and put it on your IL86/102 keepers. Global has no separate PvP armor: PvP power comes from Potential, the Fierce Battle Amulet, Decanus skins (about 500k AP for the set) and Abyssal manastones. Swap only the amulet between PvE and PvP.':' Keep any Damage Boost stone you roll (there is no lock, so stop engraving that item); odds and top rolls are under Upgrades &amp; stones › Manastones. Don\'t put Superior stones on gear you\'ll replace: use cheap stones until the IL86+ piece is your keeper. Upgrade recipes remove your stones, and a different item starts empty too.';
+  const sbNote=mode==='pvp'?' <b>Soul Binding (PvP)</b>: the lines worth keeping against players, best first. It is the same item as your PvE piece, so pick one target set.':' <b>Soul Binding</b>: the best lines for your class on that slot, best first, as many as the item gets. The % is how often a line rolls (rare = expensive to Sync into), so chase the best rare ones first and keep them. A dropped piece has fewer lines: aim for the top ones. "all lines ▸" opens every line that slot can roll, with ranges and worth.';
   host.innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px">
       <div class="seg" role="group" aria-label="Gear set"><button type="button" data-gm="pve" aria-pressed="${mode==='pve'}">PvE gear</button><button type="button" data-gm="pvp" aria-pressed="${mode==='pvp'}">PvP gear</button></div>
       <div class="progress" style="flex:1 1 260px"><div class="bar"><i style="width:${total?100*done/total:0}%"></i></div><span class="readout">${done} / ${total} done</span><button class="btn" type="button" id="gearreset">Clear ${mode==='pvp'?'PvP':'PvE'} gear checkmarks</button></div></div>
   <div class="tablewrap"><table class="geartable"><thead><tr><th>Slot</th><th>Best item (where)</th><th>Have</th><th>Enhance</th><th>${third}</th><th>Manastones / Soulstones${mode==='pvp'?' (Abyssal / normal Soulstones)':' (Superior)'}</th></tr></thead><tbody>${rows}</tbody></table></div>
-  <p class="small muted" style="margin:8px 0 0"><b>Manastones</b> go on the weapon, guard and armor; necklace, earrings, rings and bracelet take <b>Soulstones</b> (aim for the same stats). ${R.note}${pvpNote}</p>`;
+  <p class="small muted" style="margin:8px 0 0"><b>Manastones</b> go on the weapon, guard and armor; necklace, earrings, rings and bracelet take <b>Soulstones</b> (aim for the same stats). ${R.note}${pvpNote}${sbNote}</p>`;
   host.querySelectorAll('[data-gm]').forEach(b=>b.addEventListener('click',()=>{S.set('gearmode',b.dataset.gm);renderGear()}));
   const rb=$('gearreset'); if(rb) rb.addEventListener('click',()=>{const sv=S.get('sv',{});Object.keys(sv).forEach(k=>{if(k.startsWith(P2))delete sv[k]});S.set('sv',sv);renderGear()});
   if(typeof renderGearGuide==='function') setTimeout(renderGearGuide,0);
 }
+// "all lines ▸" in the gear planner: open that slot's full list under Soul Binding by slot (sbfull_fn.js)
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[data-sbfgo]');if(!a)return;
+  const d=document.querySelector(`#soultable details.sbfull[data-sbf="${a.dataset.sbfgo}"]`);if(!d)return;e.preventDefault();
+  for(let p=d.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS'&&!p.open)p.open=true;
+  d.open=true;d.scrollIntoView({behavior:'smooth',block:'start'});const su=d.querySelector('summary');if(su)try{su.focus({preventScroll:true})}catch(_){}});
 function renderSV(){const sv=S.get('sv',{});document.querySelectorAll('[data-sv]').forEach(i=>{i.checked=!!sv[i.dataset.sv]})}
 document.addEventListener('change',e=>{const k=e.target&&e.target.dataset&&e.target.dataset.sv;if(!k)return;const sv=S.get('sv',{});sv[k]=e.target.checked;S.set('sv',sv);if(k.startsWith('g-')||k.startsWith('gv-'))renderGear();if(k.startsWith('fm-')&&typeof farmCounts==='function')farmCounts()});
 
