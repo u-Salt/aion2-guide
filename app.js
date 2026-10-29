@@ -1,4 +1,4 @@
-var SIMSRC="data/sim.js?v=1793235987";
+var SIMSRC="data/sim.js?v=1793238437";
 const P=ALL[SLUG];
 document.getElementById('app').innerHTML=P.body;
 document.title=P.cls+' Guide · AION 2 Global Field Manual (Unofficial Fan Guide)';
@@ -650,15 +650,15 @@ const DWTASKS=[
  {k:'bcm',t:'d',n:'Black Cloud Merchant',d:'Free hourly refresh, different stock per character.'},
  {k:'pets',t:'d',n:'Pet souls',d:'Kill a few monsters for missing pets.'},
  {k:'craft',t:'d',n:'Craft Odyle / food / potions',d:'If your profession is levelled.'},
- {k:'fissure',t:'w',srv:1,n:'Daily Dungeon ×14',d:'Daeva Bio-Research Base (Unknown Fissure tab): a 90-second run paying 3,000–10,000 Enhance Stones by score, 14 entries a week shared by the server.'},
+ {k:'fissure',t:'w',srv:1,n:'Daily Dungeon ×14',d:'Daeva Bio-Research Base (Unknown Fissure tab): a 90-second run paying 3,000–10,000 Enhance Stones by score, 14 entries a week shared by the server. New 28 Oct: Odylium Repository pays Soul Crystals (Bound) by clear points instead, and uses the same 14 entries. Split them by what you need: Enhance Stones (Bio-Research) or Soul Crystals (Odylium).'},
  {k:'conquest',t:'w',n:'Conquest runs',d:'1 reward count per 8h (cap 21). Always take the reward cube.'},
  {k:'trans',t:'w',n:'Transcendence runs',d:'1 per 12h (cap 14). Arcana.'},
- {k:'hardexp',t:'w',n:'Expedition Hard (Krao Cave, Draupnir)',d:'New 21 Oct, item level 2,600: 4-minute boss Frenzy timer, 3 revives each. Ariel Fragments, Philosopher\'s Stone: Revelation (chance, or pick it as the guaranteed reward), all Wrathful materials, more Kina. Morph 100 fragments into 1 Ariel crystal (up to 30 per character). Whether Hard uses the Conquest reward count is not stated.'},
+ {k:'hardexp',t:'w',n:'Expedition Hard (Krao Cave, Draupnir, Urugugu Canyon, Vakron Sky Island)',d:'Krao Cave and Draupnir Hard opened 21 Oct (item level 2,600); Urugugu Canyon and Vakron Sky Island Hard opened 28 Oct (item level 2,700). All have a 4-minute boss Frenzy timer and 3 revives each. Ariel Fragments (each dungeon gives its own kind), Philosopher\'s Stone: Revelation (chance, or pick it as the guaranteed reward), all Wrathful materials, more Kina; Urugugu and Vakron can also drop an Expedition Hero Artwork. Morph 100 fragments into 1 Ariel crystal (up to 30 per character), or 1 fragment into 5 Enhance Stones (no limit). Hard achievements give Unique skins. Whether Hard uses the Conquest reward count is not stated.'},
  {k:'explore',t:'w',n:'Exploration',d:'7 reward counts per Expedition dungeon.'},
  {k:'trial',t:'w',n:'Ascension Trial ×3',d:'Solo; Enhance Stones, Amplify fragments.'},
  {k:'subj',t:'w',off:1,n:'Subjugation ×3',d:'4-player. Not open on Global yet (probably Season 2), so hidden.'},
  {k:'raid',t:'w',off:1,n:'Ludra raid',d:'GS 2,800; offline for a rework, so hidden. Global client data: 4 attempts and 1 final-boss reward a week (the rework may change this).'},
- {k:'abyss',t:'w',n:'Abyss time',d:'7 h a week per layer (14 h in Lower and Middle with membership). Until 27/28 Oct, Lower Abyss Rift Stones add up to 7 h more (see below). Since 14 Oct you can bank at most 7 h of entry time, and unused time does not carry over to the next week; how the cap works with membership is not stated.'},
+ {k:'abyss',t:'w',n:'Abyss time',d:'7 h a week per layer (14 h in Lower and Middle with membership). Lower Abyss Rift Stones add 1 h each (see below). Since 28 Oct more players can be in the Abyss at once. Since 14 Oct you can bank at most 7 h of entry time, and unused time does not carry over to the next week; how the cap works with membership is not stated.'},
  {k:'growth',t:'w',off:1,n:'Growth dungeons',d:'Silent Graveyard, Fafnite Amphitheater: 7 h each, Soul Crystals, Enhance Stones. Probably not open on Global yet, so hidden.'},
  {k:'arena',t:'w',n:'Arena / Arena of Tactics',d:'Solitude and Cooperation: 10 participation + 30 win rewards each. Arena of Tactics (10v10, 11:00–14:00 and 19:00–21:00 only): 3 participation + 3 win rewards.'},
  {k:'apshop',t:'w',n:'Abyss Point shop',d:'Weekly limits: Potential Stones and 50 Lesser Abyssal Manastones. Stigma Shards (200) and Azphel crystals (110) have lifetime limits that never reset: buy them as AP allows.'},
@@ -669,19 +669,20 @@ const DWTASKS=[
  {k:"cmdcity",t:"w",srv:1,n:"Command Missions ×12",d:"Command Merchant in Verteron/Altgard: 15,000 Kina a scroll, 12 a week (level 45). Same reward slots as Duty Missions. Scrolls keep in your bag, so buy all 12 and finish them before Wednesday."},
  {k:"corridor",t:"w",n:"Abyss Corridor",d:"After an Artifact Siege, enter the Corridor at each Artifact your faction holds: 5 minutes of monster killing for Kina and Abyss Points (0–3 runs a siege). Open until the next siege; needs Abyss time."},
  {k:"siege",t:"w",n:"Artifact Siege + Abyss elites",d:"Siege Mon/Thu/Sat 21:00, Executors 21:30; Nahma Fri/Sun 21:00 (server time; check the in-game timer). Sources disagree on the server clock: an EU creator says German time, while metabot.gg and allthings.how say every region runs on one GMT+9 clock. NC hasn't said; official notices only give PDT and CEST."},
- {k:"planet",t:"w",n:"Planet's Call pass",d:"Event pass: 51 levels, 40,000 EXP in total, 15,000 weekly cap. Ends at the 27 Oct PDT / 28 Oct CET maintenance. From the 21 Oct reset one weekly cap is left, so under 25,000 pass EXP you can no longer finish it: claim what you have before then."},
+ {k:'prelude',t:'w',n:'Prelude to Flight pass (event)',d:'Menu > Subscribe, 28 Oct to the 2 Dec maintenance. 50 levels, then a repeat reward; up to 15,000 pass EXP per character a week. Free track: Small Odyle Energy, Fissure and Nightmare tickets, Battle Enhance Scrolls, Spiritstones. Premium (1,000 Quna, optional): full Odyle Energy instead, plus 20 Battle Enhance Scrolls. Best EXP: Expedition/Transcendence clears (300 each); also gather (30), craft (30), Soul Binding (20), Hidden Cube (50).'},
+ {k:'atreia',t:'d',n:'Atreia\'s Call attendance (event)',d:'Menu > Attendance, 28 days, 28 Oct to the 2 Dec maintenance. Days 7/14/21/28: 2 Odyle Energy; days 6/13/20/27: 2,000 Soul Crystals; also Battle Enhance Scrolls, Soul Codex: Reset, Fissure tickets and Content Usage Ticket chests.'},
  {k:"passmis",t:"w",n:"Daeva Pass weekly missions",d:"Challenge Season Missions > Weekly Missions, for pass EXP."},
  {k:"wingmorph",t:"w",srv:1,n:"Sealed Wing → Enhance Stone morph",d:"Up to 20 Substance Morphs per server per week (since 7 Oct). Pick which character gets the stones."},
  {k:"spiritstone",t:"w",srv:1,n:"Resurrection Spiritstones (optional)",d:"Rise to the Challenge (from 21 Oct): Shop > Wind Breeze Merchants, per server per week: Step 1, 30 at 25,000 Kina; Step 2, 30 more at 50,000. Until the 15 Dec PST / 16 Dec CET maintenance. Before 21 Oct: 10 a week at 25,000."},
  {k:"halattend",t:"d",srv:1,n:"Trick or Treat attendance (Halloween)",d:"Menu > Attendance: 35 Pumpkin Coins a day, 100 on days 7 and 14. Once per server, until the 3 Nov PST / 4 Nov CET maintenance."},
  {k:"halmis",t:"w",srv:1,n:"Halloween event missions + coin shop",d:"Season Mission > Event tab: weekly missions, once per server (about 235 Pumpkin Coins). Then buy the weekly coin-shop items (Odyle Energy, Nightmare tickets, Shugo keys, Rift Stones). Until 3/4 Nov."},
  {k:"halcandy",t:"w",srv:1,n:"Halloween Candy Keys",d:"60 Candy Key Fragments (from Conquest and Transcendence clears; Exploration runs give none) make a Red, Yellow or Blue Candy Key in Substance Morph, each once a week per server. Red: 20 Growth Pet Chests; Yellow: 10,000 AP; Blue: 4 Odyle Energy. Until 3/4 Nov."},
- {k:"riftstone",t:"w",n:"Lower Abyss Rift Stones (Conquerors of the Abyss)",d:"Wind Breeze Merchants > Special (membership): 50,000 Kina each, up to 7 per character a week (level 45+), +1 h Lower Abyss time each. Deleted 7 days after you get them. Until 27/28 Oct."},
- {k:"odylebuy",t:"w",n:"Odyle Energy (Bound) (optional)",d:"Wind Breeze Merchants > Special (membership): 25 Odyle + 5 Fine Odyle + 1 Pure Odyle + 50,000 Kina each, up to 20 per character a week with no server limit until the 27/28 Oct maintenance (server-transfer period only). After that the old 4 per character + 16 per server limit is expected back (Unconfirmed)."},
+ {k:'riftstone',t:'w',n:'Lower Abyss Rift Stones (Season Missions)',d:'Since 28 Oct the Shop no longer sells them. The weekly Land Grabs and Watcher Kaira Season Missions now give one each (Land Grabs no longer gives Abyss Points). +1 h Lower Abyss time each; they are deleted 7 days after you get them, so use them that week.'},
+ {k:'odylebuy',t:'w',n:'Odyle Energy (Bound) (optional)',d:'Shop > Wind Breeze Merchants > Special (membership). Since 28 Oct (end of server transfers): up to 4 per character and 16 per server a week; the 20-per-character offer is gone. Cost as shown in game (it was 25 Odyle + 5 Fine Odyle + 1 Pure Odyle + 50,000 Kina each).'},
  {k:"supplyd",t:"d",n:"Supply Requests (Emergency)",d:"ESC > Supply Request (from level 25). Hand in the requested items for Abyss Points (from about 380 for low items to about 21,000 for field-boss items; rare requests reportedly 50,000-100,000) and often Enhance Stones. Emergency requests change daily. Check the list before you extract or vendor gear and crafts: some low items are requested."},
  {k:"kinahcap",t:"d",n:"Open-world Kina (optional)",d:"Monsters stop paying Kina after about 1,000,000 per character a day. Worth it on alts once their dailies are done; stop when kills pay nothing."},
  {k:"supplyw",t:"w",n:"Supply Requests (Weekly, Crafting, Boss)",d:"ESC > Supply Request. Weekly requests pay the most Abyss Points; Crafting and Boss requests take crafted items and boss drops. Resets Wednesday."},
- {k:"morphshop",t:"w",n:"Substance Morph > Special > Wind Breeze Merchants (membership)",d:"Soul Crystals and Daily Dungeon Instant Clear Tickets are sold here instead of Shop > Wind Breeze Merchants > Special during the server-transfer period (14 Oct to the 27/28 Oct maintenance); after that they should move back. Buy the weekly limit shown in game."}
+ {k:'morphshop',t:'w',srv:1,n:'Instant Clear Tickets: Daily Dungeon + Nightmare (optional)',d:'Shop > Wind Breeze Merchants > Special, since 28 Oct: Nightmare tickets (new) and Daily Dungeon tickets, each up to 14 per server a week at 30,000 Kina. The patch notes also move Soul Crystals and Daily Dungeon tickets to Substance Morph > Special > Wind Breeze Merchants; if you can\'t find one, check the other tab.'},
 ].filter(t=>!t.off); /* off:1 = not open on Global yet (listed under the table) */
 function dwChars(){let c=S.gget('chars',null);if(!c||!c.length){c=[{id:'c1',name:'Main',cls:SLUG}];}return c}
 function renderDWTable(){
@@ -1565,8 +1566,8 @@ function cpMilesHTML(){
   const ils=[70,86,102],c=cpCraft(CP.recipe),out=[];
   const cell=(il,to,amp)=>{const r=cpRun('Unique',il,0,to,0,amp,2500);return {k:r.ek.mean+r.ak.mean,k90:r.ek.p90+r.ak.p90,s:r.eS.mean,a:r.aS.mean}};
   const fmt=x=>`<b>${cpM(x.k)}</b><br><span class="small muted">${cpN(x.s)} stones${x.a?` + ${cpN(x.a)} Amp`:''}<br>unlucky ${cpM(x.k90)}</span>`;
-  const rows=[['+10 (always succeeds)',il=>cell(il,10,0)],['+12',il=>cell(il,12,0)],['+15',il=>cell(il,15,0)],['+15 and Amplify +3',il=>cell(il,15,3)],['+15 and Amplify max (+3 at IL70, +5 at 86/102)',il=>cell(il,15,cpCap(il,false))]];
-  const t62=cell(62,15,1),t70s=cell(70,15,1);
+  const rows=[['+10 (always succeeds)',il=>cell(il,10,0)],['+12',il=>cell(il,12,0)],['+15',il=>cell(il,15,0)],['+15 and Amplify +3',il=>cell(il,15,3)],['+15 and Amplify max (+3 at IL70, +5 at 86/102; crafted pieces too since 28 Oct)',il=>cell(il,15,cpCap(il,false))]];
+  const t62=cell(62,15,3),t70s=cell(70,15,3);
   return `<p class="small"><b>Expected averages</b> for one piece from +0 (Kina fees; stones listed under). Weapons, armor and accessories cost the same at the same item level. Multiply by the pieces you plan to do. "Unlucky" = 90th percentile.</p>
   <div class="tablewrap"><table><thead><tr><th>Checkpoint</th>${ils.map(i=>`<th>IL${i} piece</th>`).join('')}</tr></thead><tbody>
   ${rows.map(([n,f])=>`<tr><td class="small">${cpE(n)}</td>${ils.map(il=>`<td class="num">${fmt(f(il))}</td>`).join('')}</tr>`).join('')}
@@ -1574,8 +1575,8 @@ function cpMilesHTML(){
   <h4>Crafted True Dragon Lord (${CP.recipe==='weapon'?'weapon':'earrings'} recipe, prices from the Crafting section)</h4>
   <div class="tablewrap"><table><thead><tr><th>Goal</th><th>Expected Kina</th></tr></thead><tbody>
    <tr><td class="small">Craft one True Dragon Lord (IL62)</td><td class="num"><b>${cpM(c.total)}</b></td></tr>
-   <tr><td class="small">…then +15 and Amplify +1 (IL62 cap)</td><td class="num"><b>${cpM(c.total+t62.k)}</b><br><span class="small muted">+ ${cpN(t62.s)} stones + ${cpN(t62.a)} Amp</span></td></tr>
-   <tr><td class="small">Splendent True Dragon Lord (IL70) straight from the craft (about 4 successes), +15 and Amplify +1</td><td class="num"><b>${cpM(c.total*4+t70s.k)}</b></td></tr>
+   <tr><td class="small">…then +15 and Amplify +3 (IL62 cap; it was +1 before the 28 Oct patch)</td><td class="num"><b>${cpM(c.total+t62.k)}</b><br><span class="small muted">+ ${cpN(t62.s)} stones + ${cpN(t62.a)} Amp</span></td></tr>
+   <tr><td class="small">Splendent True Dragon Lord (IL70) straight from the craft (about 4 successes), +15 and Amplify +3 (cap since 28 Oct)</td><td class="num"><b>${cpM(c.total*4+t70s.k)}</b></td></tr>
   </tbody></table></div>
   <p class="small muted">Enhance and Amplify Stones are farmed, not bought, so they are listed rather than priced. 1 Amplify Stone = 4 Fragments + 2,500 Enhance Stones. Soul Binding to 100% adds 2.13M Kina + 408 Soul Codex per Unique piece.</p>`;
 }
@@ -8707,7 +8708,7 @@ try{render();wire()}catch(e){console.error(e)}
       else o+=slotHTML(Object.assign({},sl,{n:(['Guard','Ring','Earrings','Necklace'].indexOf(sl.k)+2)+'. '+sl.n}),P,sv);
     });
     o+=`<details class="cgsub" id="cg-gear-cons"${OPEN.has('cg-gear-cons')?' open':''}><summary><b>Consumables worth crafting</b> <span class="small muted">potions, scrolls, food and stones</span></summary><div class="tablewrap cgstackw"><table class="cgtab cgstack"><thead><tr><th>Item</th><th>Recipe</th><th>Why</th></tr></thead><tbody>${d.consumables.map(x=>{const r=idx()[x.r];return r?`<tr><td class="small">${item(x.r)} <span class="muted">(${h(r.p)} ${r.lv})</span></td><td class="small">${r.parts.map(([pn,pq])=>item(pn,pq)).join(' ')}</td><td class="small">${h(x.why)} <span class="muted">(${srcLinks(x.src)})</span></td></tr>`:''}).join('')}</tbody></table></div></details>`;
-    o+=`<details class="cgsub" id="cg-gear-other"${OPEN.has('cg-gear-other')?' open':''}><summary><b>Other things people ask about</b> <span class="small muted">Philosopher's Stone, Wrathful materials after 21 Oct, Daevanion crystals, Arcana Transmute</span></summary><ul class="plain small">${d.other.map(x=>`<li><b>${h(x.t)}:</b> ${h(x.d)} <span class="muted">(${srcLinks(x.src)})</span></li>`).join('')}</ul>
+    o+=`<details class="cgsub" id="cg-gear-other"${OPEN.has('cg-gear-other')?' open':''}><summary><b>Other things people ask about</b> <span class="small muted">Philosopher's Stone, Wrathful materials from Hard Expeditions, Daevanion crystals, Arcana Transmute</span></summary><ul class="plain small">${d.other.map(x=>`<li><b>${h(x.t)}:</b> ${h(x.d)} <span class="muted">(${srcLinks(x.src)})</span></li>`).join('')}</ul>
       <p class="small">Dungeon details: <a href="#dungeonguide" data-goto="dungeonguide">Dungeon guides</a>. Where else an item comes from: <a href="#itemfinder" data-goto="itemfinder">Item finder</a>. Upgrade costs after crafting (and Screamheart's crafting cost sheet): <a href="#sys-costplan" data-goto="sys-costplan">Upgrade cost planner</a>.</p></details>`;
     return o;
   }
@@ -9052,7 +9053,7 @@ try{render();wire()}catch(e){console.error(e)}
     ['Balaur materials',['Balaur materials','Balaur Scales','Balaur Horns','Balaur Scale','Balaur Horn','Balaur Leather'],'Scales, horns and leather made from Balaur\'s Essence (a field-boss drop that is cheap on the Market). They level you from 51 to 80 and go into True Dragon Lord recipes.'],
     ['Essence Extraction',['Essence Extraction'],'The game\'s name for gathering: ore, gem, log, Odyle, herb and food nodes, with its own level 1–100 and skill points.'],
     ['Item level',['item level','IL102','IL62'],'The number that sums up how strong a piece is. Splendent Wise Dragon Lord is 102, the highest you can craft.'],
-    ['Wrathful materials',['Wrathful'],'Wrathful Mind, Will and Ego: rare dungeon materials (Krao Cave and Draupnir) that the top crafts need. Usually the most expensive part of a piece.'],
+    ['Wrathful materials',['Wrathful'],'Wrathful Mind, Will and Ego: rare dungeon materials (Krao Cave and Draupnir; since 28 Oct also Urugugu Canyon and Vakron Sky Island Hard) that the top crafts need. Usually the most expensive part of a piece.'],
     ['Break-even',['break-even','Break-even'],'The lowest sale price that doesn\'t lose money: your cost per item ÷ 0.88, because the Market keeps about 12% in fees.'],
     ['10× (bulk) recipe',['10×','bulk'],'A recipe that makes 10 at once. It gives about half the XP of ten single crafts, so level with single crafts.'],
     ['Seeker',['Seeker'],'Gathering skill: shows one node family on your minimap.'],
@@ -9631,6 +9632,7 @@ var QUESTLOG_LINKS={
     ['#sys-ascension-trial','Ascension Trial','The solo weekly score run: entries, rooms and rewards.'],
     ['#sys-field-bosses','Field bosses','Where the 56 field bosses are and how their respawns work.'],
     ['#ev-halloween','Halloween event','Pumpkin Coins: how to earn them and what to buy, until the 3/4 Nov maintenance.'],
+    ['#ev-1028','28 Oct update','Weaker Expedition bosses, Urugugu and Vakron Hard, Odylium Repository, crafted Amplify caps, the gathering limit and the other changes.'],
     ['#ev-1021','21 Oct update','Expedition Hard, the Ariel board, Rise to the Challenge and the other changes from that patch.'],
     ['#ev-1014','14 Oct update','Conquerors of the Abyss and the other changes from that patch.'],
     ['#ev-invasion','Dimensional Invasion','The hourly wave-defence event at :30: how to join and what it pays.'],
