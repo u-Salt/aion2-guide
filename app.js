@@ -1,4 +1,4 @@
-var SIMSRC="data/sim.js?v=1792961984";
+var SIMSRC="data/sim.js?v=1793235987";
 const P=ALL[SLUG];
 document.getElementById('app').innerHTML=P.body;
 document.title=P.cls+' Guide · AION 2 Global Field Manual (Unofficial Fan Guide)';
@@ -487,19 +487,20 @@ function sbResearch(s){ // this class's research pick text for the slot, split i
     body.split(/,|;|>|\bthen\b|\belse\b|\bor\b/).forEach(t=>{t=t.replace(/^\s*(keep|aim for|take)\s+/i,'').replace(/\s+if it rolls.*$/i,'').replace(/\s+(until|first|last|once)\b.*$/i,'').replace(/[.\s]+$/,'').trim();if(t)out.push(t)})});
   return out;
 }
-function sbLines(mode,s){
+function sbLines(mode,s,full){ // full: no cap, then the rest of the slot's pool (filler:true = not in any ranking); also used by the Soul Binding tab (sbfull_fn.js)
   if(s.t==='none')return null;
   const Q=sbPool(s),R=typeof rollSlot==='function'?rollSlot(mode,s.k):null;if(!Q&&!R)return null;
   const P=Q&&Q.P,cnt=sbCount(s,P),lc=x=>String(x).toLowerCase().trim();
   const rows=P?P.rows:[],byName=new Map(rows.map(r=>[lc(r.n),r]));
   const skills=(P&&P.skill&&Q.F.skills&&Q.F.skills[SLUG]&&Q.F.skills[SLUG][P.skill])||null;
   const vals=(P&&Q.F.rank&&Q.F.rank[SLUG]&&Q.F.rank[SLUG][Q.k])||null;
-  const out=[],seen=new Set();
+  const out=[],seen=new Set(),cap=full?1e9:cnt.n,vOf=new Map();let fill=false;
+  if(vals){rows.forEach((r,i)=>vOf.set(lc(r.n),vals[i]));if(skills)skills.forEach((n,j)=>vOf.set(lc('+1 '+n),vals[rows.length+j]))}
   const valid=nm=>{if(/^\+1 /.test(nm)){const sk=nm.slice(3).trim();return !P||!skills||skills.some(x=>lc(x)===lc(sk))?nm:null}
     if(byName.has(lc(nm)))return byName.get(lc(nm)).n;if(!P)return nm;
     const sk=skills&&skills.find(x=>lc(x)===lc(nm));return sk?'+1 '+sk:null};
   const add=raw=>{
-    if(out.length>=cnt.n)return;let t=String(raw||'').trim();
+    if(out.length>=cap)return;let t=String(raw||'').trim();
     if(!t||/^(any|other)\b|damage (passive|active)/i.test(t))return;
     let note='';const m=t.match(/\s*\(([^)]*)\)\s*$/);if(m){note=m[1];t=t.slice(0,m.index).trim()}
     const ok=t.split(/\s+\/\s+/).map(valid).filter(Boolean);if(!ok.length)return;
@@ -510,13 +511,15 @@ function sbLines(mode,s){
     const rs=ok.map(o=>byName.get(lc(o))).filter(Boolean);
     let pc=null,ex='',range='';
     if(rs.length){pc=rs.reduce((a,r)=>a+(parseFloat(r.c)||0),0);ex=rs[0].x||'';range=rs.length===1?rs[0].r:''}
-    else if(/^\+1 /.test(label)&&P&&P.skill){pc=20/(P.skill==='active'?12:10);range='+1 skill level'}
-    out.push({n:label,note,range,pc,ex,skill:/^\+1 /.test(label)});
+    else if(/^\+1 /.test(label)&&P&&P.skill){pc=ok.length*20/(P.skill==='active'?12:10);range='+1 skill level'}
+    const vs=ok.map(o=>vOf.get(lc(o))).filter(v=>v!=null);
+    out.push({n:label,note,range,pc,ex,skill:/^\+1 /.test(label),rows:rs,v:vs.length?Math.max(...vs):null,pvp:rs.some(r=>r.p),filler:fill});
   };
   const ranked=()=>{if(!vals){const RK=(P&&Q.F.rank)||{},cl=Object.keys(RK).filter(x=>RK[x][Q.k]);if(!cl.length)return []; // no data for this class (Brawler): average of the other classes, stat lines only
       return rows.map((r,i)=>({n:r.n,v:cl.reduce((a,x)=>a+(RK[x][Q.k][i]||0),0)/cl.length})).filter(x=>x.v>=0.01).sort((a,b)=>b.v-a.v).map(x=>x.n)}const L=rows.map((r,i)=>({n:r.n,v:vals[i]}));if(skills)skills.forEach((n,j)=>L.push({n:'+1 '+n,v:vals[rows.length+j]}));return L.filter(x=>x.v!=null&&x.v>=0.01).sort((a,b)=>b.v-a.v).map(x=>x.n)};
   if(mode==='pvp'){(R&&R.best||[]).forEach(add);(R&&R.keep||[]).forEach(add);rows.filter(r=>r.p).forEach(r=>add(r.n));ranked().forEach(add)}
   else{sbResearch(s).forEach(add);(R&&R.best||[]).forEach(add);ranked().forEach(add);(R&&R.keep||[]).forEach(add)}
+  if(full){fill=true;rows.forEach(r=>add(r.n));if(skills)skills.forEach(n=>add('+1 '+n))}
   if(!out.length)return null;
   return {n:cnt.n,lab:cnt.lab,lines:out,key:Q?Q.k:null};
 }
@@ -9422,7 +9425,7 @@ try{render();wire()}catch(e){console.error(e)}
 /* ---------- Soul Binding: every line each slot can roll, ranked for this class (Gear & stats > Soul Binding by slot) ----------
    Data: SBFULL (audit/r28/soulbind_full.json, built by audit/r28/build_sbfull.py from metabot.gg item pages + the simulator weights).
    Keeps the short "best picks" line per slot (rolls.json via rolls_fn.js) and adds a closed drop-down per slot with the full list.
-   Loaded after rolls_fn.js: wraps renderGear and rewrites #soultable. Also adds a "which slot rolls which damage line" box to the Soul Binding tab. */
+   Loaded after rolls_fn.js: wraps renderGear and rewrites #soultable. Also adds "Soul Binding by gear piece" (class + PvE/PvP ranked, via gear_fn.js sbLines) and a closed "which slot rolls which line" drop-down to the Soul Binding tab. */
 (function(){
   if(typeof SBFULL==='undefined'||!SBFULL||!SBFULL.slots)return;
   const H=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -9502,19 +9505,75 @@ table.sbft .tg.ex{color:var(--gold);border-color:color-mix(in srgb,var(--gold) 5
     last=html;t.innerHTML=html;
   }
   document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.classList&&d.classList.contains('sbfull')){const k=d.dataset.sbf;if(d.open)open.add(k);else open.delete(k)}},true);
-  {const o=window.renderGear;if(typeof o==='function')window.renderGear=function(){const r=o.apply(this,arguments);try{render()}catch(e){}return r}}
-  // Soul Binding tab: which slot rolls which damage line (class-independent)
+  {const o=window.renderGear;if(typeof o==='function')window.renderGear=function(){const r=o.apply(this,arguments);try{render()}catch(e){}try{pieceBox()}catch(e){}return r}}
+  // Soul Binding tab: "Soul Binding by gear piece — best lines first" for the current class and top-bar mode (ranking = gear_fn.js sbLines(mode,slot,true),
+  // the same order as the Gear tab's ranked best-in-slot lists), then the class-independent "Which slot can roll which line" drop-down.
+  const PIECES=[['weapon','Weapon'],['guard','Guard / off-hand'],['helmet','Helmet'],['shoulders','Shoulders'],['chest','Chest'],['gloves','Gloves'],['legs','Legs'],['boots','Boots'],['cloak','Cloak'],['necklace','Necklace'],['ear1','Earrings'],['ring1','Rings'],['bracelet','Bracelet']];
+  function pcss(){
+    if(document.getElementById('sbpiece-css'))return;
+    const st=document.createElement('style');st.id='sbpiece-css';
+    st.textContent=`.sbpgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:10px;margin-top:8px}
+.sbpc{border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+.sbpc h4{margin:0 0 2px;font-size:15px}.sbpc .sbpsub{margin:0 0 4px;font-size:12px}
+ol.sbpl{list-style:none;margin:0;padding:0}
+ol.sbpl li{display:grid;grid-template-columns:1.8em minmax(0,1fr);column-gap:6px;padding:4px 0;border-top:1px solid var(--line);font-size:13px}
+ol.sbpl li:first-child{border-top:0}
+ol.sbpl .rk{grid-row:1/span 2;font:600 13px var(--f-mono);color:var(--gold)}
+ol.sbpl .ln{overflow-wrap:anywhere}ol.sbpl .mt{grid-column:2;font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+ol.sbpl.top .ln b{color:var(--wind)}
+ol.sbpl li.nw .ln b,ol.sbpl li.nw .rk{color:var(--muted)}
+.sbpc .tg{display:inline-block;font:600 12px var(--f-mono);border:1px solid var(--line);border-radius:6px;padding:0 4px;margin:0 0 0 4px;white-space:nowrap}
+.sbpc .tg.ex{color:var(--gold);border-color:color-mix(in srgb,var(--gold) 50%,transparent)}
+.sbpc .tg.pvp{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 50%,transparent)}
+.sbpc .tg.nwt{color:var(--muted)}
+.sbpc .sbr{white-space:nowrap}
+.sbpc details.sbprest{margin-top:4px}.sbpc details.sbprest>summary{cursor:pointer;color:var(--wind);font-size:12px}`;
+    document.head.appendChild(st);
+  }
+  const fmtp=v=>(v<10&&v%1?v.toFixed(1).replace(/\.0$/,''):Math.round(v))+'%';
+  function lineLi(ln,i,mode,rest){
+    const rr=typeof sbRare==='function'?sbRare(ln.pc):'';
+    const odds=ln.pc!=null?`<span class="sbr sbr-${rr.replace(' ','')}">${ln.skill?'≈':''}${fmtp(ln.pc)} of rolls · ${rr}</span>`:'';
+    const rg=ln.skill?'+1 skill level':(ln.rows&&ln.rows.length?ln.rows.map(r=>(ln.rows.length>1?r.n+' ':'')+r.r).join(' / ')+' (IL102)':ln.range);
+    const nw=rest&&ln.filler&&!(mode==='pve'&&ln.pvp);
+    const tags=(ln.ex?`<span class="tg ex" title="${H(ln.ex)}">only this slot</span>`:'')+(rest&&ln.pvp&&mode==='pve'&&ln.filler?'<span class="tg pvp">PvP</span>':'')+(nw?'<span class="tg nwt">not worth it</span>':'');
+    const note=ln.note?` <span class="muted">(${H(ln.note)})</span>`:'';
+    return `<li${nw?' class="nw"':''}><span class="rk">${i}</span><span class="ln"><b>${H(ln.n)}</b>${note}${tags}</span><span class="mt">${odds}${odds&&rg?' · ':''}${H(rg||'')}</span></li>`;
+  }
+  let plast='';
+  function pieceBox(){
+    const box=document.getElementById('sys-sbpiece');if(!box||typeof sbLines!=='function'||typeof GEARSLOTS==='undefined')return;
+    pcss();
+    const mode=(typeof MODE!=='undefined'?MODE:(document.body&&document.body.dataset.mode))==='pvp'?'pvp':'pve';
+    const cname=(typeof P!=='undefined'&&P&&P.cls)||'your class';
+    const cards=PIECES.map(([k,nm])=>{
+      const s=GEARSLOTS.pve.find(x=>x.k===k);if(!s)return '';
+      let L=null;try{L=sbLines(mode,s,true)}catch(e){}
+      if(!L)return `<div class="sbpc" data-sbp="${k}"><h4>${H(nm)}</h4><p class="small muted">No ranked lines for this piece yet.</p></div>`;
+      const top=L.lines.filter(x=>!x.filler).slice(0,L.n),rest=L.lines.filter(x=>!top.includes(x)),ok='p:'+k;
+      return `<div class="sbpc" data-sbp="${k}"><h4>${H(nm)}</h4><p class="sbpsub muted">${H(L.lab)}</p><ol class="sbpl top">${top.map((ln,i)=>lineLi(ln,i+1,mode,false)).join('')}</ol>`+
+        (rest.length?`<details class="sbprest sbfull" data-sbf="${ok}"${open.has(ok)?' open':''}><summary>Rest of the pool (${rest.length} more)</summary><ol class="sbpl">${rest.map((ln,i)=>lineLi(ln,top.length+i+1,mode,true)).join('')}</ol></details>`:'')+`</div>`;
+    }).join('');
+    const html=`<h3>Soul Binding by gear piece — best lines first</h3>
+<p class="small">The lines worth getting on each piece for <b>${H(cname)}</b>, most important first, ${mode==='pvp'?'in <b>PvP order</b> (switch the top bar to PvE for raid and dungeon lines)':'in PvE order (switch the top bar to PvP for the PvP order)'}. Same ranking as the best-in-slot lists on <a href="#gear" data-goto="gear">Gear &amp; stats</a>. The numbered lines are as many as the best item for that piece gets; a dropped piece has fewer, so aim for the top ones.</p>
+<p class="small muted">The % is that line's share of rolls on the piece: <b>very rare</b> 1.5% or less, <b>rare</b> up to 3%, <b>uncommon</b> up to 5%, <b>common</b> above. A given class skill +1 is about 1.7% (active, 12 skills) or 2% (passive, 10 skills). Ranges are the IL102 roll. "Rest of the pool" lists the other lines the piece can roll; "not worth it" means no ranking source counts it for this class.</p>
+<div class="sbpgrid">${cards}</div>`;
+    if(html===plast&&box.querySelector('.sbpgrid'))return;
+    plast=html;box.innerHTML=html;
+  }
   function tabBox(){
     const odds=document.getElementById('sys-soulbind-odds');if(!odds||document.getElementById('sys-sbfull'))return;
     const LBL=Object.fromEntries(Object.entries(SBFULL.slots).map(([k,v])=>[k,v.label]));
     const big=['Damage Boost','Weapon Damage Boost','Combat Speed','Critical Damage Boost','Double Chance','Attack Increase','Multi-hit Chance','Perfect Chance','Attack','Critical Hit','Might','Precision','Move Speed','Endurance','Damage Tolerance'];
     const where=n=>Object.keys(SBFULL.slots).filter(k=>k!=='bracelet'&&SBFULL.slots[k].rows.some(r=>r.n.toLowerCase()===n.toLowerCase())).map(k=>LBL[k]);
+    const pb=document.createElement('div');pb.className='box';pb.id='sys-sbpiece';
     const box=document.createElement('details');box.className='box';box.id='sys-sbfull';
     box.innerHTML=`<summary><b>Which slot can roll which line</b></summary><p class="small">Global client data (MetaBot.GG item pages). Your class's full list per slot, ranked by the simulator, is under <a href="#gear" data-goto="gear">Gear &amp; stats</a> › Soul Binding by slot.</p>
 <div class="tablewrap"><table><thead><tr><th>Line</th><th>Slots that can roll it</th></tr></thead><tbody>${big.map(n=>`<tr><td><b>${H(n)}</b></td><td class="small">${H(where(n).join(', ')||'none')}</td></tr>`).join('')}
 <tr><td><b>+1 class active skill</b></td><td class="small">Weapon, guard, rings (1 of 12 skills)</td></tr><tr><td><b>+1 class passive skill</b></td><td class="small">Helmet, shoulders, chest, gloves, legs, boots, cloak, necklace, earrings (1 of 10 skills)</td></tr></tbody></table></div>
 <p class="small muted" style="margin:6px 0 0">All 8 weapon types share one pool. Every armor piece also rolls the same 17 basic lines (Attack, Critical Hit, Accuracy, HP, Defense and so on) plus Status Effect Resist.</p>`;
-    odds.insertAdjacentElement('afterend',box);
+    odds.insertAdjacentElement('afterend',pb);pb.insertAdjacentElement('afterend',box);
+    pieceBox();
   }
   try{tabBox()}catch(e){}
 })();
