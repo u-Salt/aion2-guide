@@ -1,4 +1,4 @@
-var SIMSRC="data/sim.js?v=1793238437";
+var SIMSRC="data/sim.js?v=1793482024";
 const P=ALL[SLUG];
 document.getElementById('app').innerHTML=P.body;
 document.title=P.cls+' Guide · AION 2 Global Field Manual (Unofficial Fan Guide)';
@@ -657,7 +657,8 @@ const DWTASKS=[
  {k:'explore',t:'w',n:'Exploration',d:'7 reward counts per Expedition dungeon.'},
  {k:'trial',t:'w',n:'Ascension Trial ×3',d:'Solo; Enhance Stones, Amplify fragments.'},
  {k:'subj',t:'w',off:1,n:'Subjugation ×3',d:'4-player. Not open on Global yet (probably Season 2), so hidden.'},
- {k:'raid',t:'w',off:1,n:'Ludra raid',d:'GS 2,800; offline for a rework, so hidden. Global client data: 4 attempts and 1 final-boss reward a week (the rework may change this).'},
+ {k:'raid',t:'w',n:'Ludra raid',d:'Back from 4 Nov: Normal needs item level 2,800, Hard 3,000 (new mechanics). Global client data before the rework: 4 attempts and 1 final-boss reward a week (check the in-game count). Clear it during 4–24 Nov for the Ludra\'s Nemesis title.'},
+ {k:'odyleboost',t:'d',srv:1,n:'Odyle Energy Boost mail (event)',d:'Until the 10 Nov PST / 11 Nov CET maintenance: log in once a day for 4 Odyle Energy in the mail (once per account per day; mail expires after 7 days).'},
  {k:'abyss',t:'w',n:'Abyss time',d:'7 h a week per layer (14 h in Lower and Middle with membership). Lower Abyss Rift Stones add 1 h each (see below). Since 28 Oct more players can be in the Abyss at once. Since 14 Oct you can bank at most 7 h of entry time, and unused time does not carry over to the next week; how the cap works with membership is not stated.'},
  {k:'growth',t:'w',off:1,n:'Growth dungeons',d:'Silent Graveyard, Fafnite Amphitheater: 7 h each, Soul Crystals, Enhance Stones. Probably not open on Global yet, so hidden.'},
  {k:'arena',t:'w',n:'Arena / Arena of Tactics',d:'Solitude and Cooperation: 10 participation + 30 win rewards each. Arena of Tactics (10v10, 11:00–14:00 and 19:00–21:00 only): 3 participation + 3 win rewards.'},
@@ -667,7 +668,7 @@ const DWTASKS=[
  {k:"attend2",t:"d",srv:1,n:"Launch attendance (2 calendars)",d:"7-day and 14-day launch logs until 15 Dec. Claim both, once per server. Resets 23:00 Pacific."},
  {k:"dutycmd",t:"w",n:"Abyss Duty Commands",d:"Up to 20 scrolls a week from the Command Merchant in the Abyss: AP + Abyssal Power Shards. Stockpile them and finish before Wednesday (track them in the Journal, J)."},
  {k:"cmdcity",t:"w",srv:1,n:"Command Missions ×12",d:"Command Merchant in Verteron/Altgard: 15,000 Kina a scroll, 12 a week (level 45). Same reward slots as Duty Missions. Scrolls keep in your bag, so buy all 12 and finish them before Wednesday."},
- {k:"corridor",t:"w",n:"Abyss Corridor",d:"After an Artifact Siege, enter the Corridor at each Artifact your faction holds: 5 minutes of monster killing for Kina and Abyss Points (0–3 runs a siege). Open until the next siege; needs Abyss time."},
+ {k:"corridor",t:"w",n:"Abyss Corridor",d:"After an Artifact Siege, enter the Corridor at each Artifact your faction holds: a short timed kill race (2:10 on the reworked version, older pages say 5 minutes) for Kina and Abyss Points, 0–3 runs a siege. Open until the next siege; needs Abyss time. Use your Abyss Corridor setup (Mode setups tab)."},
  {k:"siege",t:"w",n:"Artifact Siege + Abyss elites",d:"Siege Mon/Thu/Sat 21:00, Executors 21:30; Nahma Fri/Sun 21:00 (server time; check the in-game timer). Sources disagree on the server clock: an EU creator says German time, while metabot.gg and allthings.how say every region runs on one GMT+9 clock. NC hasn't said; official notices only give PDT and CEST."},
  {k:'prelude',t:'w',n:'Prelude to Flight pass (event)',d:'Menu > Subscribe, 28 Oct to the 2 Dec maintenance. 50 levels, then a repeat reward; up to 15,000 pass EXP per character a week. Free track: Small Odyle Energy, Fissure and Nightmare tickets, Battle Enhance Scrolls, Spiritstones. Premium (1,000 Quna, optional): full Odyle Energy instead, plus 20 Battle Enhance Scrolls. Best EXP: Expedition/Transcendence clears (300 each); also gather (30), craft (30), Soul Binding (20), Hidden Cube (50).'},
  {k:'atreia',t:'d',n:'Atreia\'s Call attendance (event)',d:'Menu > Attendance, 28 days, 28 Oct to the 2 Dec maintenance. Days 7/14/21/28: 2 Odyle Energy; days 6/13/20/27: 2,000 Soul Crystals; also Battle Enhance Scrolls, Soul Codex: Reset, Fissure tickets and Content Usage Ticket chests.'},
@@ -3249,11 +3250,11 @@ function onShow(){
 {const o=window.show;if(typeof o==='function')window.show=function(){const r=o.apply(this,arguments);try{onShow()}catch(e){}return r}}
 })();
 
-/* ---------- Mode setups: Nightmare / Ascension Trial / Daily Dungeon / PvP arena (data: C.modeSetups) ---------- */
+/* ---------- Mode setups: Nightmare / Ascension Trial / Daily Dungeon / Abyss Corridor / PvP arena (data: C.modeSetups) ---------- */
 (function(){
-  const ORDER=['nightmare','trial','daily','arena'];
+  const ORDER=['nightmare','trial','daily','corridor','arena'];
   // PvP mode puts the arena card first; the tab itself shows in both modes
-  const order=()=>((typeof MODE!=='undefined'&&MODE==='pvp')?['arena','nightmare','trial','daily']:ORDER);
+  const order=()=>((typeof MODE!=='undefined'&&MODE==='pvp')?['arena','nightmare','trial','daily','corridor']:ORDER);
   // mode facts (Global unless marked; checked 2026-10-17)
   const INFO={
     nightmare:{name:'Nightmare',kind:'Solo boss duel',
@@ -3262,6 +3263,8 @@ function onShow(){
       facts:'3 mob rooms with a buff orb after each, then the boss room. This week (Sanctum of Loathing): 41 mobs, then Duduri and Dodori together. Easy, Normal, Hard and Extreme need item level 1,000, 1,500, 2,000 and 2,500, and allow 5, 3, 2 and 2 deaths. Score = clear points + seconds left × a bonus.'},
     daily:{name:'Daily Dungeon',kind:'90-second kill race',
       facts:'Unknown Fissure → Daeva Bio-Research Base: one 90-second solo stage, no boss. Pick 1 of 3 buff cards first, then kill level-30 waves and 5 elites. It pays 3,000–10,000 Enhance Stones depending on your score.'},
+    corridor:{name:'Abyss Corridor',kind:'5-minute solo kill race',
+      facts:'Opens after each Artifact Siege at every Artifact your faction holds (0 to 3 runs; needs Abyss time). Solo and scored only by kills: weak monsters keep respawning in one arena, with red elites in the back zones worth more AP. Global seems to run the reworked Korean version with a 2:10 timer (a Global guide on 18 Oct: about 25,000 AP from one run); older pages say 5 minutes, so check yours.'},
     arena:{name:'PvP arena',kind:'Arena of Solitude (1v1) · PvP',
       facts:'Arena of Solitude: 1v1, 10-minute match, first to 3 kills, 5-second respawn. The round winner keeps the HP they have left, so heal while the other player respawns. Arena of Cooperation: 5v5, one life each. Your own gear and skill ranks count in both (only Arena of Tactics, 10v10, evens stats out). Opens at level 45, any time: 300 AP per match (10 a week) and 500 per win (30 a week). Potions and scrolls work; scroll buffs end when you die.'}
   };
