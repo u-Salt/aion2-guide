@@ -1,4 +1,4 @@
-var SIMSRC="data/sim.js?v=1793482024";
+var SIMSRC="data/sim.js?v=1793485471";
 const P=ALL[SLUG];
 document.getElementById('app').innerHTML=P.body;
 document.title=P.cls+' Guide · AION 2 Global Field Manual (Unofficial Fan Guide)';
@@ -277,8 +277,8 @@ function renderPhases(){
 /* ---------- macro windows ---------- */
 /* C.macroAlt = {name, summary, bar, barSteps, rules, sim:{gainPct,min,max,note}}: a better-testing macro shown beside the current one */
 function macroChoice(){return C.macroAlt&&S.get('macroOpt','cur')==='alt'?'alt':'cur'}
-function buildBar(){
-  if(macroChoice()==='alt') return {bar:C.macroAlt.bar,steps:C.macroAlt.barSteps};
+function buildBar(mainOnly){  // mainOnly: the guide main bar even when the alternative macro is picked (mode setup cards)
+  if(!mainOnly&&macroChoice()==='alt') return {bar:C.macroAlt.bar,steps:C.macroAlt.barSteps};
   if(C.bar) return {bar:C.bar,steps:C.barSteps};
   const M=C.macro;
   const excl=C.macroExclude||[];
@@ -3359,6 +3359,30 @@ function onShow(){
       `<p class="small">${h(A.summary||'')} The setup above still works; this is the version that tested better.</p>`+
       (rows.length?`<ul class="mschg">${rows.join('')}</ul>`:'')+(g.note?`<details class="mstested"><summary>How we tested</summary><p class="small muted">${h(g.note)}</p></details>`:'')+`</div>`;
   }
+  // full skill bar + macro for a mode: the main bar with this mode's barChanges and macroSteps applied (same renderers as Rotation & macro)
+  function modeBar(M){
+    if(typeof buildBar!=='function'||typeof qbarHTML!=='function') return null;
+    const base=buildBar(true); if(!base||!base.bar) return null;
+    const bar=JSON.parse(JSON.stringify(base.bar)); let steps=(base.steps||[]).slice();
+    (M.barChanges||[]).forEach(b=>{const s=bar.find(x=>String(x.k)===String(b.slot)); if(!s) return; const r=+b.row||0; while(s.rows.length<=r) s.rows.push(null); s.rows[r]=b.to; s.free=false});
+    if(typeof M.macroSteps==='string'){
+      const lead=M.macroSteps.split(' (')[0].replace(/^[^:]*:\s*/,'');
+      const keys=lead.split(/,\s*/).map(x=>x.trim()).map(x=>x==='Left click'?'LMB':x==='Right click'?'RMB':x).filter(x=>bar.some(b=>b.k===x));
+      if(keys.length>=2){steps=keys; bar.forEach(b=>{if(b.man&&b.k!=='Space'&&steps.includes(b.k)) b.man=0})}
+    }
+    return {bar,steps,changed:!!((M.barChanges||[]).length||M.macroSteps)};
+  }
+  function barSec(k,M){
+    if(M.barOnPvpTab) return '';
+    let mb=null; try{mb=modeBar(M)}catch(e){console.error(e)}
+    if(!mb||!mb.bar.length) return '';
+    const KN=x=>(typeof KEYN!=='undefined'&&KEYN[x])||x;
+    const manual=mb.bar.filter(b=>b.man).flatMap(b=>b.rows.filter(Boolean).map(n=>({n,k:b.k,note:n==='Defiance'?'Break stuns and CC':''})));
+    return `<div class="mssec msfullbar"><h4>Skill bar and macro for this mode</h4>`+
+      `<p class="small muted">${mb.changed?'Your raid bar with the changes above already made':'Same skill bar and macro as your raid setup'} (row 0 is the bottom row and fires first; gold-outlined slots are pressed by hand). Macro steps, in order: <b>${h(mb.steps.map(KN).join(', '))}</b>, 10 ms each.</p>`+
+      `<div class="tablewrap" style="border:0"><div class="qbar">${qbarHTML(mb.bar)}</div></div>`+
+      `<div class="grid2">${macroWinHTML(mb.bar,mb.steps,{hold:(C.macroHold||'macro key'),delay:10,title:'Skill Macro 1 ('+h(INFO[k].name)+')'})}${typeof manualWinHTML==='function'&&manual.length?manualWinHTML(manual):''}</div></div>`;
+  }
   function card(k,M){
     const I=INFO[k]; const done=false; const isA=k==='arena';
     const head=`<header class="mshead"><div><span class="eyebrow">${h(I.kind)}</span><h3>${h(M&&M.title||I.name)}</h3></div>`+
@@ -3402,7 +3426,7 @@ function onShow(){
       `<div class="mscol">${list('Press by hand',M.manual,manLine)}${list('How to play it',M.tips)}${list('Staying alive',M.survival)}</div></div>`+
       arenaBits(M)+`</details>`+foot+`</article>`;
     return `<article class="box mscard${done?' done':''}" data-mscard="${k}">${head}`+
-      `<p class="mssum">${h(M.summary)}</p>`+msOpen(k,'what to change from your raid setup, Stigmas, skill bar, how to play and staying alive')+chgSec+stigSec+altSec(M.macroAlt)+
+      `<p class="mssum">${h(M.summary)}</p>`+msOpen(k,'what to change from your raid setup, Stigmas, skill bar and macro, how to play and staying alive')+chgSec+stigSec+barSec(k,M)+altSec(M.macroAlt)+
       list('Press by hand',M.manual,manLine)+list('How to play it',M.tips)+list('Staying alive',M.survival)+
       `</details>`+foot+`</article>`;
   }
