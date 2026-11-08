@@ -1,4 +1,4 @@
-var SIMSRC="data/sim.js?v=1794025096";
+var SIMSRC="data/sim.js?v=1794161298";
 const P=ALL[SLUG];
 document.getElementById('app').innerHTML=P.body;
 document.title=P.cls+' Guide · AION 2 Global Field Manual (Unofficial Fan Guide)';
@@ -343,7 +343,7 @@ function renderMacroOpt(){
     }
   }
   if(!mo) return;
-  if(/^creator/.test(ch)){const CB=curCreator();mo.hidden=false;mo.innerHTML=`<p class="small" style="margin:0">Showing <b>${esc(CB.short)}</b>'s skill bar and macro${CB.reconstructed?' (rebuilt: no video of their bar)':''}. Our own build is one click away: <b>${esc((A&&A.btnCur)||'Guide main')}</b> at the top of this tab.</p>`;return}
+  if(/^creator/.test(ch)){const CB=curCreator();mo.hidden=false;mo.innerHTML=`<p class="small" style="margin:0">Showing ${CB.ours?`the <b>${esc(CB.short)}</b> skill bar and macro (our recommendation)`:`<b>${esc(CB.short)}</b>'s skill bar and macro${CB.reconstructed?` (rebuilt from ${esc(CB.barSource||'their parses')}, not from ${esc(CB.short)}'s screen)`:''}`}. Our own build is one click away: <b>${esc((A&&A.btnCur)||'Guide main')}</b> at the top of this tab.</p>`;return}
   if(!A){mo.hidden=true;mo.innerHTML='';return}
   const g=A.sim||{}, gain=g.gainPct!=null?`+${g.gainPct}%`:'';
   const range=g.min!=null&&g.max!=null?` (${g.min>0?'+':''}${g.min}% to +${g.max}% across tests)`:'';
@@ -403,7 +403,7 @@ const ROLEMAP={ranger:'dps',sorcerer:'dps',spiritmaster:'dps',gladiator:'dps',as
 const STONES={
   pve:{
     dps:{weapon:['Attack','Attack','Attack','Attack'],armor:['Attack','Attack','Crit','Crit'],acc:['Accuracy','Accuracy','Attack','Attack'],brace:['Attack','Attack','Crit','Crit'],
-      note:'Swap Crit stones to Attack once your crit chance is near the 50% cap. Swap Accuracy stones to Attack once you stop missing bosses (about 1,100–1,200 Accuracy for Season 1, 1,350–1,400 for Ludra).'},
+      note:'Swap Crit stones to Attack once your crit chance is near the 50% cap. Swap Accuracy stones to Attack once you stop missing bosses (about 1,100–1,200 Accuracy for Season 1; Ludra about 900 Normal / 1,200 Hard by one Global guide, low confidence; 1,350–1,400 was the Early Access Ludra benchmark).'},
     tank:{weapon:['Attack','Attack','Accuracy','Accuracy'],armor:['Block','Block','Defense','Defense'],acc:['HP','HP','Block','Block'],brace:['Defense','Defense','HP','HP'],
       note:'Attack and Accuracy on the weapon keep your threat up. Swap Block to Defense if you already parry most hits.'},
     healer:{weapon:['Attack','Attack','Attack','Attack'],armor:['HP','HP','Defense','Defense'],acc:['Attack','Attack','Accuracy','Accuracy'],brace:['HP','HP','Defense','Defense'],
@@ -418,8 +418,8 @@ const STONES={
 };
 const GEARSLOTS={
  pve:[
-  {k:'weapon',n:'Weapon',t:'weapon',item:'Enraged Kromede weapon (Fire Temple Conquest, IL86) → Ludra raid (IL102; offline for a rework, no return date yet) or Splendent Dragon Lord craft',enh:'+15, then amplify'},
-  {k:'guard',n:'Guard / off-hand',t:'weapon',item:'Fire Temple Conquest (IL86) → Ludra (IL102, once it returns)',enh:'+15'},
+  {k:'weapon',n:'Weapon',t:'weapon',item:'Enraged Kromede weapon (Fire Temple Conquest, IL86) → Ludra raid (IL102; back since 4 Nov: Normal item level 2,800, Hard 3,000) or Splendent Dragon Lord craft',enh:'+15, then amplify'},
+  {k:'guard',n:'Guard / off-hand',t:'weapon',item:'Fire Temple Conquest (IL86) → Ludra (IL102, back since 4 Nov)',enh:'+15'},
   {k:'helmet',n:'Helmet',t:'armor',item:'Nuakum set (Ferocious Horn Den Conquest, IL86) → Splendent Wise/Ebony Dragon Lord craft (IL102, craft-only)',enh:'+10'},
   {k:'shoulders',n:'Shoulders',t:'armor',item:'Nuakum set (Ferocious Horn Den) → Splendent craft (IL102, craft-only)',enh:'+10'},
   {k:'chest',n:'Chest',t:'armor',item:'Nuakum set (Ferocious Horn Den) → Splendent craft (IL102, craft-only)',enh:'+10'},
@@ -432,7 +432,7 @@ const GEARSLOTS={
   {k:'ear2',n:'Earring 2',t:'acc',item:'Fire Temple / voucher chest → Splendent craft',enh:'+10'},
   {k:'ring1',n:'Ring 1',t:'acc',item:'Fire Temple / voucher chest → Splendent craft',enh:'+10'},
   {k:'ring2',n:'Ring 2',t:'acc',item:'Fire Temple / voucher chest → Splendent craft',enh:'+10'},
-  {k:'bracelet',n:'Bracelet',t:'brace',item:'Ascension Bracelet for now; Abyssal Bracelet (Ludra drop, or 3 Ludra vouchers + 5M Kina) once Ludra returns',enh:'+10'},
+  {k:'bracelet',n:'Bracelet',t:'brace',item:'Ascension Bracelet until Ludra; Abyssal Bracelet (Ludra drop, or 3 Ludra vouchers + 5M Kina) or Ludra\'s Bracelet (6 Normal or 3 Hard Ludra vouchers); Ludra is back since 4 Nov',enh:'+10'},
   {k:'amulet',n:'Amulet',t:'none',item:'Never replaced: Substance Morph Rare → Epic → Unique, each at +10',enh:'+10 per grade'},
   {k:'belt',n:'Belt',t:'none',item:'Never replaced: Substance Morph Rare → Epic → Unique, each at +10',enh:'+10 per grade'}],
  pvp:[
@@ -1057,6 +1057,7 @@ document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.classList&&d.cla
 function xkeep(host){if(host)host.querySelectorAll('details.xdet').forEach(d=>d.open?XOPEN.add(d.dataset.xk):XOPEN.delete(d.dataset.xk))}
 function renderChanges(){
   const host=$('changelist'); if(!host||!CHANGES) return; xkeep(host);
+  {const o=document.getElementById('chgarchive');if(o&&!host.contains(o))o.remove();}  // r35: the archive may have been moved below the events
   const items=chgFor(), dates=chgDates(items), recent=dates.slice(0,2), cls=C['class'];
   let h='';
   recent.forEach((d,di)=>{
@@ -1077,6 +1078,7 @@ function renderChanges(){
   h+=`<details class="box" id="chgarchive"><summary><b>All changes (archive)</b> <span class="small muted">${older} rows for your ${esc(cls)} since ${esc(chgDay(dates[dates.length-1]||''))}: what the old guide said, what it says now, and what to do</span></summary><div id="chgarchivebody" style="display:grid;gap:14px;margin-top:10px"><p class="small muted">Loading…</p></div></details>`;
   host.innerHTML=h;
   const ar=$('chgarchive'); if(ar) ar.addEventListener('toggle',()=>{if(ar.open&&!ar.dataset.drawn){ar.dataset.drawn=1;renderChangeArchive()}});
+  {const ev=$('events');if(ar&&ev&&ev.parentNode===host.parentNode)ev.after(ar);}  // r35: latest updates, then the events, then the archive
   decorate(host);
   renderChangeBanner();
 }
@@ -2586,7 +2588,8 @@ document.addEventListener('click',e=>{
   else if(act==='clear'){
     // two clicks instead of confirm(): dialogs are blocked inside the claude.ai viewer
     if(b.dataset.armed!=='1'){b.dataset.armed='1';const old=b.textContent;b.textContent='Click again to remove';setTimeout(()=>{if(b.isConnected){b.dataset.armed='';b.textContent=old}},4000);return}
-    chDelete();chNotice='Removed. No character is saved in the guide now (titles you ticked in the Titles tab stay ticked: that is your own checklist).';renderMyChar();
+    chDelete();try{const mb=S.get('mybuild',null);if(mb&&(mb.stamp||mb.src==='char')){mb.stamp='';mb.src='form';S.set('mybuild',mb)}}catch(e){}  // r35: no trace of the character in Build for my character either
+    chNotice='Removed. No character is saved in the guide now (titles you ticked in the Titles tab stay ticked: that is your own checklist).';renderMyChar();
   }
   else if(act==='edit'){const d=document.querySelector('#mycharbox details.chhow');if(d){d.open=true;const t=$('chpaste');if(t)t.focus()}}
   else if(act==='switch'){chSwitch(b.dataset.slug)}
@@ -2626,7 +2629,8 @@ const now=()=>(typeof performance!=='undefined'&&performance.now)?performance.no
 const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
 const sdev=a=>{if(a.length<2)return 0;const m=mean(a);return Math.sqrt(a.reduce((x,y)=>x+(y-m)*(y-m),0)/(a.length-1))};
 const quant=(a,q)=>{const s=a.slice().sort((x,y)=>x-y);return s.length?s[Math.min(s.length-1,Math.max(0,Math.round(q*(s.length-1))))]:0};
-const tabOpen=id=>{const el=document.getElementById(id);return !!el&&!el.hidden};
+// r35: a folded sub-section (simulator, mychar) counts as open only when its host tab is shown and no closed drop-down hides it
+const tabOpen=id=>{const el=document.getElementById(id);if(!el)return false;const sec=el.closest('section.tab')||el;if(sec.hidden||el.hidden)return false;const d=el.closest('details');return !d||d.open};
 const D=()=>window.AION_SIMDATA&&window.AION_SIMDATA.classes&&window.AION_SIMDATA.classes[SLUG];
 const FIGHTS=40, WORTH_FIGHTS=24, EST_FIGHTS=12;
 
@@ -3248,6 +3252,10 @@ function onShow(){
   if(tabOpen('mychar'))charTabShown();
 }
 {const o=window.show;if(typeof o==='function')window.show=function(){const r=o.apply(this,arguments);try{onShow()}catch(e){}return r}}
+// the simulator sits in a closed drop-down on Rotation & macro: load it when that drop-down opens
+document.addEventListener('toggle',e=>{const d=e.target,s=document.getElementById('simulator');if(d&&d.open&&s&&d.contains&&d.contains(s))try{onShow()}catch(_){}},true);
+// show('simulator') opens that drop-down after the tab switch: check again once it is open
+{const o=window.show;if(typeof o==='function')window.show=function(){const r=o.apply(this,arguments);setTimeout(()=>{try{if(tabOpen('simulator'))onShow()}catch(e){}},60);return r}}
 })();
 
 /* ---------- Mode setups: Nightmare / Ascension Trial / Daily Dungeon / Abyss Corridor / PvP arena (data: C.modeSetups) ---------- */
@@ -3420,6 +3428,11 @@ function onShow(){
           :`<span class="tag wind">Simulator</span> ${s.robust===true?'<span class="tag">same result with typical and top 10% gear and every assumption we tried</span>':s.robust===false?'<span class="tag">depends on gear and assumptions</span>':''}`)+
       `</div>${simLine(s)}${s.note?`<p class="small muted">${h(s.note)}</p>`:''}</details>`:'';
     const foot=`<footer class="mssim"><p class="small msverdict"><b>Verdict:</b> ${h(verdict)} ${conf}</p>${tested}</footer>`;
+    // r35: the full PvP write-up lives on the PvP build tab (C.pvpBuild); the card keeps its summary, Stigmas and burst order.
+    // Lines found only on the card were moved to the PvP tab (pvpBuild.arenaExtra) by audit/r35/cleanup.py.
+    if(isA&&M.fullIn==='pvp'&&C.pvpBuild) return `<article class="box mscard arena${done?' done':''}" data-mscard="${k}">${head}`+
+      `<p class="mssum">${h(M.summary)}</p><div class="mssec"><h4>Stigmas</h4><div class="mschips">${stig}</div></div>${burstFlow(M.burst)}`+
+      `<p class="callout small" style="margin:0"><b>Full PvP write-up:</b> perks, Stigma levels and swaps, how to play, matchups and team arenas are on the <a href="#pvp" data-goto="pvp">PvP build</a> tab (switch <b>Build for</b> at the top to PvP), with the skill bar and macro.</p>`+srcBits({sources:M.sources})+foot+`</article>`;
     if(isA) return `<article class="box mscard arena${done?' done':''}" data-mscard="${k}">${head}`+
       `<p class="mssum">${h(M.summary)}</p>`+msOpen(k,'perks, Stigmas, burst order, how to play and matchups')+
       `<div class="mscols"><div class="mscol">${chgSec}${stigSec}${burstFlow(M.burst)}</div>`+
@@ -3896,7 +3909,7 @@ function onShow(){
   const list=(t,a,fn)=>a&&a.length?`<div class="mssec"><h4>${t}</h4><ul class="plain small">${a.map(fn||(x=>`<li>${h(x)}</li>`)).join('')}</ul></div>`:'';
   /* short link card for a creator build (full view lives on Rotation & macro: C.creatorBuilds, app.js picker) */
   function refCard(B){
-    return `<article class="box mscard" data-build="${h(B.id)}"><header class="mshead"><div><span class="eyebrow">Top creator build</span><h3>${h(C['class'])}: ${h(B.name)}</h3></div><span class="tag gold">Confidence: ${h(B.confidence||'?')}</span></header>`+
+    return `<article class="box mscard" data-build="${h(B.id)}"><header class="mshead"><div><span class="eyebrow">${h(B.eyebrow||'Top creator build')}</span><h3>${h(C['class'])}: ${h(B.name)}</h3></div><span class="tag gold">Confidence: ${h(B.confidence||'?')}</span></header>`+
       `<p class="mssum">${h(B.summary)}</p>${B.healerNote?`<p class="small muted"><b>Healer note:</b> ${h(B.healerNote)}</p>`:''}`+
       `<p><button type="button" class="btn primary" data-crgo="${h(B.creatorRef)}">Open it on Rotation &amp; macro</button></p></article>`;
   }
@@ -3968,29 +3981,30 @@ function onShow(){
     if(!CB){[top,pic,cc].forEach(x=>{x.hidden=true;x.innerHTML=''});return}
     const T=CB.top||{}, v=T.video, W=(C.creatorBuilds||[])[0]||CB, WC=W.card||{}, c=CB.card||{};
     let t='';
-    if(v) t+=`<a class="btn primary crwatch" href="${h(v.url)}" target="_blank" rel="noopener">&#9654; Watch ${h(CB.short)}'s build video: ${h(v.title)}${v.date?` (${h(v.date)})`:''}${v.t?` &middot; starts at ${h(v.t)}`:''}</a>`+
+    if(v) t+=`<a class="btn primary crwatch" href="${h(v.url)}" target="_blank" rel="noopener">&#9654; ${CB.videoLabel?h(CB.videoLabel)+':':`Watch ${h(CB.short)}'s build video:`} ${h(v.title)}${v.date?` (${h(v.date)})`:''}${v.t?` &middot; starts at ${h(v.t)}`:''}</a>`+
       `<div class="small muted">${v.author?`Video by ${h(v.author)}. `:''}${T.channel?A_(T.channel.url,h(T.channel.label)):''}${T.profile?` &middot; ${A_(T.profile.url,h(T.profile.label))}`:''}</div>`;
     else if(T.profile) t+=`<a class="btn primary crwatch" href="${h(T.profile.url)}" target="_blank" rel="noopener">${h(T.profile.label)}</a><div class="small muted">${h(CB.short)} has no video of this build: this is their public parse and profile page.</div>`;
     (T.related||[]).forEach(r=>{t+=`<div class="small">${/youtube\.com|youtu\.be/.test(r.url)?'Related video':'See also'}: ${A_(r.url,h(r.title))}${r.author?` by ${h(r.author)}`:''}${r.date?` (${h(r.date)})`:''}${r.note?`: ${h(r.note)}`:''}</div>`});
-    const kind=CB.isCreator?'Content creator':'Top player (not a content creator)';
+    const kind=CB.kindLabel||(CB.isCreator?'Content creator':'Top player (not a content creator)');
     t+=`<p class="small" style="margin:6px 0 0"><b>${h(CB.short)}</b>${CB.server?` &middot; ${h(CB.server)}`:''} &middot; ${kind} &middot; <span class="tag gold">Confidence: ${h(c.confLevel||WC.confLevel||'?')}</span></p>`;
     if(c.alert) t+=`<div class="callout warn small" style="margin-top:8px"><b>Read this first.</b> ${h(c.alert)}</div>`;
-    t+=`<p class="small muted" style="margin:6px 0 0">The skill bar, macro and by-hand list below are ${h(CB.short)}'s. Our boss rotation boxes are hidden while a creator build is picked; the evidence and how it differs from our build are under the macro.</p>`;
+    const whose=CB.ours?(CB.oursText||'This is our own recommended build, put together from top players\' parses and our simulator; credit for every part we took is listed under the macro.'):CB.reconstructed?`Rebuilt by us, not copied from ${h(CB.short)}'s screen: the skill bar and macro below come from ${h(CB.barSource||'their parses and narration')}.`:`The skill bar, macro and by-hand list below are ${h(CB.short)}'s.`;
+    t+=`<p class="small muted" style="margin:6px 0 0">${CB.ours?h(whose):whose} Our boss rotation boxes are hidden while ${CB.ours?'this build':'a creator build'} is picked; the evidence and how it differs from our build are under the macro.</p>`;
     top.innerHTML=`<div class="box crtop">${t}</div>`; top.hidden=false;
     let p='';
     (CB.pics||[]).forEach(x=>{p+=`<figure class="crpic"><a href="${h(x.link||'#')}" target="_blank" rel="noopener noreferrer"><img src="${x.src}" alt="${h(x.caption)}" loading="lazy"></a><figcaption class="small muted">${x.link?A_(x.link,h(x.caption)):h(x.caption)}</figcaption></figure>`});
     if(!(CB.pics||[]).length||CB.reconstructed) p+=`<p class="small muted" style="margin:0">${h(CB.picNote||'')}</p>`;
     if(CB.barNote) p+=`<p class="small muted" style="margin:0">${h(CB.barNote)}</p>`;
     pic.innerHTML=p; pic.hidden=!p;
-    let x=`<div class="box crcard"><h3>${h(String(CB.label||'').replace(/^Creator: /,'Top creator build: '))}</h3>`;
+    let x=`<div class="box crcard"><h3>${h(CB.cardTitle||String(CB.label||'').replace(/^Creator: /,'Top creator build: '))}</h3>`;
     x+=`<div class="mssec"><h4>DPS evidence</h4>${dpsTable(c.dps)}${para(CB.dpsSummary)}</div>`;
     x+=`<div class="mssec"><h4>Why this build was picked</h4>${para(CB.why)}${para(CB.caveat)}</div>`;
-    x+=`<div class="mssec"><h4>The full build</h4>${buildDetail(CB)}</div>`;
+    x+=`<div class="mssec"><h4>The full build</h4>${buildDetail(CB)}${(CB.tables||[]).map(T=>det(h(T.title),(T.intro?para(T.intro):'')+`<div class="tablewrap"><table><thead><tr>${(T.head||[]).map(c=>`<th>${h(c)}</th>`).join('')}</tr></thead><tbody>${(T.rows||[]).map(r=>`<tr>${r.map((c,i)=>`<td${i?' class="small"':''} data-l="${h((T.head||[])[i]||'')}">${h(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`+(T.notes||[]).map(para).join(''),T.open)).join('')}${(CB.extra||[]).map(X=>det(h(X.title),(X.paras||[]).map(para).join('')+((X.items||[]).length?`<ul class="plain small">${X.items.map(i=>`<li>${h(i)}</li>`).join('')}</ul>`:''),X.open)).join('')}</div>`;
     if(CB.role==='winner'&&c.runnerUp){const R=c.runnerUp;x+=`<div class="mssec"><h4>Runner-up: ${h(R.short)}${R.server?` (${h(R.server)})`:''}</h4>${para(R.dps)}${para(R.why)}${det('Runner-up DPS evidence',c.ruDps&&c.ruDps.length?dpsTable(c.ruDps):'')}${(R.links||[]).length?`<p class="small">${R.links.map(l=>A_(l.url,h(l.label))).join(' &middot; ')}</p>`:''}</div>`}
     if(c.healer) x+=`<div class="mssec"><h4>Healer note</h4><p class="small"><b>${h(c.healer.who)}</b> (confidence ${h(c.healer.confidence||'?')}): ${h(c.healer.evidence)}</p>${(c.healer.links||[]).length?`<p class="small">${c.healer.links.map(l=>A_(l.url,h(l.label))).join(' &middot; ')}</p>`:''}</div>`;
     const diffs=(WC.diffs||[]).map(d=>d.text!=null?`<li>${h(d.text)}</li>`:`<li><b>${h(d.topic)}</b>: ours: ${h(d.guide)}. ${h(W.short)}: ${h(d.creator)}.${d.evidence?` ${h(d.evidence)}`:''}${d.verdict?` <i>Verdict: ${h(d.verdict)}.</i>`:''}</li>`).join('');
     x+=`<div class="mssec"><h4>How it differs from our main build</h4>${CB.role!=='winner'?`<p class="small muted">Compared for ${h(W.short)}'s build (the top pick); ${h(CB.short)}'s bar and macro are shown above.</p>`:''}${diffs?det('All differences ('+(WC.diffs||[]).length+')',`<ul class="small crlist">${diffs}</ul>`,true):'<p class="small muted">None listed.</p>'}</div>`;
-    x+=`<div class="mssec"><h4>What our simulator says</h4><p class="small">The simulator can't model held keys or animation cancels, and many of these builds rely on both. Real 60 s parses outrank it, so read its numbers as a rough check only.</p>${det('Simulator details',(WC.sim||[]).map(para).join('')+para(WC.recommendation))}</div>`;
+    x+=`<div class="mssec"><h4>What our simulator says</h4><p class="small">The simulator can't model held keys or animation cancels, and many of these builds rely on both. Real 60 s parses outrank it, so read its numbers as a rough check only.</p>${CB.sim?det('Simulator details',(CB.sim||[]).map(para).join('')):det('Simulator details',(WC.sim||[]).map(para).join('')+para(WC.recommendation))}</div>`;
     const tip=c.test||WC.test;
     x+=`<div class="mssec"><h4>Test it yourself</h4><ol class="small"><li>Use the Training Scarecrow and the in-game Combat Analysis (<span class="kbd">Ctrl</span>+<span class="kbd">X</span>), same food and scrolls each time.</li><li>Do at least 3 pulls of 60 s with our main build and 3 or more with this one; compare the average DPS, not the best pull.</li>${tip?`<li>${h(tip)}</li>`:''}<li>Keep whichever wins on your character and save the other in a spare skill preset.</li></ol></div>`;
     x+=`<div class="mssec"><h4>Confidence</h4><p class="small"><span class="tag gold">${h(c.confLevel||WC.confLevel||'?')}</span> ${h(WC.confidence||'')}</p></div>`;
@@ -5114,7 +5128,7 @@ function renderAch(){
   h+=`<div class="box" style="display:grid;gap:10px"><h3 style="margin:0">Easiest wins first</h3><p class="small muted" style="margin:0">Biggest reward for the least effort. Rewards count titles you would equip, Soul Codex, Amplify Stones, Oath Coin, Pantheon decorations, Lucky Auras and Hidden Cube keys the most.</p><ol class="pansteps">${easy.map(item).join('')}</ol></div>`;
   if(best.length) h+=`<div class="box" style="display:grid;gap:10px"><h3 style="margin:0">Best rewards (harder)</h3><ol class="pansteps">${best.map(item).join('')}</ol></div>`;
   const gsort=A.groups.slice().sort((a,b)=>b.season-a.season||a.eff-b.eff||a.n.localeCompare(b.n));
-  h+=`<div class="box" style="display:grid;gap:8px"><h3 style="margin:0">All achievements by group</h3>${gsort.map(g=>{const left=g.rows.filter(r=>!sv[r.id]).length;return `<details class="coldet"><summary class="pansum"><b>${esc(g.n)}</b> <span class="small muted">${g.season?'Season 1 (until '+esc(A.seasonEnd)+') · ':''}${A.effn[g.eff]} · ${g.rows.length} achievements${g.id==='sanctuary'?' · the Ludra raid is offline on Global for a rework':''}</span></summary>
+  h+=`<div class="box" style="display:grid;gap:8px"><h3 style="margin:0">All achievements by group</h3>${gsort.map(g=>{const left=g.rows.filter(r=>!sv[r.id]).length;return `<details class="coldet"><summary class="pansum"><b>${esc(g.n)}</b> <span class="small muted">${g.season?'Season 1 (until '+esc(A.seasonEnd)+') · ':''}${A.effn[g.eff]} · ${g.rows.length} achievements${g.id==='sanctuary'?' · Ludra is back since 4 Nov; Ludra Hunt titles until 24 Nov':''}</span></summary>
     <div class="tablewrap" style="margin-top:8px"><table class="pantable coltable"><thead><tr><th>Achievement</th><th>Goal (first tier)</th><th>Tiers</th><th>All tiers pay</th></tr></thead><tbody>${g.rows.slice().sort((a,b)=>b.sc-a.sc).map(r=>`<tr class="${sv[r.id]?'panrowown':''}"><td class="small">${chk(r)}<b>${esc(r.n)}</b></td><td class="small">${esc(r.goal)}</td><td class="small">${esc(r.t)}</td><td class="small">${r.ti?achTitle(r)+'<br>':''}${achRew(r)}</td></tr>`).join('')}</tbody></table></div></details>`}).join('')}</div>`;
   h+=`<div class="box small"><h3 style="font-size:18px">Good to know</h3><ul class="plain">
     <li>Achievements unlock at level 9. Season 1 ones (Abyss, Arena, Nightmare, Transcendence, Ascension Trial and the weekly challenges) stop counting at the end of Season 1; the rest never reset.</li>
@@ -8189,7 +8203,7 @@ function wire(){
   box.addEventListener('change',e=>{const t=e.target;if(!t||ui.running)return;if(t.closest('.box')){const I=readForm(inp());saveInp(I);
     if(t.id==='mbslots'||t.dataset.mbown){render()}}});
 }
-function onShow(){const s=$('mybuild');if(s&&!s.hidden&&!ui.running){render();wire()}}
+function onShow(){const s=$('mybuild'),sec=s&&(s.closest('section.tab')||s);if(s&&!s.hidden&&!sec.hidden&&!ui.running){render();wire()}}  // r35: mybuild is a sub-section of My character
 window.MyBuild={run,render,buildJob:(o)=>{const I=readForm(inp());return buildJob(I,charRead(),o)},core:MB_CORE,last:null,inputs:inp,saveInputs:saveInp};
 {const o=window.show;if(typeof o==='function')window.show=function(){const r=o.apply(this,arguments);try{onShow()}catch(e){}return r}}
 {const o=window.renderMyChar;if(typeof o==='function')window.renderMyChar=function(){const r=o.apply(this,arguments);try{onShow()}catch(e){}return r}}
@@ -8350,6 +8364,7 @@ try{render();wire()}catch(e){console.error(e)}
       det('arcana','Arcana for PvP','which card sets and stats work in PvP',A(PB.arcana).length?ul(PB.arcana):'')+
       det('modes','Arena, Tactics and open world','what changes in each PvP mode',modesHTML())+
       det('match','Matchups','how to fight each class',A(PB.matchups).length?matchHTML():'')+
+      det('arenaextra','Arena notes (from the Other builds card)','arena tips and stigma notes that were only on the PvP arena card',A(PB.arenaExtra).length?ul(PB.arenaExtra):'')+
       det('check','Check in game','things to confirm on the dummy or in your first matches',checkHTML())+
       det('chg','What changed from the old PvP section','and which Korean patches apply on Global',A(PB.changesFromGuide).length?chgHTML():'')+
       det('src','Sources','videos (with timestamps) and sites this build comes from',A(PB.sources).length?srcHTML():'')+
@@ -9436,7 +9451,7 @@ try{render();wire()}catch(e){console.error(e)}
     ['gear','Want a slot that won\'t drop? Crafted item level 102 pieces, their ladders and full material lists are in the <a href="#craftguidebox" data-goto="craftguidebox">crafting guide</a> (Crafting &amp; gathering: pick "Craft gear for my character").'],
     ['upgrades','Crafting a piece instead? The chain, success odds and materials for every item level 102 craft are in the <a href="#craftguidebox" data-goto="craftguidebox">crafting guide</a>. Remember: upgrade crafts remove Manastones and Theostones.'],
     ['itemfinder','Crafting materials (Wrathful Mind, Will, Ego, refining stones, Balaur\'s Essence): full lists and where each comes from in the <a href="#craftguidebox" data-goto="craftguidebox">crafting guide</a>.'],
-    ['farming','Farming for crafting? Which materials each item level 102 craft needs and where they drop: <a href="#craftguidebox" data-goto="craftguidebox">crafting guide</a>.']
+    ['farming','Farming for crafting? Which materials each item level 102 craft needs and where they drop: <a href="#craftguidebox" data-goto="craftguidebox">crafting guide</a>. Crafting materials (Wrathful Mind, Will, Ego, refining stones, Balaur\'s Essence): full lists and where each comes from are there too.']  // r35: merged with the Item finder line (Item finder is part of this tab now)
   ];
   function addLinks(){
     LINKS.forEach(([tab,html])=>{
@@ -9606,6 +9621,45 @@ ol.sbpl li.nw .ln b,ol.sbpl li.nw .rk{color:var(--muted)}
   try{tabBox()}catch(e){}
 })();
 
+/* ---------- Short versions of the longest blocks (r35, Nov 2026) ----------
+   Data: SHORTNOTES = audit/r35/short.json  {items:[{k:'<first words of the block, as rendered>', b:['bullet', ...]}]}
+   A paragraph, list item, table cell or callout whose text starts with k gets 2-4 short bullets, and the original
+   text stays word for word underneath in a closed "Full notes" drop-down. Nothing is deleted: the original element
+   is moved inside the drop-down (ids, links and listeners keep working). Runs after every tab switch and re-render. */
+(function(){
+  if(typeof SHORTNOTES==='undefined'||!SHORTNOTES||!(SHORTNOTES.items||[]).length) return;
+  const h=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
+  const ITEMS=SHORTNOTES.items.map(x=>({k:norm(x.k),b:x.b||[]})).filter(x=>x.k.length>=24);
+  (function css(){if(document.getElementById('shortcss'))return;const st=document.createElement('style');st.id='shortcss';
+    st.textContent='.shortv{display:grid;gap:4px;margin:0}.shortv ul{margin:0;padding-left:18px}.shortv li{margin:2px 0}details.fullnotes>summary{cursor:pointer;font-size:13px;color:var(--muted)}details.fullnotes[open]>summary{margin-bottom:6px}';
+    document.head.appendChild(st)})();
+  function apply(root){
+    const sec=root||document.querySelector('section.tab:not([hidden])'); if(!sec) return;
+    sec.querySelectorAll('p,li,td,.callout').forEach(el=>{
+      if(el.dataset.shortdone||el.closest('details.fullnotes')||el.closest('.shortv')) return;
+      if(el.querySelector('p,li,ul,ol,table')) return;
+      const t=norm(el.textContent); if(t.length<300) return;
+      const it=ITEMS.find(x=>t.startsWith(x.k)); if(!it) return;
+      el.dataset.shortdone=1;
+      const bl=`<ul>${it.b.map(x=>`<li>${h(x)}</li>`).join('')}</ul>`;
+      if(el.tagName==='TD'||el.tagName==='LI'){  // keep the cell / item, put both versions inside it
+        const orig=el.innerHTML;
+        el.innerHTML=`<div class="shortv">${bl}<details class="fullnotes"><summary>Full notes</summary><div class="fullbody">${orig}</div></details></div>`;
+        return;
+      }
+      const wrap=document.createElement('div'); wrap.className='shortv';
+      wrap.innerHTML=bl+'<details class="fullnotes"><summary>Full notes</summary></details>';
+      el.parentNode.insertBefore(wrap,el); wrap.querySelector('details').appendChild(el);
+    });
+  }
+  window.applyShortNotes=apply;
+  let q=0; const later=()=>{if(q)return;q=1;setTimeout(()=>{q=0;try{apply()}catch(e){}},80)};
+  {const o=window.show;if(typeof o==='function')window.show=function(){const r=o.apply(this,arguments);later();return r}}
+  try{new MutationObserver(later).observe(document.getElementById('app')||document.body,{childList:true,subtree:true})}catch(e){}
+  later();
+})();
+
 /* ---------- "Our builds on questlog.gg": the ONE place to paste the guide's questlog.gg build links ----------
    Paste each full https://questlog.gg/... link between the quotes. Any link left '' is hidden, and a class with no
    links at all shows no box. Shown on each class's Rotation & macro tab (polish_fn.js reads this).
@@ -9658,7 +9712,7 @@ var QUESTLOG_LINKS={
     ['#sys-not-live','Not open on Global yet','Things in the game files and database sites that you can\'t do yet.'],
     ['#sys-ascension-trial','Ascension Trial','The solo weekly score run: entries, rooms and rewards.'],
     ['#sys-field-bosses','Field bosses','Where the 56 field bosses are and how their respawns work.'],
-    ['#ev-halloween','Halloween event','Pumpkin Coins: how to earn them and what to buy, until the 3/4 Nov maintenance.'],
+    ['#ev-halloween','Halloween event (ended)','Pumpkin Coins: how they were earned and what the shop sold; ended with the 3/4 Nov maintenance.'],
     ['#ev-1028','28 Oct update','Weaker Expedition bosses, Urugugu and Vakron Hard, Odylium Repository, crafted Amplify caps, the gathering limit and the other changes.'],
     ['#ev-1021','21 Oct update','Expedition Hard, the Ariel board, Rise to the Challenge and the other changes from that patch.'],
     ['#ev-1014','14 Oct update','Conquerors of the Abyss and the other changes from that patch.'],
@@ -9685,6 +9739,20 @@ var QUESTLOG_LINKS={
     ['#sys-storage','Bags, storage and presets','Cube expansions, character and account storage, presets.'],
     ['#sys-settings','Settings worth changing','Control mode, targeting and other options to change first.'],
     ['g:Where sources disagree','Where sources disagree and main sources','Each disagreement, the choice this guide made and why, plus the main sources.'],
+    // r35: tabs folded into a host tab start closed, so each tab leads with its own content (build first)
+    ['#simulator','Simulator (advanced)','Plays a boss fight hit by hit with your real skill numbers: test a change before you spend anything.'],
+    ['#buildshare','Share & compare your build','Turn your plan into a code or link, load someone else\'s, keep variants.'],
+    ['#alts','Leveling alts','The fastest way to level a second character, and what your alts share.'],
+    ['#soulbind','Soul Binding: costs, odds and by gear piece','What Soul Binding costs, the odds of each line, and the ranking by gear piece.'],
+    ['#abyss','Abyss & PvP rules','When other players can attack you, Rift times, arena caps and Season 1 rankings.'],
+    ['#account','Membership & account','Membership, Mileage, server transfers, characters and what gets accounts banned.'],
+    ['#combat','Combat & stats','How damage stats stack, stat caps, Power Shards, hitting a boss, dying and reviving.'],
+    ['#social','Legions & groups','Legions, finding a group, friends, chat and mail.'],
+    ['#insight','Genus Insight','Your pet collection turned into rolled stats: targets slot by slot and how it works.'],
+    ['#titles','Titles','Tick the titles you own; the guide shows the best one for each slot.'],
+    ['#achfarm','Achievement farming','The easiest achievements to farm, in order.'],
+    ['#communitytools','Community tools','DPS meters, maps, databases and planners made by players, ranked by category.'],
+    ['#gear-quick','Quick facts: enhancing, caps, wings','The short versions; the full facts are on their own sections.'],
   ];
   const h=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const SK='aion2fm-cbox';
@@ -9699,6 +9767,8 @@ var QUESTLOG_LINKS={
       '.cbox>.cbody>.box,.cbox>.cbody>div:not(.box):not(.grid2)>.box:only-child{border:0;background:none;padding:0;box-shadow:none;margin:0}',
       '.cbox>.cbody>.box>h3:first-child,.cbox>.cbody>div:not(.box):not(.grid2)>.box:only-child>h3:first-child{display:none}',
       '.grid2>details.cbox,.grid3>details.cbox{align-self:start}',
+      '.cbox>.cbody>.mergedsec{border-top:0;padding-top:0}','.cbox>.cbody>.mergedsec>div:first-child>h2.subh2{display:none}',
+      'details.evended>summary{cursor:pointer;margin:6px 0}','details.evended[open]>summary{margin-bottom:8px}',
       'section.tab [id],section.tab details{scroll-margin-top:var(--cbox-smt,150px)}'].join('\n');
     document.head.appendChild(st);
   })();
@@ -9736,7 +9806,9 @@ var QUESTLOG_LINKS={
     sync(d);
     try{let q=0;new MutationObserver(()=>{if(q)return;q=1;setTimeout(()=>{q=0;sync(d)},0)}).observe(d.querySelector('.cbody'),{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['hidden']})}catch(e){}
   }
-  function apply(){CFG.forEach(([k,t,s])=>{try{const el=find(k);if(el)wrap(el,k,t,s)}catch(e){console.error(e)}})}
+  function apply(){CFG.forEach(([k,t,s])=>{try{const el=find(k);if(el)wrap(el,k,t,s)}catch(e){console.error(e)}});
+    // r35: the (ended) Halloween box goes inside "Ended events"
+    try{const en=document.getElementById('ev-ended'),hw=document.getElementById('ev-halloween');if(en&&hw){const b=hw.closest('details.cbox')||hw;if(!en.contains(b))en.appendChild(b)}}catch(e){}}
   window.applyCollapse=apply;
   // open every closed <details> around an element
   function openAround(el){let n=el&&el.parentElement;while(n){if(n.tagName==='DETAILS'&&!n.open)n.open=true;n=n.parentElement}}
@@ -9779,11 +9851,16 @@ var QUESTLOG_LINKS={
   const okUrl=u=>/^https:\/\/[^\s"'<>]+$/i.test(String(u||'').trim());
 
   /* ---- merged tabs ---- */
-  const ALIAS={modes:'builds',closet:'pantheon',achievements:'monoliths',notes:'credits',progress:'start'};
+  const ALIAS={modes:'builds',closet:'pantheon',achievements:'monoliths',notes:'credits',progress:'start',
+    // r35: 18 tabs folded into a host tab (classes/reorg.py MERGE_LATE); their ids live on as sub-sections
+    rankings:'start',events:'changes',mybuild:'mychar',buildshare:'mychar',alts:'plan',simulator:'rotation',soulbind:'gear',enhance:'upgrades',stones:'upgrades',
+    abyss:'content',itemfinder:'farming',insight:'pets',titles:'pantheon',achfarm:'monoliths',account:'economy',combat:'systems',social:'systems',communitytools:'credits'};
   const orig=window.show;
   window.show=function(id,push){
     const to=ALIAS[id];
     if(to){
+      // r35: open the closed drop-down a folded tab sits in first, so its renderer (e.g. the simulator) sees it open
+      try{const e0=document.getElementById(id==='progress'?'progressbox':id);if(e0&&typeof openAround==='function')openAround(e0)}catch(e){}
       const r=orig.call(this,to,push);
       const el=document.getElementById(id==='progress'?'progressbox':id);
       if(el){ if(el.tagName==='DETAILS'){el.open=true; if(id==='progress'&&typeof renderProgress==='function') renderProgress();}
@@ -9861,7 +9938,7 @@ var QUESTLOG_LINKS={
   }
 
   /* ---- one "Sources for this tab" block per tab ---- */
-  const SRC_SKIP=new Set(['credits','communitytools','dungeonguide','changes']);
+  const SRC_SKIP=new Set(['credits','communitytools','dungeonguide','changes']);  // r35: communitytools now lives inside credits
   const isSrc=el=>/^\s*Sources?\s*:/.test(el.textContent||'');
   function tidySources(id){
     const sec=document.getElementById(id); if(!sec||sec.tagName!=='SECTION'||SRC_SKIP.has(id)) return;
